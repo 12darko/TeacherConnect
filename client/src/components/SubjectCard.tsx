@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "wouter";
-import { Icon } from "lucide-react";
+import { useLocation } from "wouter";
+// Icon type için lucide-react'tan LucideIcon kullanıyoruz
+import { LucideIcon } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
 type SubjectCardProps = {
@@ -12,10 +13,10 @@ type SubjectCardProps = {
 };
 
 export function SubjectCard({ id, name, icon, teacherCount = 0 }: SubjectCardProps) {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   
   // Dinamik olarak icon'u al
-  const IconComponent = LucideIcons[icon as keyof typeof LucideIcons] as Icon || LucideIcons.Book;
+  const IconComponent = LucideIcons[icon as keyof typeof LucideIcons] as LucideIcon || LucideIcons.Book;
   
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -35,7 +36,7 @@ export function SubjectCard({ id, name, icon, teacherCount = 0 }: SubjectCardPro
       <CardFooter className="mt-auto pt-2">
         <Button
           variant="outline"
-          onClick={() => navigate(`/teachers?subjectId=${id}`)}
+          onClick={() => setLocation(`/teachers?subjectId=${id}`)}
           className="w-full"
         >
           Öğretmenleri Gör

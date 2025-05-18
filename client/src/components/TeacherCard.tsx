@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarIcon } from "lucide-react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 export type TeacherCardProps = {
   id: number;
@@ -29,7 +29,7 @@ export function TeacherCard({
   totalReviews,
   subjectNames = []
 }: TeacherCardProps) {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const fullName = `${firstName} ${lastName}`;
   
   // Initials for avatar fallback
@@ -82,7 +82,7 @@ export function TeacherCard({
       
       <CardFooter className="mt-auto pt-0">
         <Button 
-          onClick={() => navigate(`/teachers/${id}`)} 
+          onClick={() => setLocation(`/teachers/${id}`)} 
           className="w-full"
         >
           Profili Görüntüle

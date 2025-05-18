@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Brain, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 type AISuggestionCardProps = {
   suggestion?: string;
@@ -15,7 +15,7 @@ export function AISuggestionCard({
   type = "study",
   loading = false
 }: AISuggestionCardProps) {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   
   useEffect(() => {
