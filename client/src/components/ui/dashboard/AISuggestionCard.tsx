@@ -86,7 +86,7 @@ export function AISuggestionCard({
         <Button 
           variant="ghost" 
           className="w-full justify-between text-primary hover:text-primary hover:bg-primary/10"
-          onClick={() => navigate(getActionRoute())}
+          onClick={() => setLocation(getActionRoute())}
         >
           {getActionText()}
           <ArrowRight className="ml-2 h-4 w-4" />
