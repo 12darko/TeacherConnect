@@ -12,6 +12,8 @@ import TeacherProfile from "@/pages/TeacherProfile";
 import CreateExam from "@/pages/CreateExam";
 import TakeExam from "@/pages/TakeExam";
 import ClassRoom from "@/pages/ClassRoom";
+import Pricing from "@/pages/Pricing";
+import AITutor from "@/pages/AITutor";
 import NotFound from "@/pages/not-found";
 
 // Navigation
@@ -32,6 +34,8 @@ export default function App() {
           <Route path="/create-exam" component={CreateExam} />
           <Route path="/exam/:id" component={TakeExam} />
           <Route path="/classroom/:id" component={ClassRoom} />
+          <Route path="/pricing" component={Pricing} />
+          <Route path="/ai-tutor" component={AITutor} />
           <Route component={NotFound} />
         </Switch>
       </main>
