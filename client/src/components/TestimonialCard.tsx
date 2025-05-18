@@ -30,16 +30,16 @@ export function TestimonialCard({
   let formattedDate = "";
   try {
     if (date) {
-      formattedDate = new Date(date).toLocaleDateString('tr-TR', {
+      formattedDate = new Date(date).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
     } else {
-      formattedDate = "Tarih belirtilmedi";
+      formattedDate = "Date not specified";
     }
   } catch (error) {
-    formattedDate = "Geçersiz tarih";
+    formattedDate = "Invalid date";
   }
   
   return (
@@ -65,7 +65,7 @@ export function TestimonialCard({
         </div>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground pb-4">
-        {comment || "Harika bir öğretmen! Çok şey öğrendim."}
+        {comment || "Great teacher! I learned a lot."}
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground border-t pt-3">
         {formattedDate}

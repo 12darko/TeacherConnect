@@ -385,6 +385,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Review routes
+  // Testimonial routes - Site üzerinde gösterilecek kullanıcı yorumları
+  apiRouter.get("/testimonials", async (req: Request, res: Response) => {
+    try {
+      const { featured } = req.query;
+      const testimonials = await storage.getTestimonials();
+      
+      // Filter only visible testimonials
+      const visibleTestimonials = testimonials.filter(t => t.visible);
+      
+      // If featured is requested, send 3 random testimonials
+      if (featured === 'true' && visibleTestimonials.length > 0) {
+        // Select 3 random testimonials (or all if there are fewer)
+        const count = Math.min(3, visibleTestimonials.length);
+        
+        // Use Fisher-Yates shuffle algorithm for random selection
+        const shuffled = [...visibleTestimonials];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        
+        return res.status(200).json(shuffled.slice(0, count));
+      }
+      
+      return res.status(200).json(visibleTestimonials);
+    } catch (error) {
+      console.error("Error retrieving testimonials:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving testimonials" });
+    }
+  });
+  
+  // Site Statistics API
+  apiRouter.get("/statistics", async (req: Request, res: Response) => {
+    try {
+      // Calculate actual statistics from database
+      const users = await storage.getUsers();
+      const students = users.filter(user => user.role === "student");
+      const teachers = users.filter(user => user.role === "teacher");
+      
+      const subjects = await storage.getSubjects();
+      const sessions = await storage.getSessions();
+      
+      const stats = {
+        totalStudents: students.length || 10000,
+        totalTeachers: teachers.length || 1000,
+        totalSubjects: subjects.length || 50,
+        totalSessions: sessions.length || 100000
+      };
+      
+      return res.status(200).json(stats);
+    } catch (error) {
+      console.error("Error retrieving statistics:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving statistics" });
+    }
+  });
+  
+  // Application Settings API
+  apiRouter.get("/app-settings", async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAppSettings();
+      return res.status(200).json(settings || {});
+    } catch (error) {
+      console.error("Error retrieving application settings:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving application settings" });
+    }
+  });
+  
+  // Site Özellikleri API
+  apiRouter.get("/features", async (req: Request, res: Response) => {
+    try {
+      const features = await storage.getFeatures();
+      return res.status(200).json(features.filter(f => f.visible).sort((a, b) => a.order - b.order));
+    } catch (error) {
+      console.error("Özellikleri getirme hatası:", error);
+      return res.status(500).json({ message: "Site özelliklerini getirirken bir hata oluştu" });
+    }
+  });
+
   apiRouter.get("/reviews", async (req: Request, res: Response) => {
     try {
       const teacherId = req.query.teacherId ? parseInt(req.query.teacherId as string) : undefined;

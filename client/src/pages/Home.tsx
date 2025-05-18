@@ -31,14 +31,14 @@ export default function Home() {
   
   // Fetch testimonials
   const { data: testimonials = [] } = useQuery<any[]>({
-    queryKey: ['/api/reviews?featured=true'],
+    queryKey: ['/api/testimonials?featured=true'],
   });
   
   // Set up testimonials if none are returned from API
   const mockTestimonials = [
     {
       id: 1,
-      comment: "Harika bir öğretmen! Çok şey öğrendim. Matematik becerilerim birkaç ders sonrasında dramatik şekilde gelişti.",
+      comment: "Amazing teacher! I learned so much. My math skills improved dramatically after just a few lessons.",
       rating: 5,
       studentName: "Emma Thompson",
       date: new Date(2023, 11, 15),
@@ -46,7 +46,7 @@ export default function Home() {
     },
     {
       id: 2,
-      comment: "Platform çok kullanıcı dostu ve doğru öğretmeni bulmak kolaydı. Oturumlar sırasındaki video kalitesi mükemmel.",
+      comment: "The platform is very user-friendly and it was easy to find the right teacher. The video quality during sessions is excellent.",
       rating: 4,
       studentName: "Michael Chen",
       date: new Date(2024, 1, 22),
@@ -54,7 +54,7 @@ export default function Home() {
     },
     {
       id: 3,
-      comment: "Bu platformu bulana kadar kimya derslerimde zorlanıyordum. Şimdi sınıfımın en iyi öğrencilerinden biriyim!",
+      comment: "I was struggling with my chemistry classes until I found this platform. Now I'm one of the top students in my class!",
       rating: 5,
       studentName: "Sophia Rodriguez",
       date: new Date(2024, 3, 10),
@@ -62,7 +62,17 @@ export default function Home() {
     }
   ];
   
-  const displayTestimonials = testimonials.length > 0 ? testimonials : mockTestimonials;
+  // Map database testimonials to match our component props
+  const mappedTestimonials = testimonials.map(t => ({
+    id: t.id,
+    comment: t.comment,
+    rating: t.rating,
+    studentName: t.name,
+    date: new Date(t.date),
+    studentImage: t.avatarUrl || ""
+  }));
+  
+  const displayTestimonials = mappedTestimonials.length > 0 ? mappedTestimonials : mockTestimonials;
   
   return (
     <div>
@@ -93,13 +103,14 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      size="lg" 
-                      className="bg-white text-primary hover:bg-white/90"
-                      onClick={() => window.location.href = "/api/login"}
-                    >
-                      Get Started
-                    </Button>
+                    <Link href="/auth">
+                      <Button 
+                        size="lg" 
+                        className="bg-white text-primary hover:bg-white/90"
+                      >
+                        Get Started
+                      </Button>
+                    </Link>
                     <Link href="/find-teachers">
                       <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
                         Browse Teachers
@@ -174,10 +185,10 @@ export default function Home() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Popüler Dersler</h2>
+            <h2 className="text-3xl font-bold">Popular Subjects</h2>
             <Link href="/find-teachers">
               <Button variant="outline" className="group border-primary text-primary hover:bg-primary/10">
-                Tümünü Gör
+                View All
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -245,7 +256,7 @@ export default function Home() {
                 disabled={isAuthenticated}
                 className="bg-primary hover:bg-primary/90 text-white"
               >
-                {isAuthenticated ? "Zaten Giriş Yapmışsınız" : "Hemen Başlayın"}
+                {isAuthenticated ? "You're Already Logged In" : "Get Started Now"}
               </Button>
             </Link>
           </div>
@@ -289,7 +300,7 @@ export default function Home() {
             {isAuthenticated ? (
               <Link href="/find-teachers">
                 <Button size="lg" className="bg-white text-primary hover:bg-white/90">
-                  Öğretmenleri Bul
+                  Find Teachers
                 </Button>
               </Link>
             ) : (
@@ -298,7 +309,7 @@ export default function Home() {
                   size="lg" 
                   className="bg-white text-primary hover:bg-white/90"
                 >
-                  Hemen Üye Ol
+                  Sign Up Now
                 </Button>
               </Link>
             )}
