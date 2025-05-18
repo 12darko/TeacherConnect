@@ -1,7 +1,10 @@
 import { 
   users, subjects, teacherProfiles, sessions, reviews, exams, examAssignments, studentStats,
+  testimonials, appSettings, homepageSections, features, pricingPlans, faqItems,
   type User, type Subject, type TeacherProfile, type Session, type Review, type Exam, type ExamAssignment, type StudentStat,
-  type InsertUser, type InsertSubject, type InsertTeacherProfile, type InsertSession, type InsertReview, type InsertExam, type InsertExamAssignment, type InsertStudentStats
+  type Testimonial, type AppSettings, type HomepageSection, type Feature, type PricingPlan, type FaqItem,
+  type InsertUser, type InsertSubject, type InsertTeacherProfile, type InsertSession, type InsertReview, type InsertExam, type InsertExamAssignment, type InsertStudentStats,
+  type InsertTestimonial, type InsertAppSettings, type InsertHomepageSection, type InsertFeature, type InsertPricingPlan, type InsertFaqItem
 } from "@shared/schema";
 
 // Interface for all storage operations
@@ -57,6 +60,40 @@ export interface IStorage {
   updateStudentActivity(studentId: string): Promise<StudentStat | undefined>;
   updateStudentSessionCount(studentId: string): Promise<StudentStat | undefined>;
   updateStudentExamStats(studentId: string, score: number): Promise<StudentStat | undefined>;
+  
+  // UI Content - Testimonials
+  getTestimonials(): Promise<Testimonial[]>;
+  getTestimonial(id: number): Promise<Testimonial | undefined>;
+  createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  updateTestimonial(id: number, testimonial: Partial<InsertTestimonial>): Promise<Testimonial | undefined>;
+  
+  // UI Content - App Settings
+  getAppSettings(): Promise<AppSettings | undefined>;
+  updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
+  
+  // UI Content - Homepage Sections
+  getHomepageSections(): Promise<HomepageSection[]>;
+  getHomepageSection(id: number): Promise<HomepageSection | undefined>;
+  createHomepageSection(section: InsertHomepageSection): Promise<HomepageSection>;
+  updateHomepageSection(id: number, section: Partial<InsertHomepageSection>): Promise<HomepageSection | undefined>;
+  
+  // UI Content - Features
+  getFeatures(): Promise<Feature[]>;
+  getFeature(id: number): Promise<Feature | undefined>;
+  createFeature(feature: InsertFeature): Promise<Feature>;
+  updateFeature(id: number, feature: Partial<InsertFeature>): Promise<Feature | undefined>;
+  
+  // UI Content - Pricing Plans
+  getPricingPlans(): Promise<PricingPlan[]>;
+  getPricingPlan(id: number): Promise<PricingPlan | undefined>;
+  createPricingPlan(plan: InsertPricingPlan): Promise<PricingPlan>;
+  updatePricingPlan(id: number, plan: Partial<InsertPricingPlan>): Promise<PricingPlan | undefined>;
+  
+  // UI Content - FAQ Items
+  getFaqItems(): Promise<FaqItem[]>;
+  getFaqItem(id: number): Promise<FaqItem | undefined>;
+  createFaqItem(item: InsertFaqItem): Promise<FaqItem>;
+  updateFaqItem(id: number, item: Partial<InsertFaqItem>): Promise<FaqItem | undefined>;
 }
 
 // In-memory implementation of the storage interface
@@ -78,7 +115,21 @@ export class MemStorage implements IStorage {
   private examIdCounter: number;
   private examAssignmentIdCounter: number;
   private studentStatsIdCounter: number;
+  private testimonialIdCounter: number;
+  private appSettingsIdCounter: number;
+  private homepageSectionIdCounter: number;
+  private featureIdCounter: number;
+  private pricingPlanIdCounter: number;
+  private faqItemIdCounter: number;
   
+  // UI components
+  private testimonials: Map<number, Testimonial>;
+  private appSettingsData: Map<number, AppSettings>;
+  private homepageSections: Map<number, HomepageSection>;
+  private featuresData: Map<number, Feature>;
+  private pricingPlans: Map<number, PricingPlan>;
+  private faqItems: Map<number, FaqItem>;
+    
   constructor() {
     this.users = new Map();
     this.subjects = new Map();
@@ -89,6 +140,14 @@ export class MemStorage implements IStorage {
     this.examAssignments = new Map();
     this.studentStats = new Map();
     
+    // Initialize UI component maps
+    this.testimonials = new Map();
+    this.appSettingsData = new Map();
+    this.homepageSections = new Map();
+    this.featuresData = new Map();
+    this.pricingPlans = new Map();
+    this.faqItems = new Map();
+    
     this.userIdCounter = 1;
     this.subjectIdCounter = 1;
     this.teacherProfileIdCounter = 1;
@@ -97,6 +156,12 @@ export class MemStorage implements IStorage {
     this.examIdCounter = 1;
     this.examAssignmentIdCounter = 1;
     this.studentStatsIdCounter = 1;
+    this.testimonialIdCounter = 1;
+    this.appSettingsIdCounter = 1;
+    this.homepageSectionIdCounter = 1;
+    this.featureIdCounter = 1;
+    this.pricingPlanIdCounter = 1;
+    this.faqItemIdCounter = 1;
     
     // Initialize with sample data
     this.initSampleData();
@@ -463,6 +528,228 @@ export class MemStorage implements IStorage {
     };
     this.studentStats.set(stats.id, updatedStats);
     return updatedStats;
+  }
+
+  // UI Content - Testimonials
+  async getTestimonials(): Promise<Testimonial[]> {
+    return Array.from(this.testimonials.values())
+      .filter(testimonial => testimonial.visible)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  async getTestimonial(id: number): Promise<Testimonial | undefined> {
+    return this.testimonials.get(id);
+  }
+
+  async createTestimonial(testimonialData: InsertTestimonial): Promise<Testimonial> {
+    const id = this.testimonialIdCounter++;
+    const now = new Date();
+    const testimonial: Testimonial = {
+      ...testimonialData,
+      id,
+      date: now,
+      visible: testimonialData.visible ?? true
+    };
+    this.testimonials.set(id, testimonial);
+    return testimonial;
+  }
+
+  async updateTestimonial(id: number, testimonialData: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
+    const testimonial = this.testimonials.get(id);
+    if (!testimonial) return undefined;
+
+    const updatedTestimonial: Testimonial = {
+      ...testimonial,
+      ...testimonialData
+    };
+    this.testimonials.set(id, updatedTestimonial);
+    return updatedTestimonial;
+  }
+
+  // UI Content - App Settings
+  async getAppSettings(): Promise<AppSettings | undefined> {
+    // Always return the first one if exists
+    const allSettings = Array.from(this.appSettingsData.values());
+    return allSettings.length > 0 ? allSettings[0] : undefined;
+  }
+
+  async updateAppSettings(settingsData: Partial<InsertAppSettings>): Promise<AppSettings> {
+    // Check if settings exist
+    const existingSettings = await this.getAppSettings();
+    
+    if (existingSettings) {
+      // Update existing settings
+      const updatedSettings: AppSettings = {
+        ...existingSettings,
+        ...settingsData
+      };
+      this.appSettingsData.set(existingSettings.id, updatedSettings);
+      return updatedSettings;
+    } else {
+      // Create settings if not exist
+      const id = this.appSettingsIdCounter++;
+      const newSettings: AppSettings = {
+        id,
+        siteName: settingsData.siteName || "EduConnect",
+        logoUrl: settingsData.logoUrl || "/logo.svg",
+        primaryColor: settingsData.primaryColor || "#4f46e5",
+        secondaryColor: settingsData.secondaryColor || "#f97316",
+        contactEmail: settingsData.contactEmail || "info@educonnect.com",
+        contactPhone: settingsData.contactPhone || "+1234567890",
+        address: settingsData.address || "",
+        socialLinks: settingsData.socialLinks || {},
+        metaDescription: settingsData.metaDescription || "Online education platform connecting students with teachers",
+        metaKeywords: settingsData.metaKeywords || "education, online learning, tutoring",
+        googleAnalyticsId: settingsData.googleAnalyticsId || "",
+        facebookPixelId: settingsData.facebookPixelId || "",
+        customCss: settingsData.customCss || "",
+        customJs: settingsData.customJs || ""
+      };
+      this.appSettingsData.set(id, newSettings);
+      return newSettings;
+    }
+  }
+
+  // UI Content - Homepage Sections
+  async getHomepageSections(): Promise<HomepageSection[]> {
+    return Array.from(this.homepageSections.values())
+      .filter(section => section.visible)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async getHomepageSection(id: number): Promise<HomepageSection | undefined> {
+    return this.homepageSections.get(id);
+  }
+
+  async createHomepageSection(sectionData: InsertHomepageSection): Promise<HomepageSection> {
+    const id = this.homepageSectionIdCounter++;
+    const section: HomepageSection = {
+      ...sectionData,
+      id,
+      visible: sectionData.visible ?? true,
+      order: sectionData.order ?? 0
+    };
+    this.homepageSections.set(id, section);
+    return section;
+  }
+
+  async updateHomepageSection(id: number, sectionData: Partial<InsertHomepageSection>): Promise<HomepageSection | undefined> {
+    const section = this.homepageSections.get(id);
+    if (!section) return undefined;
+
+    const updatedSection: HomepageSection = {
+      ...section,
+      ...sectionData
+    };
+    this.homepageSections.set(id, updatedSection);
+    return updatedSection;
+  }
+
+  // UI Content - Features
+  async getFeatures(): Promise<Feature[]> {
+    return Array.from(this.featuresData.values())
+      .filter(feature => feature.visible)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async getFeature(id: number): Promise<Feature | undefined> {
+    return this.featuresData.get(id);
+  }
+
+  async createFeature(featureData: InsertFeature): Promise<Feature> {
+    const id = this.featureIdCounter++;
+    const feature: Feature = {
+      ...featureData,
+      id,
+      visible: featureData.visible ?? true,
+      order: featureData.order ?? 0
+    };
+    this.featuresData.set(id, feature);
+    return feature;
+  }
+
+  async updateFeature(id: number, featureData: Partial<InsertFeature>): Promise<Feature | undefined> {
+    const feature = this.featuresData.get(id);
+    if (!feature) return undefined;
+
+    const updatedFeature: Feature = {
+      ...feature,
+      ...featureData
+    };
+    this.featuresData.set(id, updatedFeature);
+    return updatedFeature;
+  }
+
+  // UI Content - Pricing Plans
+  async getPricingPlans(): Promise<PricingPlan[]> {
+    return Array.from(this.pricingPlans.values())
+      .filter(plan => plan.active)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async getPricingPlan(id: number): Promise<PricingPlan | undefined> {
+    return this.pricingPlans.get(id);
+  }
+
+  async createPricingPlan(planData: InsertPricingPlan): Promise<PricingPlan> {
+    const id = this.pricingPlanIdCounter++;
+    const plan: PricingPlan = {
+      ...planData,
+      id,
+      active: planData.active ?? true,
+      order: planData.order ?? 0,
+      features: Array.isArray(planData.features) ? planData.features : []
+    };
+    this.pricingPlans.set(id, plan);
+    return plan;
+  }
+
+  async updatePricingPlan(id: number, planData: Partial<InsertPricingPlan>): Promise<PricingPlan | undefined> {
+    const plan = this.pricingPlans.get(id);
+    if (!plan) return undefined;
+
+    const updatedPlan: PricingPlan = {
+      ...plan,
+      ...planData,
+      features: Array.isArray(planData.features) ? planData.features : plan.features
+    };
+    this.pricingPlans.set(id, updatedPlan);
+    return updatedPlan;
+  }
+
+  // UI Content - FAQ Items
+  async getFaqItems(): Promise<FaqItem[]> {
+    return Array.from(this.faqItems.values())
+      .filter(item => item.visible)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async getFaqItem(id: number): Promise<FaqItem | undefined> {
+    return this.faqItems.get(id);
+  }
+
+  async createFaqItem(itemData: InsertFaqItem): Promise<FaqItem> {
+    const id = this.faqItemIdCounter++;
+    const item: FaqItem = {
+      ...itemData,
+      id,
+      visible: itemData.visible ?? true,
+      order: itemData.order ?? 0
+    };
+    this.faqItems.set(id, item);
+    return item;
+  }
+
+  async updateFaqItem(id: number, itemData: Partial<InsertFaqItem>): Promise<FaqItem | undefined> {
+    const item = this.faqItems.get(id);
+    if (!item) return undefined;
+
+    const updatedItem: FaqItem = {
+      ...item,
+      ...itemData
+    };
+    this.faqItems.set(id, updatedItem);
+    return updatedItem;
   }
 }
 

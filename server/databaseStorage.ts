@@ -7,6 +7,12 @@ import {
   exams,
   examAssignments,
   studentStats,
+  testimonials,
+  appSettings,
+  homepageSections,
+  features,
+  pricingPlans,
+  faqItems,
   type User,
   type Subject,
   type TeacherProfile,
@@ -15,6 +21,12 @@ import {
   type Exam,
   type ExamAssignment,
   type StudentStat,
+  type Testimonial,
+  type AppSettings,
+  type HomepageSection,
+  type Feature,
+  type PricingPlan,
+  type FaqItem,
   type InsertUser,
   type InsertSubject,
   type InsertTeacherProfile,
@@ -22,7 +34,13 @@ import {
   type InsertReview,
   type InsertExam,
   type InsertExamAssignment,
-  type InsertStudentStats
+  type InsertStudentStats,
+  type InsertTestimonial,
+  type InsertAppSettings,
+  type InsertHomepageSection,
+  type InsertFeature,
+  type InsertPricingPlan,
+  type InsertFaqItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
@@ -348,6 +366,215 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedStats;
+  }
+
+  // UI Content - Testimonials
+  async getTestimonials(): Promise<Testimonial[]> {
+    const testimonialsList = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.visible, true))
+      .orderBy(desc(testimonials.date));
+    return testimonialsList;
+  }
+
+  async getTestimonial(id: number): Promise<Testimonial | undefined> {
+    const [testimonialItem] = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.id, id));
+    return testimonialItem;
+  }
+
+  async createTestimonial(testimonialData: InsertTestimonial): Promise<Testimonial> {
+    const [testimonialItem] = await db
+      .insert(testimonials)
+      .values({
+        ...testimonialData,
+        date: new Date(),
+      })
+      .returning();
+    return testimonialItem;
+  }
+
+  async updateTestimonial(id: number, testimonialData: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
+    const [testimonialItem] = await db
+      .update(testimonials)
+      .set(testimonialData)
+      .where(eq(testimonials.id, id))
+      .returning();
+    return testimonialItem;
+  }
+
+  // UI Content - App Settings
+  async getAppSettings(): Promise<AppSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(appSettings)
+      .limit(1);
+    return settings;
+  }
+
+  async updateAppSettings(settingsData: Partial<InsertAppSettings>): Promise<AppSettings> {
+    // Check if settings exist
+    const existingSettings = await this.getAppSettings();
+    
+    if (existingSettings) {
+      // Update existing settings
+      const [settings] = await db
+        .update(appSettings)
+        .set(settingsData)
+        .where(eq(appSettings.id, existingSettings.id))
+        .returning();
+      return settings;
+    } else {
+      // Create settings if not exist
+      const [settings] = await db
+        .insert(appSettings)
+        .values(settingsData)
+        .returning();
+      return settings;
+    }
+  }
+
+  // UI Content - Homepage Sections
+  async getHomepageSections(): Promise<HomepageSection[]> {
+    const sections = await db
+      .select()
+      .from(homepageSections)
+      .where(eq(homepageSections.visible, true))
+      .orderBy(homepageSections.order);
+    return sections;
+  }
+
+  async getHomepageSection(id: number): Promise<HomepageSection | undefined> {
+    const [section] = await db
+      .select()
+      .from(homepageSections)
+      .where(eq(homepageSections.id, id));
+    return section;
+  }
+
+  async createHomepageSection(sectionData: InsertHomepageSection): Promise<HomepageSection> {
+    const [section] = await db
+      .insert(homepageSections)
+      .values(sectionData)
+      .returning();
+    return section;
+  }
+
+  async updateHomepageSection(id: number, sectionData: Partial<InsertHomepageSection>): Promise<HomepageSection | undefined> {
+    const [section] = await db
+      .update(homepageSections)
+      .set(sectionData)
+      .where(eq(homepageSections.id, id))
+      .returning();
+    return section;
+  }
+
+  // UI Content - Features
+  async getFeatures(): Promise<Feature[]> {
+    const featuresList = await db
+      .select()
+      .from(features)
+      .where(eq(features.visible, true))
+      .orderBy(features.order);
+    return featuresList;
+  }
+
+  async getFeature(id: number): Promise<Feature | undefined> {
+    const [feature] = await db
+      .select()
+      .from(features)
+      .where(eq(features.id, id));
+    return feature;
+  }
+
+  async createFeature(featureData: InsertFeature): Promise<Feature> {
+    const [feature] = await db
+      .insert(features)
+      .values(featureData)
+      .returning();
+    return feature;
+  }
+
+  async updateFeature(id: number, featureData: Partial<InsertFeature>): Promise<Feature | undefined> {
+    const [feature] = await db
+      .update(features)
+      .set(featureData)
+      .where(eq(features.id, id))
+      .returning();
+    return feature;
+  }
+
+  // UI Content - Pricing Plans
+  async getPricingPlans(): Promise<PricingPlan[]> {
+    const plans = await db
+      .select()
+      .from(pricingPlans)
+      .where(eq(pricingPlans.active, true))
+      .orderBy(pricingPlans.order);
+    return plans;
+  }
+
+  async getPricingPlan(id: number): Promise<PricingPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(pricingPlans)
+      .where(eq(pricingPlans.id, id));
+    return plan;
+  }
+
+  async createPricingPlan(planData: InsertPricingPlan): Promise<PricingPlan> {
+    const [plan] = await db
+      .insert(pricingPlans)
+      .values(planData)
+      .returning();
+    return plan;
+  }
+
+  async updatePricingPlan(id: number, planData: Partial<InsertPricingPlan>): Promise<PricingPlan | undefined> {
+    const [plan] = await db
+      .update(pricingPlans)
+      .set(planData)
+      .where(eq(pricingPlans.id, id))
+      .returning();
+    return plan;
+  }
+
+  // UI Content - FAQ Items
+  async getFaqItems(): Promise<FaqItem[]> {
+    const items = await db
+      .select()
+      .from(faqItems)
+      .where(eq(faqItems.visible, true))
+      .orderBy(faqItems.order);
+    return items;
+  }
+
+  async getFaqItem(id: number): Promise<FaqItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(faqItems)
+      .where(eq(faqItems.id, id));
+    return item;
+  }
+
+  async createFaqItem(itemData: InsertFaqItem): Promise<FaqItem> {
+    const [item] = await db
+      .insert(faqItems)
+      .values(itemData)
+      .returning();
+    return item;
+  }
+
+  async updateFaqItem(id: number, itemData: Partial<InsertFaqItem>): Promise<FaqItem | undefined> {
+    const [item] = await db
+      .update(faqItems)
+      .set(itemData)
+      .where(eq(faqItems.id, id))
+      .returning();
+    return item;
   }
 }
 

@@ -120,6 +120,83 @@ export const studentStats = pgTable("student_stats", {
   lastActivity: timestamp("last_activity"),
 });
 
+// UI Content - Testimonial
+export const testimonials = pgTable("testimonials", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  avatarUrl: varchar("avatar_url"),
+  role: varchar("role").notNull(),
+  comment: text("comment").notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  date: timestamp("date").defaultNow(),
+  visible: boolean("visible").default(true),
+});
+
+// UI Content - App Settings
+export const appSettings = pgTable("app_settings", {
+  id: serial("id").primaryKey(),
+  siteName: varchar("site_name").notNull().default("EduConnect"),
+  logoUrl: varchar("logo_url"),
+  primaryColor: varchar("primary_color").default("#0284c7"),
+  secondaryColor: varchar("secondary_color").default("#f59e0b"),
+  heroTitle: text("hero_title").default("Find the Perfect Teacher for Your Learning Journey"),
+  heroSubtitle: text("hero_subtitle").default("Connect with expert teachers for personalized online lessons, assignments, and exams tailored to your learning goals."),
+  footerText: text("footer_text").default("© 2024 EduConnect. Tüm hakları saklıdır."),
+  contactEmail: varchar("contact_email").default("info@educonnect.com"),
+  phone: varchar("phone"),
+  address: text("address"),
+  metaDescription: text("meta_description").default("EduConnect - Kişiselleştirilmiş Online Eğitim ve Öğretmen Buluşma Platformu"),
+  metaKeywords: text("meta_keywords").default("online eğitim, öğretmen, kurs, sınavlar, özel ders"),
+});
+
+// UI Content - Homepage Sections
+export const homepageSections = pgTable("homepage_sections", {
+  id: serial("id").primaryKey(),
+  sectionType: varchar("section_type").notNull(), // hero, features, testimonials, pricing, etc.
+  title: varchar("title").notNull(),
+  subtitle: text("subtitle"),
+  content: text("content"),
+  imageUrl: varchar("image_url"),
+  buttonText: varchar("button_text"),
+  buttonUrl: varchar("button_url"),
+  order: integer("order").notNull(),
+  visible: boolean("visible").default(true),
+});
+
+// UI Content - Feature Items
+export const features = pgTable("features", {
+  id: serial("id").primaryKey(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon").notNull(),
+  order: integer("order").notNull().default(0),
+  visible: boolean("visible").default(true),
+});
+
+// UI Content - Pricing Plans
+export const pricingPlans = pgTable("pricing_plans", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  price: doublePrecision("price").notNull(),
+  currency: varchar("currency").default("TRY"),
+  interval: varchar("interval").default("month"), // month, year, etc.
+  description: text("description"),
+  features: json("features").$type<string[]>().notNull(),
+  recommended: boolean("recommended").default(false),
+  active: boolean("active").default(true),
+  order: integer("order").default(0),
+});
+
+// FAQ Items
+export const faqItems = pgTable("faq_items", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: varchar("category").default("general"),
+  order: integer("order").default(0),
+  visible: boolean("visible").default(true),
+});
+
 // Schemas for insertion
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertSubjectSchema = createInsertSchema(subjects).omit({ id: true });
@@ -129,6 +206,14 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, c
 export const insertExamSchema = createInsertSchema(exams).omit({ id: true, createdAt: true });
 export const insertExamAssignmentSchema = createInsertSchema(examAssignments).omit({ id: true, assignedAt: true, completed: true, score: true, submittedAt: true });
 export const insertStudentStatsSchema = createInsertSchema(studentStats).omit({ id: true, totalSessionsAttended: true, totalExamsCompleted: true, averageExamScore: true, lastActivity: true });
+
+// UI content insert schemas
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({ id: true, date: true });
+export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({ id: true });
+export const insertHomepageSectionSchema = createInsertSchema(homepageSections).omit({ id: true });
+export const insertFeatureSchema = createInsertSchema(features).omit({ id: true });
+export const insertPricingPlanSchema = createInsertSchema(pricingPlans).omit({ id: true });
+export const insertFaqItemSchema = createInsertSchema(faqItems).omit({ id: true });
 
 // Types for insertion
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -140,6 +225,14 @@ export type InsertExam = z.infer<typeof insertExamSchema>;
 export type InsertExamAssignment = z.infer<typeof insertExamAssignmentSchema>;
 export type InsertStudentStats = z.infer<typeof insertStudentStatsSchema>;
 
+// UI content insertion types
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
+export type InsertHomepageSection = z.infer<typeof insertHomepageSectionSchema>;
+export type InsertFeature = z.infer<typeof insertFeatureSchema>;
+export type InsertPricingPlan = z.infer<typeof insertPricingPlanSchema>;
+export type InsertFaqItem = z.infer<typeof insertFaqItemSchema>;
+
 // Types for selection
 export type User = typeof users.$inferSelect;
 export type Subject = typeof subjects.$inferSelect;
@@ -149,6 +242,14 @@ export type Review = typeof reviews.$inferSelect;
 export type Exam = typeof exams.$inferSelect;
 export type ExamAssignment = typeof examAssignments.$inferSelect;
 export type StudentStat = typeof studentStats.$inferSelect;
+
+// UI content selection types
+export type Testimonial = typeof testimonials.$inferSelect;
+export type AppSettings = typeof appSettings.$inferSelect;
+export type HomepageSection = typeof homepageSections.$inferSelect;
+export type Feature = typeof features.$inferSelect;
+export type PricingPlan = typeof pricingPlans.$inferSelect;
+export type FaqItem = typeof faqItems.$inferSelect;
 
 // Extended schemas for validation
 export const loginSchema = z.object({
