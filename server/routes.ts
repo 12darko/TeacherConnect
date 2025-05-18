@@ -72,10 +72,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create the HTTP server for the application
   const httpServer = createServer(app);
-
-  // Setup WebSocket server for video calls
-  const wss = new WebSocketServer({ server: httpServer });
+  
+  // Setup WebSocket server for video calls with a specific path
+  // Use a different path than Vite to avoid conflicts
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws/video-call'
+  });
   
   wss.on("connection", (ws) => {
     ws.on("message", (message) => {
