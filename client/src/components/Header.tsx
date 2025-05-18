@@ -22,7 +22,7 @@ export default function Header() {
 
   // Handle sign in/out actions
   const handleSignIn = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/auth";
   };
 
   const handleSignOut = () => {

@@ -100,9 +100,6 @@ export default function Auth() {
   };
 
   // Farklı login seçenekleri
-  const handleReplitAuth = () => {
-    window.location.href = "/api/login";
-  };
   
   const handleGoogleAuth = () => {
     // Google OAuth API isteği gönderilecek
@@ -356,15 +353,7 @@ export default function Auth() {
               Apple ile {tab === "login" ? "Giriş Yap" : "Kayıt Ol"}
             </Button>
             
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={handleReplitAuth} 
-              className="w-full bg-white hover:bg-gray-50 border-gray-300 text-purple-600"
-            >
-              <UserCircle className="mr-2 h-4 w-4" />
-              Replit ile {tab === "login" ? "Giriş Yap" : "Kayıt Ol"}
-            </Button>
+
           </div>
         </CardFooter>
       </Card>

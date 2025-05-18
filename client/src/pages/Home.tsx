@@ -174,10 +174,10 @@ export default function Home() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Popular Subjects</h2>
+            <h2 className="text-3xl font-bold">Popüler Dersler</h2>
             <Link href="/find-teachers">
               <Button variant="outline" className="group border-primary text-primary hover:bg-primary/10">
-                View All 
+                Tümünü Gör
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

@@ -24,10 +24,6 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session management is now handled by replitAuth.ts
-  // Setup both Replit Auth and our custom auth
-  await setupAuth(app);
-  
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
