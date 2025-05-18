@@ -141,12 +141,12 @@ export const appSettings = pgTable("app_settings", {
   secondaryColor: varchar("secondary_color").default("#f59e0b"),
   heroTitle: text("hero_title").default("Find the Perfect Teacher for Your Learning Journey"),
   heroSubtitle: text("hero_subtitle").default("Connect with expert teachers for personalized online lessons, assignments, and exams tailored to your learning goals."),
-  footerText: text("footer_text").default("© 2024 EduConnect. Tüm hakları saklıdır."),
+  footerText: text("footer_text").default("© 2024 EduConnect. All rights reserved."),
   contactEmail: varchar("contact_email").default("info@educonnect.com"),
   phone: varchar("phone"),
   address: text("address"),
-  metaDescription: text("meta_description").default("EduConnect - Kişiselleştirilmiş Online Eğitim ve Öğretmen Buluşma Platformu"),
-  metaKeywords: text("meta_keywords").default("online eğitim, öğretmen, kurs, sınavlar, özel ders"),
+  metaDescription: text("meta_description").default("EduConnect - Personalized Online Education and Teacher Matching Platform"),
+  metaKeywords: text("meta_keywords").default("online education, teacher, course, exams, private lessons"),
 });
 
 // UI Content - Homepage Sections

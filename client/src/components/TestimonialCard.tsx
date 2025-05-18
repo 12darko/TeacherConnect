@@ -4,8 +4,9 @@ import { StarIcon } from "lucide-react";
 
 export type TestimonialCardProps = {
   id: number;
-  studentName: string;
-  studentImage?: string;
+  studentName: string; // Maps to name in database
+  studentImage?: string; // Maps to avatarUrl in database
+  role?: string;
   rating: number;
   comment?: string;
   date: Date;
@@ -14,6 +15,7 @@ export type TestimonialCardProps = {
 export function TestimonialCard({
   studentName,
   studentImage,
+  role,
   rating,
   comment,
   date
@@ -51,6 +53,7 @@ export function TestimonialCard({
         </Avatar>
         <div className="flex flex-col">
           <div className="font-medium leading-none mb-1">{studentName}</div>
+          {role && <div className="text-xs text-muted-foreground mb-1">{role}</div>}
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (
               <StarIcon

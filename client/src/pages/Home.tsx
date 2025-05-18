@@ -280,9 +280,10 @@ export default function Home() {
                 id={testimonial.id}
                 comment={testimonial.comment}
                 rating={testimonial.rating}
-                studentName={testimonial.studentName}
-                date={testimonial.date}
-                studentImage={testimonial.studentImage}
+                studentName={testimonial.studentName || testimonial.name}
+                role={testimonial.role}
+                date={testimonial.date instanceof Date ? testimonial.date : new Date(testimonial.date)}
+                studentImage={testimonial.studentImage || testimonial.avatarUrl}
               />
             ))}
           </div>
