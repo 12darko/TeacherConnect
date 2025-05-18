@@ -45,9 +45,29 @@ export default function Auth() {
   // API mutasyonları
   const loginMutation = useMutation({
     mutationFn: async (data: z.infer<typeof loginSchema>) => {
-      const response = await apiRequest("POST", "/api/auth/login", data);
-      const responseData = await response.json();
-      return responseData;
+      try {
+        console.log("Giriş isteği gönderiliyor:", data);
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data),
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Giriş işlemi sırasında bir hata oluştu");
+        }
+        
+        const responseData = await response.json();
+        console.log("Giriş yanıtı:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Giriş işlemi başarısız:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -57,11 +77,12 @@ export default function Auth() {
       
       // Kullanıcı rolüne göre yönlendirme
       setTimeout(() => {
-        if (data.role === "student") {
+        const role = data.user?.role;
+        if (role === "student") {
           navigate("/student-dashboard");
-        } else if (data.role === "teacher") {
+        } else if (role === "teacher") {
           navigate("/teacher-dashboard");
-        } else if (data.role === "admin") {
+        } else if (role === "admin") {
           navigate("/admin-dashboard");
         } else {
           navigate("/"); // Rol bulunamazsa ana sayfaya yönlendir
@@ -80,15 +101,30 @@ export default function Auth() {
   const registerMutation = useMutation({
     mutationFn: async (data: z.infer<typeof registerSchema>) => {
       try {
-        const response = await apiRequest("POST", "/api/auth/register", data);
+        console.log("Kayıt isteği gönderiliyor:", data);
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data),
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Kayıt işlemi sırasında bir hata oluştu");
+        }
+        
         const responseData = await response.json();
+        console.log("Kayıt yanıtı:", responseData);
         return responseData;
       } catch (error) {
         console.error("Kayıt hatası:", error);
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Kayıt başarılı",
         description: "Hesabınız oluşturuldu. Şimdi giriş yapabilirsiniz.",
