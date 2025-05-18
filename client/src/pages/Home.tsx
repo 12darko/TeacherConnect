@@ -51,9 +51,9 @@ export default function Home() {
                       Find a Teacher
                     </Button>
                   </Link>
-                  <Link href="/register">
+                  <Link href="/api/login">
                     <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:bg-opacity-10 w-full sm:w-auto">
-                      Become a Teacher
+                      Sign In / Register
                     </Button>
                   </Link>
                 </div>
@@ -156,7 +156,7 @@ export default function Home() {
           </div>
           
           <div className="mt-10 text-center">
-            <Link href="/register">
+            <Link href="/api/login">
               <Button size="lg">
                 Get Started Now
               </Button>
@@ -298,14 +298,9 @@ export default function Home() {
               <p className="text-neutral-medium mb-8">Join thousands of students who are already learning with EduConnect.</p>
               
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <Link href="/register">
+                <Link href="/api/login">
                   <Button size="lg" className="w-full sm:w-auto">
-                    Sign Up as Student
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Register as Teacher
+                    Sign Up or Login
                   </Button>
                 </Link>
               </div>

@@ -12,13 +12,26 @@ import {
 import { BellIcon, ChevronDownIcon, HomeIcon, NotebookIcon, SearchIcon, CalendarIcon, LogOutIcon, UserIcon, SettingsIcon } from "lucide-react";
 
 export default function Header() {
-  const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
     return location === path;
   };
+
+  // Handle sign in/out actions
+  const handleSignIn = () => {
+    window.location.href = "/api/login";
+  };
+
+  const handleSignOut = () => {
+    window.location.href = "/api/logout";
+  };
+
+  const userInitials = user?.firstName 
+    ? `${user.firstName.charAt(0)}${user.lastName ? user.lastName.charAt(0) : ''}` 
+    : user?.email?.charAt(0) || 'U';
 
   return (
     <header className="bg-white shadow-sm">
@@ -49,7 +62,7 @@ export default function Header() {
                 Find Teachers
               </Link>
               
-              {user?.role === 'student' && (
+              {isAuthenticated && user?.role === 'student' && (
                 <Link href="/student-dashboard" className={`
                   ${isActive('/student-dashboard') ? 'border-b-2 border-primary text-primary' : 'border-b-2 border-transparent hover:border-primary hover:text-primary text-neutral-medium'}
                   px-1 pb-2 inline-flex items-center text-sm font-medium
@@ -59,7 +72,7 @@ export default function Header() {
                 </Link>
               )}
 
-              {user?.role === 'teacher' && (
+              {isAuthenticated && user?.role === 'teacher' && (
                 <Link href="/teacher-dashboard" className={`
                   ${isActive('/teacher-dashboard') ? 'border-b-2 border-primary text-primary' : 'border-b-2 border-transparent hover:border-primary hover:text-primary text-neutral-medium'}
                   px-1 pb-2 inline-flex items-center text-sm font-medium
@@ -69,7 +82,7 @@ export default function Header() {
                 </Link>
               )}
 
-              {user && (
+              {isAuthenticated && user && (
                 <Link href={user.role === 'student' ? '/student-dashboard?tab=assignments' : '/teacher-dashboard?tab=exams'} className={`
                   ${(isActive('/student-dashboard?tab=assignments') || isActive('/teacher-dashboard?tab=exams')) ? 'border-b-2 border-primary text-primary' : 'border-b-2 border-transparent hover:border-primary hover:text-primary text-neutral-medium'}
                   px-1 pb-2 inline-flex items-center text-sm font-medium
@@ -83,7 +96,9 @@ export default function Header() {
 
           {/* User Menu and Mobile menu button */}
           <div className="flex items-center">
-            {user ? (
+            {isLoading ? (
+              <div className="h-8 w-8 rounded-full bg-neutral-lightest animate-pulse"></div>
+            ) : isAuthenticated && user ? (
               <>
                 <Button variant="ghost" size="icon" className="mr-2">
                   <BellIcon className="h-5 w-5 text-neutral-medium hover:text-primary" />
@@ -94,25 +109,29 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center">
                       <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white mr-2">
-                        {user.name?.substring(0, 2) || 'U'}
+                        {userInitials}
                       </div>
                       <span className="hidden md:block text-sm font-medium text-neutral-dark">
-                        {user.name || user.username}
+                        {user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.email}
                       </span>
                       <ChevronDownIcon className="h-4 w-4 ml-1 text-neutral-medium" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                    <DropdownMenuItem asChild>
+                      <Link href={user.role === 'teacher' ? '/teacher-profile' : '/student-profile'}>
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <SettingsIcon className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">
+                        <SettingsIcon className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>
+                    <DropdownMenuItem onClick={handleSignOut}>
                       <LogOutIcon className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
                     </DropdownMenuItem>
@@ -121,12 +140,9 @@ export default function Header() {
               </>
             ) : (
               <div className="flex space-x-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Log in</Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">Sign up</Button>
-                </Link>
+                <Button variant="ghost" size="sm" onClick={handleSignIn}>
+                  Sign in
+                </Button>
               </div>
             )}
 
@@ -165,7 +181,7 @@ export default function Header() {
               Find Teachers
             </Link>
             
-            {user?.role === 'student' && (
+            {isAuthenticated && user?.role === 'student' && (
               <Link href="/student-dashboard" className={`
                 ${isActive('/student-dashboard') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
                 block pl-3 pr-4 py-2 text-base font-medium
@@ -174,7 +190,7 @@ export default function Header() {
               </Link>
             )}
 
-            {user?.role === 'teacher' && (
+            {isAuthenticated && user?.role === 'teacher' && (
               <Link href="/teacher-dashboard" className={`
                 ${isActive('/teacher-dashboard') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
                 block pl-3 pr-4 py-2 text-base font-medium
@@ -183,7 +199,7 @@ export default function Header() {
               </Link>
             )}
 
-            {user && (
+            {isAuthenticated && user && (
               <Link href={user.role === 'student' ? '/student-dashboard?tab=assignments' : '/teacher-dashboard?tab=exams'} className={`
                 ${(isActive('/student-dashboard?tab=assignments') || isActive('/teacher-dashboard?tab=exams')) ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
                 block pl-3 pr-4 py-2 text-base font-medium
@@ -192,15 +208,14 @@ export default function Header() {
               </Link>
             )}
 
-            {!user && (
-              <>
-                <Link href="/login" className="text-neutral-dark hover:bg-neutral-lightest block pl-3 pr-4 py-2 text-base font-medium">
-                  Log in
-                </Link>
-                <Link href="/register" className="text-neutral-dark hover:bg-neutral-lightest block pl-3 pr-4 py-2 text-base font-medium">
-                  Sign up
-                </Link>
-              </>
+            {!isAuthenticated && (
+              <Button
+                onClick={handleSignIn}
+                className="w-full text-left justify-start text-neutral-dark hover:bg-neutral-lightest block pl-3 pr-4 py-2 text-base font-medium"
+                variant="ghost"
+              >
+                Sign in
+              </Button>
             )}
           </div>
         </div>

@@ -1,18 +1,29 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, doublePrecision, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User model (base for students and teachers)
+// Session storage table for auth
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User model (base for students, teachers, and admins)
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  role: text("role").notNull(), // "student" or "teacher"
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  role: text("role").notNull().default("student"), // "student", "teacher", or "admin"
   bio: text("bio"),
-  profileImage: text("profile_image"),
+  profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Subjects that can be taught
@@ -25,7 +36,7 @@ export const subjects = pgTable("subjects", {
 // Teacher profiles with additional information
 export const teacherProfiles = pgTable("teacher_profiles", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   subjectIds: json("subject_ids").$type<number[]>().notNull(),
   hourlyRate: doublePrecision("hourly_rate").notNull(),
   yearsOfExperience: integer("years_of_experience").notNull(),
@@ -42,8 +53,8 @@ export const teacherProfiles = pgTable("teacher_profiles", {
 // Scheduled sessions between teachers and students
 export const sessions = pgTable("sessions", {
   id: serial("id").primaryKey(),
-  teacherId: integer("teacher_id").notNull().references(() => users.id),
-  studentId: integer("student_id").notNull().references(() => users.id),
+  teacherId: varchar("teacher_id").notNull().references(() => users.id),
+  studentId: varchar("student_id").notNull().references(() => users.id),
   subjectId: integer("subject_id").notNull().references(() => subjects.id),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
@@ -55,8 +66,8 @@ export const sessions = pgTable("sessions", {
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   sessionId: integer("session_id").notNull().references(() => sessions.id),
-  teacherId: integer("teacher_id").notNull().references(() => users.id),
-  studentId: integer("student_id").notNull().references(() => users.id),
+  teacherId: varchar("teacher_id").notNull().references(() => users.id),
+  studentId: varchar("student_id").notNull().references(() => users.id),
   rating: integer("rating").notNull(), // 1-5 stars
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -65,7 +76,7 @@ export const reviews = pgTable("reviews", {
 // Exams created by teachers
 export const exams = pgTable("exams", {
   id: serial("id").primaryKey(),
-  teacherId: integer("teacher_id").notNull().references(() => users.id),
+  teacherId: varchar("teacher_id").notNull().references(() => users.id),
   subjectId: integer("subject_id").notNull().references(() => subjects.id),
   title: text("title").notNull(),
   description: text("description"),
@@ -84,7 +95,7 @@ export const exams = pgTable("exams", {
 export const examAssignments = pgTable("exam_assignments", {
   id: serial("id").primaryKey(),
   examId: integer("exam_id").notNull().references(() => exams.id),
-  studentId: integer("student_id").notNull().references(() => users.id),
+  studentId: varchar("student_id").notNull().references(() => users.id),
   assignedAt: timestamp("assigned_at").defaultNow(),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").default(false),
@@ -99,7 +110,7 @@ export const examAssignments = pgTable("exam_assignments", {
 // Student statistics
 export const studentStats = pgTable("student_stats", {
   id: serial("id").primaryKey(),
-  studentId: integer("student_id").notNull().references(() => users.id).unique(),
+  studentId: varchar("student_id").notNull().references(() => users.id).unique(),
   totalSessionsAttended: integer("total_sessions_attended").default(0),
   totalExamsCompleted: integer("total_exams_completed").default(0),
   averageExamScore: doublePrecision("average_exam_score").default(0),

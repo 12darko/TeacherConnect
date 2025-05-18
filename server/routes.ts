@@ -1,14 +1,55 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { loginSchema, registerSchema, insertTeacherProfileSchema, insertSessionSchema, insertReviewSchema, insertExamSchema, insertExamAssignmentSchema } from "@shared/schema";
 import { z } from "zod";
 import { WebSocketServer } from "ws";
+import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up Replit Auth
+  await setupAuth(app);
+  
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
+  
+  // User authentication route - get current user
+  apiRouter.get('/auth/user', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Route to update user role (admin only)
+  apiRouter.patch('/auth/role/:userId', isAuthenticated, hasRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      
+      if (!role || !['student', 'teacher', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const user = await storage.updateUserRole(userId, role);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
 
   const httpServer = createServer(app);
 
@@ -26,65 +67,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Authentication routes
-  apiRouter.post("/auth/login", async (req: Request, res: Response) => {
-    try {
-      const data = loginSchema.parse(req.body);
-      const user = await storage.getUserByUsername(data.username);
-      
-      if (!user || user.password !== data.password) {
-        return res.status(401).json({ message: "Invalid username or password" });
-      }
-      
-      return res.status(200).json({ 
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        bio: user.bio,
-        profileImage: user.profileImage
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Authentication is handled by Replit Auth middleware
+  // These routes are no longer needed as we use the /api/login and /api/logout endpoints from replitAuth.ts
   
-  apiRouter.post("/auth/register", async (req: Request, res: Response) => {
+  // Route to request role upgrade (for teachers)
+  apiRouter.post("/auth/request-role", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const data = registerSchema.parse(req.body);
+      const userId = req.user?.claims?.sub;
+      const { requestedRole } = req.body;
       
-      // Check if username or email already exists
-      const existingUserByUsername = await storage.getUserByUsername(data.username);
-      if (existingUserByUsername) {
-        return res.status(400).json({ message: "Username already taken" });
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const existingUserByEmail = await storage.getUserByEmail(data.email);
-      if (existingUserByEmail) {
-        return res.status(400).json({ message: "Email already registered" });
+      if (!requestedRole || !['student', 'teacher'].includes(requestedRole)) {
+        return res.status(400).json({ message: "Invalid role requested" });
       }
       
-      // Create user without confirmPassword
-      const { confirmPassword, ...userData } = data;
-      const user = await storage.createUser(userData);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
-      return res.status(201).json({ 
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        bio: user.bio,
-        profileImage: user.profileImage
+      // This is just a request - admin will need to approve via the role update endpoint
+      return res.status(200).json({ 
+        message: `Role upgrade to ${requestedRole} requested. An administrator will review your request.`,
+        currentRole: user.role
       });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
+      console.error("Error requesting role upgrade:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -135,25 +146,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(teacher.userId);
           return {
             ...teacher,
-            name: user?.name,
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+            fullName: user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}` 
+              : user?.firstName || 'Teacher',
             email: user?.email,
-            username: user?.username,
             bio: user?.bio,
-            profileImage: user?.profileImage
+            profileImageUrl: user?.profileImageUrl
           };
         })
       );
       
       return res.status(200).json(teachersWithUserDetails);
     } catch (error) {
+      console.error("Error fetching teachers:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
   
   apiRouter.get("/teachers/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid teacher ID" });
       }
       
@@ -179,15 +194,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json({
         ...profile,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || 'Teacher',
         email: user.email,
-        username: user.username,
         bio: user.bio,
-        profileImage: user.profileImage,
+        profileImageUrl: user.profileImageUrl,
         subjects: teacherSubjects,
         reviews
       });
     } catch (error) {
+      console.error("Error fetching teacher profile:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

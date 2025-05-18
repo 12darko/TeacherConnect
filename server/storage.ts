@@ -7,10 +7,10 @@ import {
 // Interface for all storage operations
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: any): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<User | undefined>;
   
   // Subject operations
   getSubjects(): Promise<Subject[]>;
@@ -19,7 +19,7 @@ export interface IStorage {
   
   // Teacher profile operations
   getTeacherProfile(id: number): Promise<TeacherProfile | undefined>;
-  getTeacherProfileByUserId(userId: number): Promise<TeacherProfile | undefined>;
+  getTeacherProfileByUserId(userId: string): Promise<TeacherProfile | undefined>;
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
   getTeacherProfiles(): Promise<TeacherProfile[]>;
   getTeachersBySubject(subjectId: number): Promise<TeacherProfile[]>;
@@ -27,36 +27,36 @@ export interface IStorage {
   // Session operations
   getSessions(): Promise<Session[]>;
   getSession(id: number): Promise<Session | undefined>;
-  getSessionsByTeacher(teacherId: number): Promise<Session[]>;
-  getSessionsByStudent(studentId: number): Promise<Session[]>;
+  getSessionsByTeacher(teacherId: string): Promise<Session[]>;
+  getSessionsByStudent(studentId: string): Promise<Session[]>;
   createSession(session: InsertSession): Promise<Session>;
   updateSessionStatus(id: number, status: string): Promise<Session | undefined>;
   
   // Review operations
   getReviews(): Promise<Review[]>;
   getReview(id: number): Promise<Review | undefined>;
-  getReviewsByTeacher(teacherId: number): Promise<Review[]>;
+  getReviewsByTeacher(teacherId: string): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
   
   // Exam operations
   getExams(): Promise<Exam[]>;
   getExam(id: number): Promise<Exam | undefined>;
-  getExamsByTeacher(teacherId: number): Promise<Exam[]>;
+  getExamsByTeacher(teacherId: string): Promise<Exam[]>;
   createExam(exam: InsertExam): Promise<Exam>;
   
   // Exam assignment operations
   getExamAssignments(): Promise<ExamAssignment[]>;
   getExamAssignment(id: number): Promise<ExamAssignment | undefined>;
-  getExamAssignmentsByStudent(studentId: number): Promise<ExamAssignment[]>;
+  getExamAssignmentsByStudent(studentId: string): Promise<ExamAssignment[]>;
   createExamAssignment(assignment: InsertExamAssignment): Promise<ExamAssignment>;
   submitExamAnswers(id: number, answers: any[], score: number): Promise<ExamAssignment | undefined>;
   
   // Student stats operations
-  getStudentStats(studentId: number): Promise<StudentStat | undefined>;
+  getStudentStats(studentId: string): Promise<StudentStat | undefined>;
   createStudentStats(stats: InsertStudentStats): Promise<StudentStat>;
-  updateStudentActivity(studentId: number): Promise<StudentStat | undefined>;
-  updateStudentSessionCount(studentId: number): Promise<StudentStat | undefined>;
-  updateStudentExamStats(studentId: number, score: number): Promise<StudentStat | undefined>;
+  updateStudentActivity(studentId: string): Promise<StudentStat | undefined>;
+  updateStudentSessionCount(studentId: string): Promise<StudentStat | undefined>;
+  updateStudentExamStats(studentId: string, score: number): Promise<StudentStat | undefined>;
 }
 
 // In-memory implementation of the storage interface
@@ -427,4 +427,6 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Import and use DatabaseStorage for production
+import { DatabaseStorage } from "./databaseStorage";
+export const storage = new DatabaseStorage();

@@ -97,7 +97,7 @@ export default function StudentDashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
           <h1 className="text-3xl font-heading font-semibold mb-1">Student Dashboard</h1>
-          <p className="text-neutral-medium">Welcome back, {user.name || user.username}!</p>
+          <p className="text-neutral-medium">Welcome back, {user.firstName || 'Student'}!</p>
         </div>
         <div className="mt-4 md:mt-0">
           <Link href="/find-teachers">

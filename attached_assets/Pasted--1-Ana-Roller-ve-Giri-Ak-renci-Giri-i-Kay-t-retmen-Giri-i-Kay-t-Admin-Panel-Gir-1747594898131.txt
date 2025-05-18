@@ -1,0 +1,159 @@
+
+1. Ana Roller ve Giriş Akışı
+Öğrenci Girişi / Kayıt
+
+Öğretmen Girişi / Kayıt
+
+Admin Panel Girişi
+
+Giriş sonrası kullanıcı rolüne göre yönlendirme yapılır.
+
+2. Öğrenci Paneli Tasarımı
+Dashboard (Özet Sayfa)
+Bugünkü dersler
+
+Ders saati geri sayımı
+
+Performans grafiği (haftalık)
+
+AI önerisi kutucuğu
+
+Son sınav sonucu + ilerleme yüzdesi
+
+Dersler Sayfası
+Branş filtresi (Matematik, Fizik, vs.)
+
+Öğretmen filtreleri: Puan, ücret, popülerlik
+
+"Kirala" butonu ile ödeme ve randevu sistemi
+
+Öğretmen profili popup:
+
+Tanıtım videosu
+
+Hakkında
+
+Takvim görünümü
+
+Canlı Ders Odası
+Zoom benzeri:
+
+Kamera & mikrofon
+
+Ortak beyaz tahta
+
+Quiz gönderimi
+
+Ders esnasında not alma
+
+Chat
+
+Sınavlar Sayfası
+Atanan sınavlar
+
+Süreli / süresiz
+
+Sonuçlar
+
+Doğru/yanlış analizi + AI yorum
+
+İstatistik Sayfası
+Toplam alınan ders süresi
+
+Ortalama performans
+
+Gelişim grafikleri
+
+Hedef belirleme
+
+3. Öğretmen Paneli Tasarımı
+Dashboard
+Bugünkü ders programı
+
+Yeni öğrenci talepleri
+
+Kazanç özeti
+
+Yorum ve puanlar
+
+Takvim / Ders Planlayıcı
+Ders saatlerini aç/kapat
+
+Özel notlar
+
+Öğrenci Takibi
+Her öğrencinin gelişimi
+
+Geçmiş dersler ve sınavlar
+
+Geri bildirim oluştur (manuel veya AI destekli)
+
+Kazançlar & Ödeme Sayfası
+Kazanılan toplam tutar
+
+Bekleyen ödemeler
+
+Hesap numarası tanımlama
+
+Otomatik fatura kesme
+
+4. Admin Panel Tasarımı
+Kullanıcı Yönetimi
+Tüm öğrenci ve öğretmen listesi
+
+Ban / uyarı sistemi
+
+Yorum/şikayet denetleme
+
+Ödeme ve Komisyon Yönetimi
+Komisyon oranı belirleme
+
+Paket tanımlama
+
+Raporlar
+
+Veri & İstatistik Paneli
+Aktif kullanıcı sayısı
+
+Günlük ders sayısı
+
+Gelir grafiği
+
+Top 10 öğretmen vs.
+
+5. Yapay Zeka Destekli Özellikler (UI içinde olacak)
+"Hangi öğretmeni seçmeliyim?" AI Asistanı
+
+"Performansım ne durumda?" analiz butonu
+
+"Sınavdan sonra AI feedback" kutucuğu
+
+"Otomatik ödev önerisi"
+
+
+
+3. TEKNOLOJİ SEÇİMİ
+Frontend:
+React + Next.js (Web + SSR)
+
+React Native / Expo (Mobil)
+
+Electron (Masaüstü, web kodu reuse edilir)
+
+Backend:
+Node.js + NestJS (kurumsal yapı, test, cache, queue desteğiyle)
+
+Socket.io veya WebRTC (canlı dersler için)
+
+PostgreSQL (istatistikler için güçlü ilişkisel yapı)
+
+Diğer:
+Stripe veya iyzico (ödeme sistemi)
+
+Prisma ORM (veritabanı kolay yönetimi)
+
+Redis (cacheleme, rate-limit)
+
+Firebase Auth veya kendi JWT sistemi
+
+bunların hepsi olucak v 
