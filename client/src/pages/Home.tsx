@@ -51,11 +51,14 @@ export default function Home() {
                       Find a Teacher
                     </Button>
                   </Link>
-                  <Link href="/api/login">
-                    <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:bg-opacity-10 w-full sm:w-auto">
-                      Sign In / Register
-                    </Button>
-                  </Link>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white text-white hover:bg-white hover:bg-opacity-10 w-full sm:w-auto"
+                    onClick={() => window.location.href = "/api/login"}
+                  >
+                    Sign In / Register
+                  </Button>
                 </div>
               </div>
               <div className="md:w-1/2">
@@ -156,11 +159,12 @@ export default function Home() {
           </div>
           
           <div className="mt-10 text-center">
-            <Link href="/api/login">
-              <Button size="lg">
-                Get Started Now
-              </Button>
-            </Link>
+            <Button 
+              size="lg"
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Get Started Now
+            </Button>
           </div>
         </div>
       </section>
@@ -298,11 +302,13 @@ export default function Home() {
               <p className="text-neutral-medium mb-8">Join thousands of students who are already learning with EduConnect.</p>
               
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <Link href="/api/login">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Sign Up or Login
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto"
+                  onClick={() => window.location.href = "/api/login"}
+                >
+                  Sign Up or Login
+                </Button>
               </div>
             </div>
           </div>
