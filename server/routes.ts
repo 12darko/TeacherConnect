@@ -25,9 +25,33 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create HTTP server for the application
+  const httpServer = createServer(app);
+  
+  // Initialize WebSocket diagnostic utility
+  setupWebSocketDiagnostic(httpServer);
+  
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
+  
+  // Setup WebSocket server for video calls
+  const videoWss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws/video-call'
+  });
+  
+  videoWss.on("connection", (ws) => {
+    console.log("Video WebSocket connection established");
+    ws.on("message", (message) => {
+      // Broadcast message to all clients except sender
+      videoWss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === 1) {
+          client.send(message);
+        }
+      });
+    });
+  });
   
   // Custom authentication routes (local authentication)
   apiRouter.post('/auth/register', registerUser);
@@ -72,26 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create the HTTP server for the application
-  const httpServer = createServer(app);
-  
-  // Setup WebSocket server for video calls with a specific path
-  // Use a different path than Vite to avoid conflicts
-  const wss = new WebSocketServer({ 
-    server: httpServer,
-    path: '/ws/video-call'
-  });
-  
-  wss.on("connection", (ws) => {
-    ws.on("message", (message) => {
-      // Broadcast message to all clients except sender
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === 1) {
-          client.send(message);
-        }
-      });
-    });
-  });
+  // (WebSocket setup is now handled in the top section)
 
   // Authentication is handled by Replit Auth middleware
   // These routes are no longer needed as we use the /api/login and /api/logout endpoints from replitAuth.ts
