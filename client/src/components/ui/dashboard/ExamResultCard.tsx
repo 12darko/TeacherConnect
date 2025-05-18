@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CircleCheck, AlertCircle, BookOpen, ArrowRight } from "lucide-react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 type ExamResultCardProps = {
   examId?: number;
@@ -20,7 +20,7 @@ export function ExamResultCard({
   passThreshold = 70,
   completedAt = new Date()
 }: ExamResultCardProps) {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const isPassed = score >= passThreshold;
   const percentage = Math.round((score / maxScore) * 100);
   
@@ -76,7 +76,7 @@ export function ExamResultCard({
         <Button 
           variant="ghost" 
           className="w-full justify-between text-primary hover:text-primary hover:bg-primary/10"
-          onClick={() => navigate(examId ? `/exam/${examId}/result` : '/exams')}
+          onClick={() => setLocation(examId ? `/exam/${examId}/result` : '/exams')}
         >
           Detayları Gör
           <ArrowRight className="ml-2 h-4 w-4" />

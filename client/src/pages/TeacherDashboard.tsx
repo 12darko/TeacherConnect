@@ -213,8 +213,8 @@ const SessionRequest = ({
 
 // Ana öğretmen dashboard bileşeni
 export default function TeacherDashboard() {
-  const [, params] = useLocation();
-  const urlParams = new URLSearchParams(params);
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const initialTab = urlParams.get("tab") || "overview";
   
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -222,25 +222,25 @@ export default function TeacherDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   
   // Öğretmenin ders oturumlarını getir
-  const { data: sessions = [], isLoading: isLoadingSessions } = useQuery({
+  const { data: sessions = [], isLoading: isLoadingSessions } = useQuery<any[]>({
     queryKey: [`/api/sessions?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
   
   // Bekleyen ders taleplerini getir
-  const { data: pendingRequests = [], isLoading: isLoadingRequests } = useQuery({
+  const { data: pendingRequests = [], isLoading: isLoadingRequests } = useQuery<any[]>({
     queryKey: [`/api/sessions?teacherId=${user?.id}&status=pending`],
     enabled: !!user?.id,
   });
   
   // Öğretmene gelen yorumları getir
-  const { data: reviews = [], isLoading: isLoadingReviews } = useQuery({
+  const { data: reviews = [], isLoading: isLoadingReviews } = useQuery<any[]>({
     queryKey: [`/api/reviews?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
   
   // Öğretmenin profilini getir
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+  const { data: profile = {}, isLoading: isLoadingProfile } = useQuery<any>({
     queryKey: [`/api/teachers/profile?userId=${user?.id}`],
     enabled: !!user?.id,
   });
