@@ -17,11 +17,14 @@ export const authSessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
   email: varchar("email").unique(),
+  passwordHash: varchar("password_hash"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   role: text("role").notNull().default("student"), // "student", "teacher", or "admin"
   bio: text("bio"),
   profileImageUrl: varchar("profile_image_url"),
+  authProvider: varchar("auth_provider"), // "local", "google", "facebook", "apple", etc
+  authProviderId: varchar("auth_provider_id"), // ID from the auth provider if using social login
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -149,12 +152,17 @@ export type StudentStat = typeof studentStats.$inferSelect;
 
 // Extended schemas for validation
 export const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export const registerSchema = insertUserSchema.extend({
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+export const registerSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your password"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(["student", "teacher"]),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],

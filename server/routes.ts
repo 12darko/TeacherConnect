@@ -1,28 +1,56 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
 import { storage } from "./storage";
 import { loginSchema, registerSchema, insertTeacherProfileSchema, insertSessionSchema, insertReviewSchema, insertExamSchema, insertExamAssignmentSchema } from "@shared/schema";
 import { z } from "zod";
 import { WebSocketServer } from "ws";
-import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
+import { 
+  registerUser, 
+  loginUser, 
+  logoutUser, 
+  getCurrentUser, 
+  isAuthenticated, 
+  hasRole 
+} from "./auth";
+
+// Session type augmentation
+declare module 'express-session' {
+  interface SessionData {
+    userId: string;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up Replit Auth
-  await setupAuth(app);
+  // Simple in-memory session store
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'edu-connect-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    }
+  }));
   
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
   
+  // Custom authentication routes
+  apiRouter.post('/auth/register', registerUser);
+  apiRouter.post('/auth/login', loginUser);
+  apiRouter.post('/auth/logout', logoutUser);
+  
   // User authentication route - get current user
-  apiRouter.get('/auth/user', isAuthenticated, async (req: any, res: Response) => {
+  apiRouter.get('/auth/user', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
-      res.json(user);
+      
+      res.json(req.user);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });

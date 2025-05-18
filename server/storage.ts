@@ -118,22 +118,27 @@ export class MemStorage implements IStorage {
   }
   
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-  
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+  async getUser(id: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.id === id);
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
   
-  async createUser(userData: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
+  async upsertUser(userData: any): Promise<User> {
+    // Use provided ID or generate a UUID-like number as string
+    const id = userData.id || `user_${this.userIdCounter++}`;
     const now = new Date();
-    const user: User = { ...userData, id, createdAt: now };
+    
+    const user: User = { 
+      ...userData,
+      id, 
+      createdAt: userData.createdAt || now,
+      updatedAt: now
+    };
+    
+    // Store using string ID as key
     this.users.set(id, user);
     
     // If the user is a student, initialize their stats
@@ -142,6 +147,20 @@ export class MemStorage implements IStorage {
     }
     
     return user;
+  }
+  
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = { 
+      ...user, 
+      role,
+      updatedAt: new Date()
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
   
   // Subject operations
@@ -165,7 +184,7 @@ export class MemStorage implements IStorage {
     return this.teacherProfiles.get(id);
   }
   
-  async getTeacherProfileByUserId(userId: number): Promise<TeacherProfile | undefined> {
+  async getTeacherProfileByUserId(userId: string): Promise<TeacherProfile | undefined> {
     return Array.from(this.teacherProfiles.values()).find(profile => profile.userId === userId);
   }
   
@@ -200,19 +219,23 @@ export class MemStorage implements IStorage {
     return this.sessions.get(id);
   }
   
-  async getSessionsByTeacher(teacherId: number): Promise<Session[]> {
+  async getSessionsByTeacher(teacherId: string): Promise<Session[]> {
     return Array.from(this.sessions.values())
       .filter(session => session.teacherId === teacherId);
   }
   
-  async getSessionsByStudent(studentId: number): Promise<Session[]> {
+  async getSessionsByStudent(studentId: string): Promise<Session[]> {
     return Array.from(this.sessions.values())
       .filter(session => session.studentId === studentId);
   }
   
   async createSession(sessionData: InsertSession): Promise<Session> {
     const id = this.sessionIdCounter++;
-    const session: Session = { ...sessionData, id };
+    const session: Session = { 
+      ...sessionData, 
+      id,
+      sessionUrl: sessionData.sessionUrl || null
+    };
     this.sessions.set(id, session);
     
     // Update teacher's total students
@@ -220,7 +243,7 @@ export class MemStorage implements IStorage {
     if (teacherProfile) {
       const updatedProfile = { 
         ...teacherProfile, 
-        totalStudents: teacherProfile.totalStudents + 1 
+        totalStudents: (teacherProfile.totalStudents || 0) + 1 
       };
       this.teacherProfiles.set(teacherProfile.id, updatedProfile);
     }
@@ -255,7 +278,7 @@ export class MemStorage implements IStorage {
     return this.reviews.get(id);
   }
   
-  async getReviewsByTeacher(teacherId: number): Promise<Review[]> {
+  async getReviewsByTeacher(teacherId: string): Promise<Review[]> {
     return Array.from(this.reviews.values())
       .filter(review => review.teacherId === teacherId);
   }
@@ -263,7 +286,12 @@ export class MemStorage implements IStorage {
   async createReview(reviewData: InsertReview): Promise<Review> {
     const id = this.reviewIdCounter++;
     const now = new Date();
-    const review: Review = { ...reviewData, id, createdAt: now };
+    const review: Review = { 
+      ...reviewData, 
+      id, 
+      createdAt: now,
+      comment: reviewData.comment || null
+    };
     this.reviews.set(id, review);
     
     // Update teacher's average rating
@@ -293,7 +321,7 @@ export class MemStorage implements IStorage {
     return this.exams.get(id);
   }
   
-  async getExamsByTeacher(teacherId: number): Promise<Exam[]> {
+  async getExamsByTeacher(teacherId: string): Promise<Exam[]> {
     return Array.from(this.exams.values())
       .filter(exam => exam.teacherId === teacherId);
   }
@@ -301,7 +329,12 @@ export class MemStorage implements IStorage {
   async createExam(examData: InsertExam): Promise<Exam> {
     const id = this.examIdCounter++;
     const now = new Date();
-    const exam: Exam = { ...examData, id, createdAt: now };
+    const exam: Exam = { 
+      ...examData, 
+      id, 
+      createdAt: now,
+      description: examData.description || null
+    };
     this.exams.set(id, exam);
     return exam;
   }
@@ -315,7 +348,7 @@ export class MemStorage implements IStorage {
     return this.examAssignments.get(id);
   }
   
-  async getExamAssignmentsByStudent(studentId: number): Promise<ExamAssignment[]> {
+  async getExamAssignmentsByStudent(studentId: string): Promise<ExamAssignment[]> {
     return Array.from(this.examAssignments.values())
       .filter(assignment => assignment.studentId === studentId);
   }
@@ -328,9 +361,9 @@ export class MemStorage implements IStorage {
       id, 
       assignedAt: now, 
       completed: false,
-      answers: undefined,
-      score: undefined,
-      submittedAt: undefined
+      answers: null,
+      score: null,
+      submittedAt: null
     };
     this.examAssignments.set(id, assignment);
     
@@ -361,7 +394,7 @@ export class MemStorage implements IStorage {
   }
   
   // Student stats operations
-  async getStudentStats(studentId: number): Promise<StudentStat | undefined> {
+  async getStudentStats(studentId: string): Promise<StudentStat | undefined> {
     return Array.from(this.studentStats.values())
       .find(stats => stats.studentId === studentId);
   }
@@ -381,9 +414,11 @@ export class MemStorage implements IStorage {
     return stats;
   }
   
-  async updateStudentActivity(studentId: number): Promise<StudentStat | undefined> {
+  async updateStudentActivity(studentId: string): Promise<StudentStat | undefined> {
     const stats = await this.getStudentStats(studentId);
-    if (!stats) return undefined;
+    if (!stats) {
+      return await this.createStudentStats({ studentId });
+    }
     
     const now = new Date();
     const updatedStats: StudentStat = { ...stats, lastActivity: now };
@@ -391,29 +426,33 @@ export class MemStorage implements IStorage {
     return updatedStats;
   }
   
-  async updateStudentSessionCount(studentId: number): Promise<StudentStat | undefined> {
+  async updateStudentSessionCount(studentId: string): Promise<StudentStat | undefined> {
     const stats = await this.getStudentStats(studentId);
-    if (!stats) return undefined;
+    if (!stats) {
+      return await this.createStudentStats({ studentId });
+    }
     
     const now = new Date();
     const updatedStats: StudentStat = { 
       ...stats, 
       lastActivity: now,
-      totalSessionsAttended: stats.totalSessionsAttended + 1
+      totalSessionsAttended: (stats.totalSessionsAttended || 0) + 1
     };
     this.studentStats.set(stats.id, updatedStats);
     return updatedStats;
   }
   
-  async updateStudentExamStats(studentId: number, score: number): Promise<StudentStat | undefined> {
+  async updateStudentExamStats(studentId: string, score: number): Promise<StudentStat | undefined> {
     const stats = await this.getStudentStats(studentId);
-    if (!stats) return undefined;
+    if (!stats) {
+      return await this.createStudentStats({ studentId });
+    }
     
     const now = new Date();
     
     // Calculate new average
-    const totalExams = stats.totalExamsCompleted + 1;
-    const totalScore = stats.averageExamScore * stats.totalExamsCompleted + score;
+    const totalExams = (stats.totalExamsCompleted || 0) + 1;
+    const totalScore = (stats.averageExamScore || 0) * (stats.totalExamsCompleted || 0) + score;
     const newAverage = totalScore / totalExams;
     
     const updatedStats: StudentStat = { 
