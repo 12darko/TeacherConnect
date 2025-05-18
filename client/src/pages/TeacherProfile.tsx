@@ -1,167 +1,217 @@
 import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TestimonialCard } from "@/components/TestimonialCard";
+import { StarIcon, CheckIcon, CalendarIcon, GraduationCapIcon, ClockIcon, ArrowLeftIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Star, StarHalf, Calendar as CalendarIcon, Clock, DollarSign, Award, MessageSquare } from "lucide-react";
-import TestimonialCard from "@/components/TestimonialCard";
 import { format } from "date-fns";
 
 export default function TeacherProfile() {
   const [, params] = useRoute("/teacher/:id");
-  const teacherId = parseInt(params?.id || "0");
-  const { user } = useAuth();
+  const teacherId = params?.id || "";
+  const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isStudent } = useAuth();
   const { toast } = useToast();
   
-  // State for booking
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
+  // States for session booking
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
+  const [sessionDate, setSessionDate] = useState("");
+  const [sessionStartTime, setSessionStartTime] = useState("");
+  const [sessionEndTime, setSessionEndTime] = useState("");
+  const [sessionNotes, setSessionNotes] = useState("");
+  
+  // State for review form
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
   
   // Fetch teacher profile
-  const { data: teacher, isLoading } = useQuery({
+  const { data: teacherProfile, isLoading: isLoadingTeacher } = useQuery({
     queryKey: [`/api/teachers/${teacherId}`],
     enabled: !!teacherId,
   });
   
-  // Fetch teacher's reviews
-  const { data: reviews = [] } = useQuery({
+  // Fetch teacher reviews
+  const { data: reviews = [], isLoading: isLoadingReviews } = useQuery({
     queryKey: [`/api/reviews?teacherId=${teacherId}`],
     enabled: !!teacherId,
   });
   
+  // Fetch subjects
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['/api/subjects'],
+  });
+  
   // Book session mutation
   const bookSession = useMutation({
-    mutationFn: async (sessionData: any) => {
-      const response = await apiRequest("POST", "/api/sessions", sessionData);
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/sessions", data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/sessions'] });
       toast({
         title: "Session booked",
         description: "Your session has been successfully booked.",
       });
       setIsBookingModalOpen(false);
-      setSelectedDate(undefined);
-      setSelectedTime("");
+      
+      // Reset form
+      setSelectedSubject(null);
+      setSessionDate("");
+      setSessionStartTime("");
+      setSessionEndTime("");
+      setSessionNotes("");
     },
     onError: (error) => {
       toast({
         title: "Booking failed",
-        description: error instanceof Error ? error.message : "Failed to book session",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     },
   });
   
-  // Generate available time slots based on teacher's availability
-  const getAvailableTimes = () => {
-    if (!teacher?.availability || !selectedDate) return [];
-    
-    const dayOfWeek = format(selectedDate, 'EEEE').toLowerCase();
-    const availableDay = teacher.availability.find((day: any) => 
-      day.day.toLowerCase() === dayOfWeek
-    );
-    
-    if (!availableDay) return [];
-    
-    // Generate time slots
-    const times = [];
-    const [startHour, startMinute] = availableDay.startTime.split(':').map(Number);
-    const [endHour, endMinute] = availableDay.endTime.split(':').map(Number);
-    
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === startHour && minute < startMinute) continue;
-        if (hour === endHour && minute >= endMinute) continue;
-        
-        const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        times.push(`${formattedHour}:${minute === 0 ? '00' : minute} ${ampm}`);
-      }
-    }
-    
-    return times;
-  };
+  // Submit review mutation
+  const submitReview = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/reviews", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Review submitted",
+        description: "Your review has been submitted successfully.",
+      });
+      setIsReviewModalOpen(false);
+      
+      // Reset form
+      setReviewRating(5);
+      setReviewText("");
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: [`/api/reviews?teacherId=${teacherId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers/${teacherId}`] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Submission failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    },
+  });
   
-  // Handle booking submission
+  // Handle booking session
   const handleBookSession = () => {
-    if (!user) {
+    if (!user || !isAuthenticated || !isStudent) {
       toast({
         title: "Authentication required",
-        description: "Please log in to book a session",
+        description: "You need to be logged in as a student to book a session.",
         variant: "destructive",
       });
       return;
     }
     
-    if (!selectedDate || !selectedTime) {
+    if (!selectedSubject) {
       toast({
-        title: "Incomplete selection",
-        description: "Please select both date and time",
+        title: "Subject required",
+        description: "Please select a subject for the session.",
         variant: "destructive",
       });
       return;
     }
     
-    const [hours, minutes] = selectedTime.split(' ')[0].split(':');
-    const ampm = selectedTime.split(' ')[1];
-    let hour = parseInt(hours);
-    if (ampm === 'PM' && hour !== 12) hour += 12;
-    if (ampm === 'AM' && hour === 12) hour = 0;
+    if (!sessionDate || !sessionStartTime || !sessionEndTime) {
+      toast({
+        title: "Time details required",
+        description: "Please provide the date and time for the session.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    const startDate = new Date(selectedDate);
-    startDate.setHours(hour);
-    startDate.setMinutes(parseInt(minutes));
-    startDate.setSeconds(0);
+    const startDateTime = new Date(`${sessionDate}T${sessionStartTime}`);
+    const endDateTime = new Date(`${sessionDate}T${sessionEndTime}`);
     
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 1);
+    if (endDateTime <= startDateTime) {
+      toast({
+        title: "Invalid time range",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     bookSession.mutate({
-      teacherId: teacherId,
+      teacherId,
       studentId: user.id,
-      subjectId: teacher.subjects[0].id,
-      startTime: startDate.toISOString(),
-      endTime: endDate.toISOString(),
-      status: "scheduled",
-      sessionUrl: `https://educonnect.com/classroom/${Date.now()}`,
+      subjectId: selectedSubject,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      notes: sessionNotes,
+      status: "pending",
     });
   };
   
-  // Render star rating
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={`star-${i}`} className="text-yellow-400 h-5 w-5" fill="currentColor" />);
+  // Handle submit review
+  const handleSubmitReview = () => {
+    if (!user || !isAuthenticated || !isStudent) {
+      toast({
+        title: "Authentication required",
+        description: "You need to be logged in as a student to submit a review.",
+        variant: "destructive",
+      });
+      return;
     }
     
-    if (hasHalfStar) {
-      stars.push(<StarHalf key="half-star" className="text-yellow-400 h-5 w-5" fill="currentColor" />);
+    if (!reviewText) {
+      toast({
+        title: "Review text required",
+        description: "Please provide your feedback in the review.",
+        variant: "destructive",
+      });
+      return;
     }
     
-    // Add empty stars to make 5 total
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Star key={`empty-star-${i}`} className="text-yellow-400 h-5 w-5" />);
-    }
-    
-    return stars;
+    submitReview.mutate({
+      teacherId,
+      studentId: user.id,
+      rating: reviewRating,
+      comment: reviewText,
+    });
   };
   
-  if (isLoading) {
+  if (isLoadingTeacher) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
@@ -170,153 +220,207 @@ export default function TeacherProfile() {
     );
   }
   
-  if (!teacher) {
+  if (!teacherProfile) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-heading font-semibold mb-2">Teacher Not Found</h2>
-        <p className="text-neutral-medium mb-4">The teacher you're looking for could not be found.</p>
-        <Link href="/find-teachers">
-          <Button>Browse Teachers</Button>
-        </Link>
+        <p className="text-neutral-medium mb-4">The teacher profile you're looking for could not be found.</p>
+        <Button variant="outline" onClick={() => setLocation("/find-teachers")}>
+          <ArrowLeftIcon className="mr-2 h-4 w-4" />
+          Back to Search
+        </Button>
       </div>
     );
   }
   
   return (
     <div className="container mx-auto px-4 py-8">
+      <Button 
+        variant="outline" 
+        className="mb-6" 
+        onClick={() => setLocation("/find-teachers")}
+      >
+        <ArrowLeftIcon className="mr-2 h-4 w-4" />
+        Back to Search
+      </Button>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left column - Teacher info */}
-        <div className="lg:col-span-2">
-          <div className="flex flex-col md:flex-row md:items-start gap-6 mb-8">
-            {/* Teacher avatar */}
-            {teacher.profileImage ? (
-              <img 
-                src={teacher.profileImage} 
-                alt={teacher.name} 
-                className="w-32 h-32 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white text-4xl">
-                {teacher.name.substring(0, 2)}
+        <div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center">
+                <div className="h-32 w-32 rounded-full overflow-hidden mb-4">
+                  <img 
+                    src={teacherProfile.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacherProfile.name)}&background=random`} 
+                    alt={`${teacherProfile.name}'s profile`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                
+                <h1 className="text-2xl font-heading font-semibold">{teacherProfile.name}</h1>
+                
+                <div className="flex items-center mt-2 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <StarIcon
+                      key={i}
+                      className={`h-5 w-5 ${
+                        i < Math.round(teacherProfile.averageRating || 0)
+                          ? "text-yellow-400 fill-current"
+                          : "text-neutral-300"
+                      }`}
+                    />
+                  ))}
+                  <span className="ml-2 text-neutral-medium">
+                    ({teacherProfile.totalReviews || 0} reviews)
+                  </span>
+                </div>
+                
+                <div className="text-center text-xl font-semibold text-primary mb-4">
+                  ${teacherProfile.hourlyRate}/hr
+                </div>
+                
+                {isAuthenticated && isStudent && (
+                  <Button 
+                    className="w-full mb-4" 
+                    onClick={() => setIsBookingModalOpen(true)}
+                  >
+                    Book a Session
+                  </Button>
+                )}
+                
+                <div className="w-full border-t pt-4">
+                  <h3 className="font-medium mb-2">Subjects</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {teacherProfile.subjectIds?.map((subjectId: number) => {
+                      const subject = subjects.find((s: any) => s.id === subjectId);
+                      return subject ? (
+                        <div 
+                          key={subjectId}
+                          className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm"
+                        >
+                          {subject.name}
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
               </div>
-            )}
-            
-            {/* Teacher info */}
-            <div className="flex-grow">
-              <h1 className="text-3xl font-heading font-semibold">{teacher.name}</h1>
-              <p className="text-lg text-neutral-medium mb-2">
-                {teacher.subjects.map((subject: any) => subject.name).join(", ")}
-              </p>
-              
-              {/* Rating */}
-              <div className="flex items-center mb-4">
-                <div className="flex mr-2">
-                  {renderStars(teacher.averageRating)}
-                </div>
-                <span className="text-neutral-medium">
-                  {teacher.averageRating.toFixed(1)} ({teacher.totalReviews} reviews)
-                </span>
-              </div>
-              
-              {/* Stats */}
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-primary mr-1" />
-                  <span>${teacher.hourlyRate}/hour</span>
-                </div>
-                <div className="flex items-center">
-                  <Award className="h-5 w-5 text-primary mr-1" />
-                  <span>{teacher.yearsOfExperience} years experience</span>
-                </div>
-                <div className="flex items-center">
-                  <MessageSquare className="h-5 w-5 text-primary mr-1" />
-                  <span>{teacher.totalStudents} students taught</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Book button (mobile) */}
-            <div className="md:hidden w-full">
-              <Button 
-                className="w-full" 
-                onClick={() => setIsBookingModalOpen(true)}
-                disabled={!user || user.id === teacherId}
-              >
-                Book a Session
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Experience</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <GraduationCapIcon className="h-5 w-5 mr-3 text-neutral-medium mt-0.5" />
+                  <div>
+                    <h4 className="font-medium">Education</h4>
+                    <p className="text-neutral-medium">{teacherProfile.education || "Not specified"}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <ClockIcon className="h-5 w-5 mr-3 text-neutral-medium mt-0.5" />
+                  <div>
+                    <h4 className="font-medium">Years Teaching</h4>
+                    <p className="text-neutral-medium">{teacherProfile.yearsOfExperience || "Not specified"}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 mr-3 text-neutral-medium mt-0.5" />
+                  <div>
+                    <h4 className="font-medium">Certifications</h4>
+                    <p className="text-neutral-medium">{teacherProfile.certifications || "Not specified"}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="lg:col-span-2">
           <Tabs defaultValue="about">
             <TabsList className="mb-6">
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="subjects">Subjects</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
             </TabsList>
             
             <TabsContent value="about">
               <Card>
                 <CardHeader>
-                  <CardTitle>About {teacher.name}</CardTitle>
+                  <CardTitle>About {teacherProfile.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-line">{teacher.bio || "No bio available."}</p>
+                  <p className="whitespace-pre-line">
+                    {teacherProfile.bio || "No bio information available."}
+                  </p>
+                  
+                  <h3 className="font-medium mt-6 mb-3">Teaching Style</h3>
+                  <p className="text-neutral-medium">
+                    {teacherProfile.teachingStyle || "No teaching style information available."}
+                  </p>
+                  
+                  <h3 className="font-medium mt-6 mb-3">Specializations</h3>
+                  <p className="text-neutral-medium">
+                    {teacherProfile.specializations || "No specialization information available."}
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="reviews">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Student Reviews</CardTitle>
-                  <CardDescription>
-                    {teacher.totalReviews} reviews, {teacher.averageRating.toFixed(1)} average rating
-                  </CardDescription>
+                  {isAuthenticated && isStudent && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsReviewModalOpen(true)}
+                    >
+                      Write a Review
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  {reviews.length > 0 ? (
-                    <div className="space-y-4">
+                  {isLoadingReviews ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                      <p className="mt-2 text-neutral-medium">Loading reviews...</p>
+                    </div>
+                  ) : reviews.length > 0 ? (
+                    <div className="space-y-6">
                       {reviews.map((review: any) => (
                         <TestimonialCard
                           key={review.id}
-                          text={review.comment || "Great teacher!"}
+                          text={review.comment}
                           rating={review.rating}
-                          studentName={review.studentName || "Student"}
-                          studentSubject={teacher.subjects[0]?.name || "Student"}
-                          studentInitials={review.studentName?.substring(0, 2) || "ST"}
-                          studentImage={review.studentProfileImage}
+                          studentName={review.studentName || "Anonymous Student"}
+                          studentSubject={review.subjectName || "General"}
+                          studentInitials={
+                            review.studentName
+                              ? review.studentName
+                                  .split(' ')
+                                  .map((name: string) => name[0])
+                                  .join('')
+                              : "AS"
+                          }
                         />
                       ))}
                     </div>
                   ) : (
-                    <p className="text-neutral-medium">No reviews yet.</p>
+                    <div className="text-center py-12 bg-neutral-50 rounded-lg">
+                      <span className="material-icons text-neutral-medium text-5xl mb-4">rate_review</span>
+                      <h3 className="text-lg font-medium mb-2">No Reviews Yet</h3>
+                      <p className="text-neutral-medium">
+                        This teacher doesn't have any reviews yet.
+                      </p>
+                    </div>
                   )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="subjects">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Subjects Taught</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {teacher.subjects.map((subject: any) => (
-                      <Badge key={subject.id} variant="secondary" className="text-sm py-1">
-                        <span className="material-icons text-primary text-sm mr-1">{subject.icon}</span>
-                        {subject.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <h3 className="font-medium mb-2">Experience</h3>
-                  <p className="text-neutral-medium">
-                    {teacher.yearsOfExperience} years of teaching experience
-                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -324,130 +428,206 @@ export default function TeacherProfile() {
             <TabsContent value="availability">
               <Card>
                 <CardHeader>
-                  <CardTitle>Weekly Availability</CardTitle>
-                  <CardDescription>When {teacher.name} is available to teach</CardDescription>
+                  <CardTitle>Availability Schedule</CardTitle>
+                  <CardDescription>
+                    When {teacherProfile.name} is available for sessions
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {teacher.availability && teacher.availability.length > 0 ? (
-                    <div className="space-y-2">
-                      {teacher.availability.map((day: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center py-2 border-b">
-                          <div className="font-medium">{day.day}</div>
-                          <div className="flex items-center text-neutral-medium">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {day.startTime} - {day.endTime}
-                          </div>
-                        </div>
-                      ))}
+                  {teacherProfile.availabilitySchedule ? (
+                    <div className="space-y-4">
+                      {/* Render schedule here */}
+                      <p className="text-neutral-medium">{teacherProfile.availabilitySchedule}</p>
                     </div>
                   ) : (
-                    <p className="text-neutral-medium">No availability information provided.</p>
+                    <div className="text-center py-12 bg-neutral-50 rounded-lg">
+                      <span className="material-icons text-neutral-medium text-5xl mb-4">calendar_today</span>
+                      <h3 className="text-lg font-medium mb-2">No Schedule Posted</h3>
+                      <p className="text-neutral-medium">
+                        This teacher hasn't posted their availability schedule yet.
+                      </p>
+                    </div>
                   )}
                 </CardContent>
+                <CardFooter>
+                  <p className="text-sm text-neutral-medium">
+                    Contact the teacher or book a session to discuss specific availability.
+                  </p>
+                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
-        
-        {/* Right column - Booking */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Book a Session</CardTitle>
-              <CardDescription>Select a date and time to schedule your session</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="font-medium mb-1">Session Price</div>
-                  <div className="text-2xl font-semibold text-primary">${teacher.hourlyRate}/hour</div>
-                </div>
-                
-                <Separator />
-                
-                {user ? (
-                  user.id !== teacherId ? (
-                    <>
-                      <Button 
-                        className="w-full" 
-                        onClick={() => setIsBookingModalOpen(true)}
-                      >
-                        <CalendarIcon className="h-4 w-4 mr-2" />
-                        Schedule a Class
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Message
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="text-center p-4 bg-neutral-lightest rounded-md">
-                      <p className="text-neutral-medium">This is your profile</p>
-                    </div>
-                  )
-                ) : (
-                  <div className="text-center p-4 bg-neutral-lightest rounded-md">
-                    <p className="text-neutral-medium mb-2">Please log in to book a session</p>
-                    <Link href="/login">
-                      <Button size="sm">Log In</Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
       
-      {/* Booking Modal */}
+      {/* Book Session Modal */}
       <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Schedule a Session</DialogTitle>
+            <DialogTitle>Book a Session with {teacherProfile.name}</DialogTitle>
             <DialogDescription>
-              Choose a date and time for your session with {teacher.name}
+              Fill out the details below to request a session. You'll be notified when the teacher confirms.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <h3 className="font-medium">Select Date</h3>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={(date) => {
-                  // Disable past dates
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  if (date < today) return true;
-                  
-                  // Disable days not in teacher's availability
-                  if (!teacher.availability) return false;
-                  
-                  const dayOfWeek = format(date, 'EEEE').toLowerCase();
-                  return !teacher.availability.some((day: any) => 
-                    day.day.toLowerCase() === dayOfWeek
-                  );
-                }}
-                showTimePicker={true}
-                selectedTime={selectedTime}
-                onTimeChange={setSelectedTime}
-                availableTimes={getAvailableTimes()}
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="subject">Subject</Label>
+              <select
+                id="subject"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedSubject || ""}
+                onChange={(e) => setSelectedSubject(parseInt(e.target.value))}
+              >
+                <option value="">Select a subject</option>
+                {teacherProfile.subjectIds?.map((subjectId: number) => {
+                  const subject = subjects.find((s: any) => s.id === subjectId);
+                  return subject ? (
+                    <option key={subjectId} value={subjectId}>
+                      {subject.name}
+                    </option>
+                  ) : null;
+                })}
+              </select>
+            </div>
+            
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input 
+                id="date" 
+                type="date" 
+                value={sessionDate} 
+                onChange={(e) => setSessionDate(e.target.value)}
+                min={format(new Date(), "yyyy-MM-dd")}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start-time">Start Time</Label>
+                <Input 
+                  id="start-time" 
+                  type="time" 
+                  value={sessionStartTime} 
+                  onChange={(e) => setSessionStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end-time">End Time</Label>
+                <Input 
+                  id="end-time" 
+                  type="time" 
+                  value={sessionEndTime} 
+                  onChange={(e) => setSessionEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea 
+                id="notes" 
+                placeholder="Add any additional information..." 
+                value={sessionNotes} 
+                onChange={(e) => setSessionNotes(e.target.value)}
+              />
+            </div>
+            
+            <div className="text-sm bg-blue-50 text-blue-600 p-3 rounded-md">
+              <p className="font-medium">Session Cost:</p>
+              <p>
+                ${teacherProfile.hourlyRate} per hour × {
+                  sessionStartTime && sessionEndTime
+                    ? ((new Date(`2000-01-01T${sessionEndTime}`).getTime() - 
+                        new Date(`2000-01-01T${sessionStartTime}`).getTime()) / 
+                        (1000 * 60 * 60)).toFixed(1)
+                    : "0"
+                } hours = ${
+                  sessionStartTime && sessionEndTime
+                    ? (teacherProfile.hourlyRate * 
+                        ((new Date(`2000-01-01T${sessionEndTime}`).getTime() - 
+                          new Date(`2000-01-01T${sessionStartTime}`).getTime()) / 
+                          (1000 * 60 * 60))).toFixed(2)
+                    : "0.00"
+                }
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBookingModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBookSession}
+              disabled={bookSession.isPending}
+            >
+              {bookSession.isPending ? "Booking..." : "Book Session"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Write Review Modal */}
+      <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Write a Review for {teacherProfile.name}</DialogTitle>
+            <DialogDescription>
+              Share your experience to help other students.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="rating">Rating</Label>
+              <div className="flex items-center mt-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => setReviewRating(rating)}
+                    className="p-1"
+                  >
+                    <StarIcon
+                      className={`h-8 w-8 ${
+                        rating <= reviewRating
+                          ? "text-yellow-400 fill-current"
+                          : "text-neutral-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="review">Your Review</Label>
+              <Textarea 
+                id="review" 
+                placeholder="Share your experience with this teacher..." 
+                value={reviewText} 
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={5}
               />
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBookingModalOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsReviewModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button 
-              onClick={handleBookSession}
-              disabled={!selectedDate || !selectedTime || bookSession.isPending}
+              onClick={handleSubmitReview}
+              disabled={submitReview.isPending}
             >
-              {bookSession.isPending ? "Booking..." : "Book Session"}
+              {submitReview.isPending ? "Submitting..." : "Submit Review"}
             </Button>
           </DialogFooter>
         </DialogContent>

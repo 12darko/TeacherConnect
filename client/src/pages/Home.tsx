@@ -1,319 +1,328 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import SubjectCard from "@/components/SubjectCard";
-import TeacherCard from "@/components/TeacherCard";
-import TestimonialCard from "@/components/TestimonialCard";
 import { useQuery } from "@tanstack/react-query";
-import { CheckIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import { SubjectCard } from "@/components/SubjectCard";
+import { TestimonialCard } from "@/components/TestimonialCard";
+import { 
+  BookOpen, 
+  GraduationCap, 
+  Video, 
+  Users, 
+  Clock, 
+  ArrowRight,
+  CheckCircle
+} from "lucide-react";
 
 export default function Home() {
-  // Fetch subjects
-  const { data: subjects = [] } = useQuery({
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
+  // Fetch featured subjects
+  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
     queryKey: ['/api/subjects'],
   });
 
-  // Fetch featured teachers
-  const { data: teachers = [] } = useQuery({
-    queryKey: ['/api/teachers'],
+  // Fetch top teachers
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
+    queryKey: ['/api/teachers?featured=true'],
   });
-
-  const testimonials = [
+  
+  // Fetch testimonials
+  const { data: testimonials = [] } = useQuery({
+    queryKey: ['/api/reviews?featured=true'],
+  });
+  
+  // Set up mock testimonials if none are returned from API
+  const displayTestimonials = testimonials.length > 0 ? testimonials : [
     {
-      text: "My math grades improved dramatically after just a few sessions with Sarah. She explains complex concepts in a way that's easy to understand.",
+      id: 1,
+      text: "My math skills improved dramatically after just a few sessions. The teacher was patient and explained concepts clearly.",
       rating: 5,
-      studentName: "Jason Doe",
+      studentName: "Emma Thompson",
       studentSubject: "Mathematics",
-      studentInitials: "JD"
+      studentInitials: "ET"
     },
     {
-      text: "As a working professional, I needed flexibility. EduConnect made it easy to find an experienced language teacher who could work with my schedule.",
+      id: 2,
+      text: "The platform is very user-friendly and finding the right teacher was easy. The video quality during the sessions is excellent.",
+      rating: 4,
+      studentName: "Michael Chen",
+      studentSubject: "Physics",
+      studentInitials: "MC"
+    },
+    {
+      id: 3,
+      text: "I was struggling with my chemistry courses until I found this platform. Now I'm one of the top students in my class!",
       rating: 5,
-      studentName: "Alicia Taylor",
-      studentSubject: "Language",
-      studentInitials: "AT"
+      studentName: "Sophia Rodriguez",
+      studentSubject: "Chemistry",
+      studentInitials: "SR"
     }
   ];
-
+  
   return (
-    <>
+    <div>
       {/* Hero Section */}
-      <section className="bg-primary text-white py-12 md:py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="md:flex md:items-center md:justify-between">
-              <div className="md:w-1/2 mb-8 md:mb-0">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold leading-tight">Learn From The Best Teachers Online</h1>
-                <p className="mt-4 text-lg text-blue-100">Connect with expert teachers for personalized 1-on-1 lessons, interactive classes, and guided assignments.</p>
-                <div className="mt-6 flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
-                  <Link href="/find-teachers">
-                    <Button size="lg" className="bg-accent hover:bg-accent-dark w-full sm:w-auto">
-                      Find a Teacher
+      <section className="bg-gradient-to-br from-primary/90 to-primary text-white py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Find the Perfect Teacher for Your Learning Journey
+              </h1>
+              <p className="text-xl mb-8 text-white/90">
+                Connect with expert teachers for personalized online lessons, assignments, and exams tailored to your learning goals.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                {isAuthenticated ? (
+                  <>
+                    <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
+                      <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                        Go to Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/find-teachers">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                        Find Teachers
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      size="lg" 
+                      className="bg-white text-primary hover:bg-white/90"
+                      onClick={() => window.location.href = "/api/login"}
+                    >
+                      Get Started
                     </Button>
-                  </Link>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-white text-white hover:bg-white hover:bg-opacity-10 w-full sm:w-auto"
-                    onClick={() => window.location.href = "/api/login"}
-                  >
-                    Sign In / Register
-                  </Button>
+                    <Link href="/find-teachers">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                        Browse Teachers
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <img 
+                src="https://images.unsplash.com/photo-1610484826967-09c5720778c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
+                alt="Online learning" 
+                className="rounded-lg shadow-xl"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Features Section */}
+      <section className="py-16 bg-neutral-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Why Choose Our Platform?</h2>
+            <p className="text-neutral-600 max-w-2xl mx-auto">
+              We provide an all-in-one learning solution with powerful features to enhance your educational experience.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <Video className="h-6 w-6" />
                 </div>
-              </div>
-              <div className="md:w-1/2">
-                <img 
-                  src="https://images.unsplash.com/photo-1587691592099-24045742c181?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
-                  alt="Teacher and student in online learning session" 
-                  className="rounded-lg shadow-lg w-full"
-                />
-              </div>
-            </div>
+                <h3 className="text-xl font-bold mb-2">Live Video Sessions</h3>
+                <p className="text-neutral-600">
+                  Connect with teachers in real-time through high-quality video conferencing with built-in tools for an interactive learning experience.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Custom Assessments</h3>
+                <p className="text-neutral-600">
+                  Teachers create personalized exams and assignments to track your progress and identify areas for improvement.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Verified Teachers</h3>
+                <p className="text-neutral-600">
+                  All teachers on our platform are verified professionals with expertise in their subjects, providing quality education.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
-
-      {/* Subject Categories Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl md:text-3xl font-heading font-semibold text-center mb-8">Browse by Subject</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {subjects.map((subject) => (
-              <SubjectCard 
-                key={subject.id}
-                id={subject.id}
-                name={subject.name}
-                icon={subject.icon}
-              />
-            ))}
-            <Link href="/find-teachers">
-              <a className="bg-neutral-lightest hover:bg-blue-50 rounded-lg p-4 flex flex-col items-center justify-center transition duration-150 h-32">
-                <span className="material-icons text-3xl text-primary mb-2">more_horiz</span>
-                <span className="text-center font-medium text-neutral-dark">More Subjects</span>
-              </a>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Teachers Section */}
-      <section className="py-12 bg-neutral-lightest">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {/* Popular Subjects Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-heading font-semibold">Featured Teachers</h2>
+            <h2 className="text-3xl font-bold">Popular Subjects</h2>
             <Link href="/find-teachers">
-              <a className="text-primary hover:text-primary-dark font-medium flex items-center">
-                View all 
-                <span className="material-icons text-sm ml-1">chevron_right</span>
-              </a>
+              <Button variant="outline" className="group">
+                View All 
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </Link>
           </div>
           
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {teachers.slice(0, 4).map((teacher) => (
-              <TeacherCard
-                key={teacher.id}
-                id={teacher.userId}
-                name={teacher.name}
-                profileImage={teacher.profileImage}
-                subject={subjects.find(s => teacher.subjectIds.includes(s.id))?.name || "Multiple Subjects"}
-                rating={teacher.averageRating}
-                reviewCount={teacher.totalReviews}
-                bio={teacher.bio || "Experienced teacher available for lessons."}
-                hourlyRate={teacher.hourlyRate}
-              />
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {isLoadingSubjects ? (
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="h-32 bg-neutral-100 rounded-lg animate-pulse"></div>
+              ))
+            ) : (
+              subjects.slice(0, 6).map((subject: any) => (
+                <SubjectCard
+                  key={subject.id}
+                  id={subject.id}
+                  name={subject.name}
+                  icon={subject.icon}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
-
+      
       {/* How It Works Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl md:text-3xl font-heading font-semibold text-center mb-8">How EduConnect Works</h2>
+      <section className="py-16 bg-neutral-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+            <p className="text-neutral-600 max-w-2xl mx-auto">
+              Getting started with our platform is easy. Follow these simple steps to begin your learning journey.
+            </p>
+          </div>
           
-          <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
-            <div className="text-center px-4">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="material-icons text-3xl text-primary">search</span>
-              </div>
-              <h3 className="text-xl font-heading font-medium mb-2">1. Find Your Perfect Teacher</h3>
-              <p className="text-neutral-medium">Browse teacher profiles and read reviews to find the perfect match for your learning needs.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+              <h3 className="text-xl font-bold mb-2">Find Your Teacher</h3>
+              <p className="text-neutral-600">
+                Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.
+              </p>
             </div>
             
-            <div className="text-center px-4">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="material-icons text-3xl text-primary">event</span>
-              </div>
-              <h3 className="text-xl font-heading font-medium mb-2">2. Book Sessions</h3>
-              <p className="text-neutral-medium">Schedule one-on-one or group classes at times that work best for your schedule.</p>
+            <div className="text-center">
+              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+              <h3 className="text-xl font-bold mb-2">Book a Session</h3>
+              <p className="text-neutral-600">
+                Schedule a session at a time that works for you. Our flexible booking system makes it easy to find convenient slots.
+              </p>
             </div>
             
-            <div className="text-center px-4">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="material-icons text-3xl text-primary">video_call</span>
-              </div>
-              <h3 className="text-xl font-heading font-medium mb-2">3. Learn Through Video Classes</h3>
-              <p className="text-neutral-medium">Connect with your teacher via our integrated video platform for interactive learning sessions.</p>
+            <div className="text-center">
+              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+              <h3 className="text-xl font-bold mb-2">Start Learning</h3>
+              <p className="text-neutral-600">
+                Connect for your live video session and access personalized learning materials, assignments, and exams.
+              </p>
             </div>
           </div>
           
-          <div className="mt-10 text-center">
+          <div className="text-center mt-12">
             <Button 
-              size="lg"
+              size="lg" 
               onClick={() => window.location.href = "/api/login"}
+              disabled={isAuthenticated}
             >
-              Get Started Now
+              {isAuthenticated ? "You're Already Signed In" : "Get Started Today"}
             </Button>
           </div>
         </div>
       </section>
-
+      
       {/* Testimonials Section */}
-      <section className="py-12 bg-neutral-lightest">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl md:text-3xl font-heading font-semibold text-center mb-8">What Our Students Say</h2>
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">What Our Students Say</h2>
+            <p className="text-neutral-600 max-w-2xl mx-auto">
+              Don't just take our word for it. Hear from students who have transformed their learning experience with our platform.
+            </p>
+          </div>
           
-          <div className="max-w-4xl mx-auto">
-            <img 
-              src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=600" 
-              alt="Students learning online" 
-              className="rounded-lg w-full h-64 object-cover mb-8"
-            />
-            
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-              {testimonials.map((testimonial, index) => (
-                <TestimonialCard
-                  key={index}
-                  text={testimonial.text}
-                  rating={testimonial.rating}
-                  studentName={testimonial.studentName}
-                  studentSubject={testimonial.studentSubject}
-                  studentInitials={testimonial.studentInitials}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* App Features Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="md:w-1/2 md:pr-8 mb-8 md:mb-0">
-              <h2 className="text-2xl md:text-3xl font-heading font-semibold mb-4">A Complete Learning Platform</h2>
-              <p className="text-neutral-medium mb-6">EduConnect provides all the tools you need for effective online learning. Our platform is designed to make education accessible, interactive, and engaging.</p>
-              
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-primary" />
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-base font-medium text-neutral-dark">Live Video Classes</h4>
-                    <p className="text-sm text-neutral-medium">Interactive HD video conferencing with screen sharing and virtual whiteboard.</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-primary" />
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-base font-medium text-neutral-dark">Assignments & Quizzes</h4>
-                    <p className="text-sm text-neutral-medium">Teachers can create and assign work to measure your progress.</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-primary" />
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-base font-medium text-neutral-dark">Progress Tracking</h4>
-                    <p className="text-sm text-neutral-medium">Detailed statistics to monitor your improvement over time.</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-primary" />
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-base font-medium text-neutral-dark">AI-Powered Recommendations</h4>
-                    <p className="text-sm text-neutral-medium">Get personalized teacher and course suggestions based on your needs.</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-8">
-                <Link href="/find-teachers">
-                  <a className="inline-flex items-center text-primary hover:text-primary-dark font-medium">
-                    Explore all features
-                    <span className="material-icons text-sm ml-1">arrow_forward</span>
-                  </a>
-                </Link>
-              </div>
-            </div>
-            
-            <div className="md:w-1/2">
-              <img 
-                src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
-                alt="Student using educational platform" 
-                className="rounded-lg shadow-lg w-full"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {displayTestimonials.map((testimonial) => (
+              <TestimonialCard
+                key={testimonial.id}
+                text={testimonial.text}
+                rating={testimonial.rating}
+                studentName={testimonial.studentName}
+                studentSubject={testimonial.studentSubject}
+                studentInitials={testimonial.studentInitials}
               />
-            </div>
+            ))}
           </div>
         </div>
       </section>
-
-      {/* Platform Download Section */}
-      <section className="py-12 bg-primary text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-heading font-semibold mb-4">Access EduConnect Anywhere</h2>
-            <p className="text-blue-100 mb-8">Our platform is available on web, desktop, and mobile devices. Learn from anywhere, at any time.</p>
-            
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button variant="secondary" size="lg" className="inline-flex items-center">
-                <span className="material-icons mr-2">laptop</span>
-                Web Platform
-              </Button>
-              <Button variant="secondary" size="lg" className="inline-flex items-center">
-                <span className="material-icons mr-2">desktop_windows</span>
-                Desktop App
-              </Button>
-              <Button variant="secondary" size="lg" className="inline-flex items-center">
-                <span className="material-icons mr-2">smartphone</span>
-                Mobile App
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="py-12 bg-neutral-lightest">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <h2 className="text-2xl md:text-3xl font-heading font-semibold mb-4">Ready to Transform Your Learning?</h2>
-              <p className="text-neutral-medium mb-8">Join thousands of students who are already learning with EduConnect.</p>
-              
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <Button 
-                  size="lg" 
-                  className="w-full sm:w-auto"
-                  onClick={() => window.location.href = "/api/login"}
-                >
-                  Sign Up or Login
+      
+      {/* CTA Section */}
+      <section className="py-16 bg-primary text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Learning Experience?</h2>
+          <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
+            Join thousands of students who are achieving their academic goals with personalized online learning.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            {isAuthenticated ? (
+              <Link href="/find-teachers">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                  Find Teachers Now
                 </Button>
-              </div>
+              </Link>
+            ) : (
+              <Button 
+                size="lg" 
+                className="bg-white text-primary hover:bg-white/90"
+                onClick={() => window.location.href = "/api/login"}
+              >
+                Sign Up Free
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
+      
+      {/* Stats Section */}
+      <section className="py-12 bg-neutral-50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">10,000+</div>
+              <p className="text-neutral-600">Students</p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">1,000+</div>
+              <p className="text-neutral-600">Expert Teachers</p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">50+</div>
+              <p className="text-neutral-600">Subjects</p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">100,000+</div>
+              <p className="text-neutral-600">Sessions Completed</p>
             </div>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

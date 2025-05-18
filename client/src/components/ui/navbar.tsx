@@ -1,0 +1,239 @@
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  Menu,
+  AlignJustify,
+  X,
+  User,
+  LogOut,
+  BookOpen,
+  LayoutDashboard
+} from "lucide-react";
+
+export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+  
+  // Handle scrolling effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+  
+  // Close mobile menu when location changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+  
+  return (
+    <header 
+      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        isScrolled || isMenuOpen 
+          ? "bg-white shadow-md py-2" 
+          : "bg-transparent py-4"
+      }`}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center">
+          {/* Logo */}
+          <Link href="/">
+            <a className="flex items-center">
+              <span className={`text-2xl font-bold ${!isScrolled && !isMenuOpen && location === "/" ? "text-white" : "text-primary"}`}>
+                EduConnect
+              </span>
+            </a>
+          </Link>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            <Link href="/find-teachers">
+              <a className={`px-4 py-2 rounded-md transition-colors ${
+                !isScrolled && location === "/" 
+                  ? "text-white hover:bg-white/10" 
+                  : "text-neutral-700 hover:bg-neutral-100"
+              } ${location === "/find-teachers" ? "font-medium" : ""}`}>
+                Find Teachers
+              </a>
+            </Link>
+            
+            <Link href="/#subjects">
+              <a className={`px-4 py-2 rounded-md transition-colors ${
+                !isScrolled && location === "/" 
+                  ? "text-white hover:bg-white/10" 
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}>
+                Subjects
+              </a>
+            </Link>
+            
+            <Link href="/#how-it-works">
+              <a className={`px-4 py-2 rounded-md transition-colors ${
+                !isScrolled && location === "/" 
+                  ? "text-white hover:bg-white/10" 
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}>
+                How It Works
+              </a>
+            </Link>
+            
+            {isAuthenticated && !isLoading ? (
+              <>
+                <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
+                  <a className={`px-4 py-2 rounded-md transition-colors ${
+                    !isScrolled && location === "/" 
+                      ? "text-white hover:bg-white/10" 
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  } ${location.includes("dashboard") ? "font-medium" : ""}`}>
+                    Dashboard
+                  </a>
+                </Link>
+                
+                <div className="relative ml-2 group">
+                  <Button 
+                    variant={(!isScrolled && location === "/") ? "outline" : "default"}
+                    className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                    size="sm"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    {user?.firstName || "Account"}
+                  </Button>
+                  
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white hidden group-hover:block">
+                    <div className="px-4 py-2 text-sm text-neutral-500 border-b">
+                      Signed in as <span className="font-medium text-neutral-900">{user?.email}</span>
+                    </div>
+                    <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
+                      <a className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
+                        <LayoutDashboard className="h-4 w-4 inline-block mr-2" />
+                        Dashboard
+                      </a>
+                    </Link>
+                    {user?.role === "teacher" && (
+                      <Link href="/create-exam">
+                        <a className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
+                          <BookOpen className="h-4 w-4 inline-block mr-2" />
+                          Create Exam
+                        </a>
+                      </Link>
+                    )}
+                    <a 
+                      href="/api/logout" 
+                      className="block px-4 py-2 text-sm text-red-600 hover:bg-neutral-100"
+                    >
+                      <LogOut className="h-4 w-4 inline-block mr-2" />
+                      Sign Out
+                    </a>
+                  </div>
+                </div>
+              </>
+            ) : !isLoading ? (
+              <Button
+                onClick={() => window.location.href = "/api/login"}
+                variant={(!isScrolled && location === "/") ? "outline" : "default"}
+                className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+              >
+                Sign In
+              </Button>
+            ) : null}
+          </nav>
+          
+          {/* Mobile menu button */}
+          <button 
+            className="md:hidden p-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+              <X className={`h-6 w-6 ${
+                !isScrolled && location === "/" ? "text-white" : "text-neutral-700"
+              }`} />
+            ) : (
+              <AlignJustify className={`h-6 w-6 ${
+                !isScrolled && location === "/" ? "text-white" : "text-neutral-700"
+              }`} />
+            )}
+          </button>
+        </div>
+        
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <nav className="md:hidden pt-4 pb-4 border-t mt-4">
+            <div className="space-y-2">
+              <Link href="/find-teachers">
+                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                  Find Teachers
+                </a>
+              </Link>
+              
+              <Link href="/#subjects">
+                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                  Subjects
+                </a>
+              </Link>
+              
+              <Link href="/#how-it-works">
+                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                  How It Works
+                </a>
+              </Link>
+              
+              {isAuthenticated && !isLoading ? (
+                <>
+                  <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
+                    <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                      Dashboard
+                    </a>
+                  </Link>
+                  
+                  <div className="border-t my-2"></div>
+                  
+                  <div className="px-4 py-2 text-sm text-neutral-500">
+                    Signed in as <span className="font-medium text-neutral-900">{user?.email}</span>
+                  </div>
+                  
+                  {user?.role === "teacher" && (
+                    <Link href="/create-exam">
+                      <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                        <BookOpen className="h-4 w-4 inline-block mr-2" />
+                        Create Exam
+                      </a>
+                    </Link>
+                  )}
+                  
+                  <a 
+                    href="/api/logout" 
+                    className="block px-4 py-2 rounded-md text-red-600 hover:bg-neutral-100 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4 inline-block mr-2" />
+                    Sign Out
+                  </a>
+                </>
+              ) : !isLoading ? (
+                <div className="pt-2">
+                  <Button
+                    onClick={() => window.location.href = "/api/login"}
+                    className="w-full"
+                  >
+                    Sign In
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </nav>
+        )}
+      </div>
+    </header>
+  );
+}
