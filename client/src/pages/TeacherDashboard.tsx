@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+
+// İşlem tipi tanımı
+type Transaction = {
+  id: string;
+  date: string;
+  type: "deposit" | "withdrawal" | "commission";
+  amount: number;
+  status: "pending" | "completed" | "failed";
+  studentName?: string;
+  description?: string;
+};
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,607 +27,783 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { EarningsCardDemo } from "@/components/ui/teacher/EarningsCardDemo";
 import { 
   Users, 
-  Book, 
   Clock, 
-  Calendar, 
-  CheckCircle, 
-  PlusCircle, 
-  BarChart3,
-  DollarSign
+  Calendar as CalendarIcon, 
+  ChevronDown, 
+  ChevronUp, 
+  DollarSign, 
+  Star, 
+  BookOpen,
+  PlusCircle,
+  ArrowRight,
+  Check,
+  X,
+  GraduationCap,
+  CreditCard
 } from "lucide-react";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 
+// Haftalık takvim bileşeni
+const WeeklySchedule = ({ sessions = [] }: { sessions: any[] }) => {
+  const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+  const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8:00 - 19:00
+  
+  // Gün ve saate göre dersleri grupla
+  const sessionsByDayAndHour = days.map(day => {
+    return hours.map(hour => {
+      return sessions.filter(session => {
+        const sessionDate = new Date(session.startTime);
+        const sessionDay = format(sessionDate, 'EEEE', { locale: tr });
+        const sessionHour = sessionDate.getHours();
+        return sessionDay === day && sessionHour === hour;
+      });
+    });
+  });
+  
+  return (
+    <div className="border rounded-md overflow-hidden">
+      <div className="grid grid-cols-8 bg-muted/50">
+        <div className="p-2 text-sm font-medium text-center border-r">Saat</div>
+        {days.map(day => (
+          <div key={day} className="p-2 text-sm font-medium text-center border-r last:border-r-0">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-8">
+        {/* Saat sütunu */}
+        <div className="border-r">
+          {hours.map(hour => (
+            <div key={hour} className="h-16 p-2 text-xs text-center border-b last:border-b-0">
+              {hour}:00
+            </div>
+          ))}
+        </div>
+        
+        {/* Günler ve dersler */}
+        {days.map((day, dayIndex) => (
+          <div key={day} className="border-r last:border-r-0">
+            {hours.map((hour, hourIndex) => {
+              const sessionsAtThisTime = sessionsByDayAndHour[dayIndex][hourIndex];
+              return (
+                <div key={`${day}-${hour}`} className="h-16 p-1 border-b last:border-b-0 relative">
+                  {sessionsAtThisTime.length > 0 ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div 
+                          className="absolute inset-1 bg-primary/80 text-white rounded-md flex items-center justify-center cursor-pointer text-xs hover:bg-primary"
+                        >
+                          {sessionsAtThisTime.length} Ders
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0">
+                        <div className="p-3 border-b">
+                          <h4 className="font-medium">{day}, {hour}:00</h4>
+                          <p className="text-xs text-muted-foreground">{sessionsAtThisTime.length} ders planlandı</p>
+                        </div>
+                        <div className="max-h-80 overflow-auto">
+                          {sessionsAtThisTime.map(session => (
+                            <div key={session.id} className="p-3 border-b last:border-b-0">
+                              <div className="flex items-center justify-between">
+                                <h5 className="font-medium">{session.subjectName}</h5>
+                                <Badge variant={
+                                  session.status === "completed" ? "success" :
+                                  session.status === "cancelled" ? "destructive" :
+                                  "secondary"
+                                }>
+                                  {session.status === "completed" ? "Tamamlandı" :
+                                   session.status === "cancelled" ? "İptal Edildi" :
+                                   "Bekliyor"}
+                                </Badge>
+                              </div>
+                              <p className="text-sm mt-1">Öğrenci: {session.studentName}</p>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(session.startTime), 'dd MMMM HH:mm', { locale: tr })}
+                                </span>
+                                <Link href={`/classroom/${session.id}`}>
+                                  <Button size="sm" variant="outline">
+                                    Derse Git
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Öğrenci talebi bileşeni
+interface SessionRequestProps {
+  id: number;
+  studentName: string;
+  studentAvatar?: string;
+  subject: string;
+  date: Date;
+  onAccept: (id: number) => void;
+  onReject: (id: number) => void;
+}
+
+const SessionRequest = ({
+  id,
+  studentName,
+  studentAvatar,
+  subject,
+  date,
+  onAccept,
+  onReject
+}: SessionRequestProps) => {
+  return (
+    <div className="flex items-center justify-between p-4 border-b last:border-b-0">
+      <div className="flex items-center">
+        <div className="w-10 h-10 rounded-full bg-primary/10 mr-3 flex items-center justify-center overflow-hidden">
+          {studentAvatar ? (
+            <img src={studentAvatar} alt={studentName} className="w-full h-full object-cover" />
+          ) : (
+            <GraduationCap className="h-6 w-6 text-primary/40" />
+          )}
+        </div>
+        <div>
+          <h4 className="font-medium">{studentName}</h4>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <BookOpen className="mr-1 h-3.5 w-3.5" />
+            <span>{subject}</span>
+          </div>
+          <div className="flex items-center text-xs text-muted-foreground mt-0.5">
+            <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+            <span>{format(date, 'dd MMMM yyyy HH:mm', { locale: tr })}</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex space-x-2">
+        <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => onReject(id)}>
+          <X className="h-4 w-4" />
+        </Button>
+        <Button size="sm" className="h-8 w-8 p-0" onClick={() => onAccept(id)}>
+          <Check className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Ana öğretmen dashboard bileşeni
 export default function TeacherDashboard() {
   const [, params] = useLocation();
   const urlParams = new URLSearchParams(params);
   const initialTab = urlParams.get("tab") || "overview";
   
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const { user, isAuthenticated, isLoading } = useAuth();
   
-  // Fetch teacher profile
-  const { data: teacherProfile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: [`/api/teachers/by-user/${user?.id}`],
+  // Öğretmenin ders oturumlarını getir
+  const { data: sessions = [], isLoading: isLoadingSessions } = useQuery({
+    queryKey: [`/api/sessions?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
   
-  // Fetch upcoming sessions
-  const { data: upcomingSessions = [], isLoading: isLoadingSessions } = useQuery({
+  // Bekleyen ders taleplerini getir
+  const { data: pendingRequests = [], isLoading: isLoadingRequests } = useQuery({
     queryKey: [`/api/sessions?teacherId=${user?.id}&status=pending`],
     enabled: !!user?.id,
   });
   
-  // Fetch created exams
-  const { data: exams = [], isLoading: isLoadingExams } = useQuery({
-    queryKey: [`/api/exams?teacherId=${user?.id}`],
-    enabled: !!user?.id,
-  });
-  
-  // Fetch reviews
+  // Öğretmene gelen yorumları getir
   const { data: reviews = [], isLoading: isLoadingReviews } = useQuery({
     queryKey: [`/api/reviews?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
   
-  // Redirect if not authenticated
+  // Öğretmenin profilini getir
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: [`/api/teachers/profile?userId=${user?.id}`],
+    enabled: !!user?.id,
+  });
+  
+  // Demo işlemler - gerçek uygulamada API'dan gelir
+  const demoTransactions = [
+    {
+      id: "tx1",
+      date: "2023-05-15T14:30:00Z",
+      type: "deposit" as const,
+      amount: 250,
+      status: "completed" as const,
+      studentName: "Ahmet Yılmaz",
+      description: "Matematik dersi ödemesi"
+    },
+    {
+      id: "tx2",
+      date: "2023-05-12T10:15:00Z",
+      type: "deposit" as const,
+      amount: 250,
+      status: "completed" as const,
+      studentName: "Zeynep Kaya",
+      description: "Matematik dersi ödemesi"
+    },
+    {
+      id: "tx3",
+      date: "2023-05-10T16:45:00Z",
+      type: "commission" as const,
+      amount: 50,
+      status: "completed" as const,
+      description: "Platform komisyonu"
+    },
+    {
+      id: "tx4",
+      date: "2023-05-05T09:20:00Z",
+      type: "withdrawal" as const,
+      amount: 400,
+      status: "completed" as const,
+      description: "Banka hesabına transfer"
+    },
+    {
+      id: "tx5",
+      date: "2023-05-01T11:00:00Z",
+      type: "deposit" as const,
+      amount: 250,
+      status: "completed" as const,
+      studentName: "Murat Demir",
+      description: "Fizik dersi ödemesi"
+    }
+  ];
+  
+  // Giriş yapmamış veya öğretmen olmayan kullanıcıları kontrol et
   if (!isLoading && !isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h2 className="text-2xl font-heading font-semibold mb-4">Access Denied</h2>
-        <p className="text-neutral-medium mb-6">You need to log in to view your dashboard.</p>
+        <h2 className="text-2xl font-bold mb-4">Erişim Reddedildi</h2>
+        <p className="text-muted-foreground mb-6">Öğretmen paneline erişmek için giriş yapmanız gerekiyor.</p>
         <div className="flex gap-4 justify-center">
-          <Button size="lg" onClick={() => window.location.href = "/api/login"}>Log In</Button>
-          <Button size="lg" variant="outline" onClick={() => window.location.href = "/"}>Go to Homepage</Button>
+          <Button size="lg" onClick={() => window.location.href = "/api/login"}>Giriş Yap</Button>
+          <Button size="lg" variant="outline" onClick={() => window.location.href = "/"}>Ana Sayfaya Git</Button>
         </div>
       </div>
     );
   }
   
-  // Loading state
-  if (isLoading || isLoadingProfile) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-        <p className="mt-4 text-neutral-medium">Loading your dashboard...</p>
+        <p className="mt-4 text-muted-foreground">Yükleniyor...</p>
       </div>
     );
   }
   
-  // Calculate some statistics
-  const totalStudents = [...new Set(upcomingSessions.map((s: any) => s.studentId))].length;
-  const totalEarnings = upcomingSessions
-    .filter((s: any) => s.status === "completed")
-    .reduce((total: number, session: any) => {
-      const durationHours = 
-        (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 
-        (1000 * 60 * 60);
-      return total + (durationHours * (teacherProfile?.hourlyRate || 0));
-    }, 0);
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length 
-    : 0;
-  
+  // Sayfa içeriği
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-heading font-semibold mb-1">Teacher Dashboard</h1>
-          <p className="text-neutral-medium">Welcome back, {user?.firstName || user?.email}</p>
+          <h1 className="text-3xl font-heading font-semibold mb-1">Öğretmen Paneli</h1>
+          <p className="text-muted-foreground">Hoş geldiniz, {user?.firstName || user?.email}</p>
         </div>
-        
-        <div className="mt-4 md:mt-0 flex space-x-3">
+        <div className="mt-4 md:mt-0 flex gap-2">
           <Link href="/create-exam">
-            <Button>
+            <Button variant="outline">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Create Exam
+              Sınav Oluştur
+            </Button>
+          </Link>
+          <Link href={`/teacher/${user?.id}`}>
+            <Button>
+              <BookOpen className="mr-2 h-4 w-4" />
+              Profilimi Görüntüle
             </Button>
           </Link>
         </div>
       </div>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 md:grid-cols-4 lg:w-[800px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="exams">Exams</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
+        <TabsList className="grid grid-cols-4 md:w-[600px]">
+          <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
+          <TabsTrigger value="schedule">Ders Programı</TabsTrigger>
+          <TabsTrigger value="students">
+            Öğrenciler
+            {pendingRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {pendingRequests.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="earnings">Kazançlar</TabsTrigger>
         </TabsList>
         
-        {/* Overview Tab */}
+        {/* Genel Bakış Sekmesi */}
         <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Students Taught</CardDescription>
+                <CardDescription>Bugün</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingSessions ? "..." : totalStudents}
+                  {isLoadingSessions ? "..." : 
+                    sessions.filter((s: any) => 
+                      new Date(s.startTime).toDateString() === new Date().toDateString()
+                    ).length}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-neutral-medium flex items-center">
+                <div className="text-sm text-muted-foreground flex items-center">
+                  <CalendarIcon className="mr-1 h-4 w-4" />
+                  Bugünkü dersler
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Toplam Öğrenci</CardDescription>
+                <CardTitle className="text-3xl">
+                  {isLoadingProfile ? "..." : profile?.totalStudents || 0}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground flex items-center">
                   <Users className="mr-1 h-4 w-4" />
-                  Total unique students
+                  Aktif öğrenciler
                 </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Teaching Hours</CardDescription>
+                <CardDescription>Toplam Saat</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingSessions ? "..." : upcomingSessions
-                    .filter((s: any) => s.status === "completed")
-                    .reduce((total: number, session: any) => {
-                      const durationHours = 
-                        (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 
-                        (1000 * 60 * 60);
-                      return total + durationHours;
-                    }, 0).toFixed(1)}
+                  {isLoadingSessions ? "..." : 
+                    sessions.filter((s: any) => s.status === "completed").length}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-neutral-medium flex items-center">
+                <div className="text-sm text-muted-foreground flex items-center">
                   <Clock className="mr-1 h-4 w-4" />
-                  Total teaching time
+                  Tamamlanan dersler
                 </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Created Exams</CardDescription>
+                <CardDescription>Değerlendirme</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingExams ? "..." : exams.length}
+                  {isLoadingProfile ? "..." : 
+                    profile?.averageRating ? profile.averageRating.toFixed(1) : "N/A"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-neutral-medium flex items-center">
-                  <Book className="mr-1 h-4 w-4" />
-                  Total assessments created
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Rating</CardDescription>
-                <CardTitle className="text-3xl">
-                  {isLoadingReviews ? "..." : averageRating.toFixed(1)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-neutral-medium flex items-center">
-                  <CheckCircle className="mr-1 h-4 w-4" />
-                  From {reviews.length} student reviews
+                <div className="text-sm text-muted-foreground flex items-center">
+                  <Star className="mr-1 h-4 w-4" />
+                  {isLoadingReviews ? "..." : reviews.length} değerlendirme
                 </div>
               </CardContent>
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Upcoming Sessions</CardTitle>
-                <CardDescription>Your next scheduled teaching sessions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingSessions ? (
-                  <div className="text-center py-6">
-                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
-                    <p className="mt-2 text-sm text-neutral-medium">Loading sessions...</p>
-                  </div>
-                ) : upcomingSessions.filter((s: any) => s.status === "pending" || s.status === "approved").length > 0 ? (
-                  <div className="space-y-4">
-                    {upcomingSessions
-                      .filter((s: any) => s.status === "pending" || s.status === "approved")
-                      .slice(0, 4)
-                      .map((session: any) => (
-                        <div key={session.id} className="flex items-start border-b pb-4">
-                          <div className="bg-blue-100 text-blue-600 p-2 rounded-md mr-4">
-                            <Calendar className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between">
-                              <h4 className="font-medium">{session.subjectName}</h4>
-                              <Badge 
-                                variant={session.status === "pending" ? "outline" : "default"}
-                                className="capitalize"
-                              >
-                                {session.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-neutral-medium">with {session.studentName}</p>
-                            <p className="text-sm text-neutral-medium mt-1">
-                              {new Date(session.startTime).toLocaleDateString()} at {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 bg-neutral-50 rounded-md">
-                    <Calendar className="h-10 w-10 mx-auto text-neutral-400" />
-                    <p className="mt-2 font-medium">No upcoming sessions</p>
-                    <p className="text-sm text-neutral-medium mt-1">
-                      Wait for students to book sessions with you.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-              {upcomingSessions.filter((s: any) => s.status === "pending" || s.status === "approved").length > 0 && (
-                <CardFooter>
-                  <Button variant="outline" className="w-full" onClick={() => setActiveTab("sessions")}>
-                    View All Sessions
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Earnings</CardTitle>
-                <CardDescription>Your earnings summary</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4">
-                  <DollarSign className="h-8 w-8 mx-auto text-primary mb-2" />
-                  <div className="text-3xl font-bold mb-1">${totalEarnings.toFixed(2)}</div>
-                  <p className="text-sm text-neutral-medium">Total earnings</p>
-                  
-                  <div className="mt-6 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span>Current month</span>
-                      <span className="font-medium">
-                        ${upcomingSessions
-                          .filter((s: any) => {
-                            const sessionDate = new Date(s.startTime);
-                            const now = new Date();
-                            return s.status === "completed" && 
-                              sessionDate.getMonth() === now.getMonth() && 
-                              sessionDate.getFullYear() === now.getFullYear();
-                          })
-                          .reduce((total: number, session: any) => {
-                            const durationHours = 
-                              (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 
-                              (1000 * 60 * 60);
-                            return total + (durationHours * (teacherProfile?.hourlyRate || 0));
-                          }, 0).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Hourly rate</span>
-                      <span className="font-medium">${teacherProfile?.hourlyRate || 0}/hr</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        {/* Sessions Tab */}
-        <TabsContent value="sessions">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+          {/* Kazanç Özeti - Genel Bakış Sekmesinde */}
+          <Card className="mb-8">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between">
                 <div>
-                  <CardTitle>Teaching Sessions</CardTitle>
-                  <CardDescription>Manage your teaching sessions</CardDescription>
+                  <CardTitle>Bu Ayki Kazanç</CardTitle>
+                  <CardDescription>Aylık gelir durumunuz</CardDescription>
                 </div>
-                <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="cursor-pointer">All</Badge>
-                  <Badge variant="outline" className="cursor-pointer">Pending</Badge>
-                  <Badge variant="outline" className="cursor-pointer">Approved</Badge>
-                  <Badge variant="outline" className="cursor-pointer">Completed</Badge>
-                  <Badge variant="outline" className="cursor-pointer">Cancelled</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSessions ? (
-                <div className="text-center py-12">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-                  <p className="mt-4 text-neutral-medium">Loading your sessions...</p>
-                </div>
-              ) : upcomingSessions.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="rounded-md border">
-                    <div className="grid grid-cols-6 gap-4 p-4 font-medium border-b bg-neutral-50 text-sm">
-                      <div className="col-span-2">Student & Subject</div>
-                      <div className="col-span-1">Date & Time</div>
-                      <div className="col-span-1">Duration</div>
-                      <div className="col-span-1">Status</div>
-                      <div className="col-span-1 text-right">Actions</div>
-                    </div>
-                    {upcomingSessions.map((session: any) => {
-                      const startTime = new Date(session.startTime);
-                      const endTime = new Date(session.endTime);
-                      const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-                      
-                      return (
-                        <div key={session.id} className="grid grid-cols-6 gap-4 p-4 border-b items-center">
-                          <div className="col-span-2">
-                            <div className="font-medium">{session.studentName}</div>
-                            <div className="text-sm text-neutral-medium">{session.subjectName}</div>
-                          </div>
-                          <div className="col-span-1">
-                            <div className="text-sm">
-                              {startTime.toLocaleDateString()}
-                            </div>
-                            <div className="text-sm text-neutral-medium">
-                              {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                          <div className="col-span-1">
-                            <div className="text-sm">
-                              {durationHours.toFixed(1)} hours
-                            </div>
-                            <div className="text-sm text-neutral-medium">
-                              ${(durationHours * (teacherProfile?.hourlyRate || 0)).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="col-span-1">
-                            <Badge 
-                              variant={
-                                session.status === "approved" ? "default" : 
-                                session.status === "completed" ? "success" : 
-                                session.status === "cancelled" ? "destructive" : "outline"
-                              }
-                              className="capitalize"
-                            >
-                              {session.status}
-                            </Badge>
-                          </div>
-                          <div className="col-span-1 text-right space-x-2">
-                            {session.status === "pending" && (
-                              <>
-                                <Button size="sm" variant="outline">
-                                  Approve
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-red-500 border-red-200 hover:bg-red-50">
-                                  Decline
-                                </Button>
-                              </>
-                            )}
-                            {session.status === "approved" && new Date() >= startTime && new Date() <= endTime && (
-                              <Link href={`/classroom/${session.id}`}>
-                                <Button size="sm">
-                                  Join Now
-                                </Button>
-                              </Link>
-                            )}
-                            {session.status === "completed" && (
-                              <Button size="sm" variant="outline" disabled>
-                                Completed
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-neutral-50 rounded-lg">
-                  <Calendar className="h-12 w-12 mx-auto text-neutral-400 mb-2" />
-                  <h3 className="text-xl font-medium mb-2">No Sessions Yet</h3>
-                  <p className="text-neutral-medium max-w-md mx-auto mb-6">
-                    You don't have any teaching sessions yet. When students book sessions with you, they'll appear here.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Exams Tab */}
-        <TabsContent value="exams">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                  <CardTitle>Your Exams</CardTitle>
-                  <CardDescription>Create and manage your exam content</CardDescription>
-                </div>
-                <Link href="/create-exam">
-                  <Button className="mt-4 md:mt-0">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create New Exam
+                <Link href="#" onClick={() => setActiveTab("earnings")}>
+                  <Button variant="ghost" className="text-sm">
+                    Tüm kazançları görüntüle
+                    <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
             </CardHeader>
             <CardContent>
-              {isLoadingExams ? (
-                <div className="text-center py-12">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-                  <p className="mt-4 text-neutral-medium">Loading your exams...</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-green-50 rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-sm">Toplam Kazanç</h4>
+                    <DollarSign className="h-4 w-4 text-green-500" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-700">12.850₺</p>
+                  <p className="text-xs text-green-600 mt-1">+14% geçen aya göre</p>
                 </div>
-              ) : exams.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="rounded-md border">
-                    <div className="grid grid-cols-7 gap-4 p-4 font-medium border-b bg-neutral-50 text-sm">
-                      <div className="col-span-2">Exam Title</div>
-                      <div className="col-span-1">Subject</div>
-                      <div className="col-span-1">Questions</div>
-                      <div className="col-span-1">Assigned To</div>
-                      <div className="col-span-1">Created</div>
-                      <div className="col-span-1 text-right">Actions</div>
-                    </div>
-                    {exams.map((exam: any) => (
-                      <div key={exam.id} className="grid grid-cols-7 gap-4 p-4 border-b items-center">
-                        <div className="col-span-2">
-                          <div className="font-medium">{exam.title}</div>
-                          <div className="text-sm text-neutral-medium truncate max-w-xs">
-                            {exam.description || "No description"}
-                          </div>
-                        </div>
-                        <div className="col-span-1">
-                          <div className="text-sm">{exam.subjectName}</div>
-                        </div>
-                        <div className="col-span-1">
-                          <div className="text-sm">{exam.questions?.length || 0} questions</div>
-                        </div>
-                        <div className="col-span-1">
-                          <div className="text-sm">{exam.assignedCount || 0} students</div>
-                        </div>
-                        <div className="col-span-1">
-                          <div className="text-sm">
-                            {new Date(exam.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="col-span-1 text-right space-x-2">
-                          <Button size="sm" variant="outline">
-                            View
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            Assign
-                          </Button>
-                        </div>
-                      </div>
+                
+                <div className="p-4 bg-blue-50 rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-sm">Çekilebilir</h4>
+                    <CreditCard className="h-4 w-4 text-blue-500" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-700">7.600₺</p>
+                  <p className="text-xs text-blue-600 mt-1">3 bekleyen ödeme</p>
+                </div>
+                
+                <div className="p-4 bg-red-50 rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-sm">Platform Komisyonu</h4>
+                    <DollarSign className="h-4 w-4 text-red-500" />
+                  </div>
+                  <p className="text-2xl font-bold text-red-700">1.285₺</p>
+                  <p className="text-xs text-red-600 mt-1">%10 komisyon</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Ders Talepleri */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Bekleyen Talepler</CardTitle>
+                <CardDescription>Öğrencilerden gelen ders talepleri</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRequests ? (
+                  <div className="text-center py-6">
+                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Talepler yükleniyor...</p>
+                  </div>
+                ) : pendingRequests.length > 0 ? (
+                  <div className="border rounded-md">
+                    {pendingRequests.slice(0, 5).map((request: any) => (
+                      <SessionRequest
+                        key={request.id}
+                        id={request.id}
+                        studentName={request.studentName}
+                        studentAvatar={request.studentAvatar}
+                        subject={request.subjectName}
+                        date={new Date(request.startTime)}
+                        onAccept={(id) => {
+                          // Kabul işlevi burada uygulanacak
+                          console.log(`Accepted request ${id}`);
+                        }}
+                        onReject={(id) => {
+                          // Reddetme işlevi burada uygulanacak
+                          console.log(`Rejected request ${id}`);
+                        }}
+                      />
                     ))}
                   </div>
+                ) : (
+                  <div className="text-center py-6 bg-muted/50 rounded-md">
+                    <BookOpen className="h-10 w-10 mx-auto text-muted-foreground" />
+                    <p className="mt-2 font-medium">Bekleyen talep yok</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Şu anda öğrencilerden bekleyen ders talebi bulunmuyor.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              {pendingRequests.length > 5 && (
+                <CardFooter>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setActiveTab("students")}
+                  >
+                    Tüm Talepleri Görüntüle ({pendingRequests.length})
+                  </Button>
+                </CardFooter>
+              )}
+            </Card>
+            
+            {/* Yaklaşan Dersler */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Bugünkü Dersler</CardTitle>
+                <CardDescription>Bugün için planlanmış dersleriniz</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSessions ? (
+                  <div className="text-center py-6">
+                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Dersler yükleniyor...</p>
+                  </div>
+                ) : sessions.filter((s: any) => 
+                    new Date(s.startTime).toDateString() === new Date().toDateString()
+                  ).length > 0 ? (
+                  <div className="space-y-4">
+                    {sessions
+                      .filter((s: any) => 
+                        new Date(s.startTime).toDateString() === new Date().toDateString()
+                      )
+                      .sort((a: any, b: any) => 
+                        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                      )
+                      .map((session: any) => (
+                        <div key={session.id} className="flex items-start border-b pb-4">
+                          <div className="bg-primary/10 text-primary p-2 rounded-md mr-4">
+                            <CalendarIcon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">{session.subjectName}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Öğrenci: {session.studentName}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {format(new Date(session.startTime), 'HH:mm', { locale: tr })} - 
+                              {format(new Date(session.endTime), 'HH:mm', { locale: tr })}
+                            </p>
+                          </div>
+                          {new Date() >= new Date(session.startTime) && new Date() <= new Date(session.endTime) ? (
+                            <Button asChild>
+                              <Link href={`/classroom/${session.id}`}>
+                                Derse Katıl
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Badge>
+                              {new Date() < new Date(session.startTime) 
+                                ? `${Math.floor((new Date(session.startTime).getTime() - new Date().getTime()) / (1000 * 60))} dk kaldı` 
+                                : "Tamamlandı"}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-muted/50 rounded-md">
+                    <CalendarIcon className="h-10 w-10 mx-auto text-muted-foreground" />
+                    <p className="mt-2 font-medium">Bugün dersiniz yok</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Bugün için planlanmış bir dersiniz bulunmuyor.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => setActiveTab("schedule")}
+                >
+                  Tüm Program
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Ders Programı Sekmesi */}
+        <TabsContent value="schedule">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Ders Programı</CardTitle>
+                  <CardDescription>Haftalık ders planınızı görüntüleyin ve yönetin</CardDescription>
+                </div>
+                <div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="ml-auto">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span>{selectedDate ? format(selectedDate, 'PPPP', { locale: tr }) : 'Tarih seçin'}</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingSessions ? (
+                <div className="text-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                  <p className="mt-4 text-muted-foreground">Program yükleniyor...</p>
                 </div>
               ) : (
-                <div className="text-center py-12 bg-neutral-50 rounded-lg">
-                  <Book className="h-12 w-12 mx-auto text-neutral-400 mb-2" />
-                  <h3 className="text-xl font-medium mb-2">No Exams Created Yet</h3>
-                  <p className="text-neutral-medium max-w-md mx-auto mb-6">
-                    Create your first exam to assess your students' knowledge. You can assign exams to specific students.
-                  </p>
-                  <Link href="/create-exam">
-                    <Button>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Create Your First Exam
-                    </Button>
-                  </Link>
-                </div>
+                <WeeklySchedule sessions={sessions} />
               )}
             </CardContent>
           </Card>
         </TabsContent>
         
-        {/* Reviews Tab */}
-        <TabsContent value="reviews">
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Reviews</CardTitle>
-              <CardDescription>What your students say about you</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingReviews ? (
-                <div className="text-center py-12">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-                  <p className="mt-4 text-neutral-medium">Loading your reviews...</p>
-                </div>
-              ) : reviews.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Average Rating</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center">
-                          <div className="text-3xl font-bold text-primary mr-2">
-                            {averageRating.toFixed(1)}
-                          </div>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`h-5 w-5 ${
-                                  i < Math.round(averageRating)
-                                    ? "text-yellow-400 fill-current"
-                                    : "text-neutral-300"
-                                }`}
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <div className="ml-2 text-sm text-neutral-medium">
-                            from {reviews.length} reviews
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Rating Breakdown</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {[5, 4, 3, 2, 1].map((rating) => {
-                            const count = reviews.filter((r: any) => r.rating === rating).length;
-                            const percentage = Math.round((count / reviews.length) * 100);
-                            
-                            return (
-                              <div key={rating} className="flex items-center">
-                                <div className="w-16 text-sm">{rating} stars</div>
-                                <div className="flex-1 mx-2 h-2 bg-neutral-100 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-primary rounded-full" 
-                                    style={{ width: `${percentage}%` }}
-                                  />
-                                </div>
-                                <div className="w-9 text-sm text-right">{percentage}%</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
+        {/* Öğrenciler Sekmesi */}
+        <TabsContent value="students">
+          <div className="grid grid-cols-1 gap-6">
+            {/* Bekleyen Talepler */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Bekleyen Ders Talepleri</CardTitle>
+                <CardDescription>Öğrencilerden gelen ders taleplerini yönetin</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRequests ? (
+                  <div className="text-center py-6">
+                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Talepler yükleniyor...</p>
                   </div>
-                  
-                  <div className="border rounded-md divide-y">
-                    {reviews.map((review: any) => (
-                      <div key={review.id} className="p-4">
-                        <div className="flex justify-between mb-2">
-                          <div className="font-medium">{review.studentName}</div>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating
-                                    ? "text-yellow-400 fill-current"
-                                    : "text-neutral-300"
-                                }`}
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-neutral-700 mb-2">{review.comment}</p>
-                        <div className="text-sm text-neutral-medium">
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
+                ) : pendingRequests.length > 0 ? (
+                  <div className="border rounded-md">
+                    {pendingRequests.map((request: any) => (
+                      <SessionRequest
+                        key={request.id}
+                        id={request.id}
+                        studentName={request.studentName}
+                        studentAvatar={request.studentAvatar}
+                        subject={request.subjectName}
+                        date={new Date(request.startTime)}
+                        onAccept={(id) => {
+                          // Kabul işlevi burada uygulanacak
+                          console.log(`Accepted request ${id}`);
+                        }}
+                        onReject={(id) => {
+                          // Reddetme işlevi burada uygulanacak
+                          console.log(`Rejected request ${id}`);
+                        }}
+                      />
                     ))}
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-neutral-50 rounded-lg">
-                  <BarChart3 className="h-12 w-12 mx-auto text-neutral-400 mb-2" />
-                  <h3 className="text-xl font-medium mb-2">No Reviews Yet</h3>
-                  <p className="text-neutral-medium max-w-md mx-auto">
-                    Once students leave reviews after your sessions, they'll appear here.
+                ) : (
+                  <div className="text-center py-6 bg-muted/50 rounded-md">
+                    <Users className="h-10 w-10 mx-auto text-muted-foreground" />
+                    <p className="mt-2 font-medium">Bekleyen talep yok</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Şu anda öğrencilerden bekleyen ders talebi bulunmuyor.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Bu bölümde öğrenci listeleri ve diğer öğrenci yönetimi özellikleri eklenebilir */}
+          </div>
+        </TabsContent>
+        
+        {/* Kazançlar Sekmesi */}
+        <TabsContent value="earnings">
+          <div className="space-y-6">
+            <EarningsCardDemo
+              totalEarnings={12850}
+              pendingEarnings={7600}
+              withdrawnEarnings={4950}
+              recentTransactions={demoTransactions}
+              loadingTransactions={false}
+            />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Kazanç İstatistikleri</CardTitle>
+                <CardDescription>
+                  Aylık ve yıllık kazanç dağılımınız
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 w-full bg-muted/50 rounded-md flex items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Gelir grafiği burada gösterilecek
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <h3 className="text-sm font-medium mb-2">Saatlik Ortalama</h3>
+                    <p className="text-2xl font-bold">{profile?.hourlyRate || 250}₺</p>
+                    <p className="text-xs text-muted-foreground mt-1">Standart ücretiniz</p>
+                  </div>
+                  
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <h3 className="text-sm font-medium mb-2">En Yüksek Kazanç</h3>
+                    <p className="text-2xl font-bold">3.250₺</p>
+                    <p className="text-xs text-muted-foreground mt-1">Nisan 2025</p>
+                  </div>
+                  
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <h3 className="text-sm font-medium mb-2">Yıllık Projeksiyon</h3>
+                    <p className="text-2xl font-bold">42.500₺</p>
+                    <p className="text-xs text-muted-foreground mt-1">Mevcut trendinize göre</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Ödeme Ayarları</CardTitle>
+                <CardDescription>
+                  Banka hesabı ve ödeme tercihlerinizi yönetin
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Banka Hesabı</h3>
+                    <div className="p-4 border rounded-md">
+                      <div className="flex items-center">
+                        <div className="bg-blue-100 text-blue-600 p-2 rounded-full mr-3">
+                          <CreditCard className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Akbank</p>
+                          <p className="text-sm text-muted-foreground">**** **** **** 5678</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-right">
+                        <Button variant="outline" size="sm">Değiştir</Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Ödeme Takvimi</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between p-2 border-b">
+                        <span className="text-sm">Ödeme sıklığı</span>
+                        <span className="text-sm font-medium">İki haftada bir</span>
+                      </div>
+                      <div className="flex justify-between p-2 border-b">
+                        <span className="text-sm">Sonraki ödeme</span>
+                        <span className="text-sm font-medium">15 Haziran 2025</span>
+                      </div>
+                      <div className="flex justify-between p-2 border-b">
+                        <span className="text-sm">Tahmini tutar</span>
+                        <span className="text-sm font-medium">2.750₺</span>
+                      </div>
+                      <div className="flex justify-between p-2">
+                        <span className="text-sm">Platform komisyonu</span>
+                        <span className="text-sm font-medium">%10</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button variant="outline">İptal</Button>
+                <Button>Değişiklikleri Kaydet</Button>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
+
       </Tabs>
     </div>
   );
