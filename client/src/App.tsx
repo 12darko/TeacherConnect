@@ -36,7 +36,8 @@ function ProtectedRoute({ component: Component, requiredRole, ...rest }: any) {
   }
   
   if (!isAuthenticated) {
-    return <Redirect to="/login" />;
+    window.location.href = "/api/login";
+    return null;
   }
   
   if (requiredRole === 'admin' && !isAdmin) {
@@ -76,7 +77,9 @@ function AuthRoute({ component: Component, ...rest }: any) {
     return <Redirect to="/student-dashboard" />;
   }
   
-  return <Component {...rest} />;
+  // Redirect to Replit Auth login
+  window.location.href = "/api/login";
+  return null;
 }
 
 function Router() {
