@@ -1,77 +1,93 @@
-import { Link } from "wouter";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StarIcon } from "lucide-react";
+import { useNavigate } from "wouter";
 
-interface TeacherCardProps {
-  id: string;
-  name: string;
-  profileImage?: string;
-  subject: string;
-  rating?: number;
-  reviewCount?: number;
-  bio: string;
+export type TeacherCardProps = {
+  id: number;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
   hourlyRate: number;
-}
+  yearsOfExperience: number;
+  averageRating: number;
+  totalReviews: number;
+  subjectNames?: string[];
+};
 
-export default function TeacherCard({
+export function TeacherCard({
   id,
-  name,
-  profileImage,
-  subject,
-  rating = 0,
-  reviewCount = 0,
-  bio,
+  firstName = "",
+  lastName = "",
+  profileImageUrl,
   hourlyRate,
+  yearsOfExperience,
+  averageRating,
+  totalReviews,
+  subjectNames = []
 }: TeacherCardProps) {
-  // Default profile image
-  const defaultImage = "https://ui-avatars.com/api/?name=" + encodeURIComponent(name) + "&background=random";
+  const navigate = useNavigate();
+  const fullName = `${firstName} ${lastName}`;
+  
+  // Initials for avatar fallback
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-200">
-      <div className="relative pb-1/2 h-40">
-        <img
-          src={profileImage || defaultImage}
-          alt={`${name}'s profile`}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </div>
+    <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+      <CardHeader className="flex items-center">
+        <Avatar className="h-20 w-20 mb-2">
+          <AvatarImage src={profileImageUrl} alt={fullName} />
+          <AvatarFallback>{initials || "ÖĞ"}</AvatarFallback>
+        </Avatar>
+        <h3 className="font-semibold text-lg">{fullName}</h3>
+        <div className="flex items-center mt-1">
+          {[...Array(5)].map((_, i) => (
+            <StarIcon
+              key={i}
+              className={i < Math.round(averageRating) 
+                ? "fill-yellow-400 text-yellow-400" 
+                : "fill-gray-200 text-gray-200"}
+              size={16}
+            />
+          ))}
+          <span className="text-sm text-muted-foreground ml-1">
+            ({totalReviews} değerlendirme)
+          </span>
+        </div>
+      </CardHeader>
       
-      <div className="p-4">
-        <div className="flex justify-between items-start">
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-1">
+          {subjectNames.map((subject, index) => (
+            <Badge key={index} variant="secondary">
+              {subject}
+            </Badge>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <h3 className="text-lg font-medium">{name}</h3>
-            <p className="text-neutral-medium text-sm">{subject}</p>
+            <p className="text-muted-foreground">Deneyim</p>
+            <p className="font-medium">{yearsOfExperience} yıl</p>
           </div>
-          <div className="flex items-center">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <StarIcon
-                  key={i}
-                  className={`h-4 w-4 ${
-                    i < Math.round(rating)
-                      ? "text-yellow-400 fill-current"
-                      : "text-neutral-300"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="ml-1 text-xs text-neutral-medium">
-              ({reviewCount})
-            </span>
+          <div>
+            <p className="text-muted-foreground">Saatlik ücret</p>
+            <p className="font-medium">{hourlyRate} ₺</p>
           </div>
         </div>
-        
-        <p className="mt-2 text-sm text-neutral-medium line-clamp-2">
-          {bio}
-        </p>
-        
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-primary font-semibold">${hourlyRate}/hr</div>
-          <Link href={`/teacher/${id}`}>
-            <Button size="sm">View Profile</Button>
-          </Link>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+      
+      <CardFooter className="mt-auto pt-0">
+        <Button 
+          onClick={() => navigate(`/teachers/${id}`)} 
+          className="w-full"
+        >
+          Profili Görüntüle
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

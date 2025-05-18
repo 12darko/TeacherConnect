@@ -1,44 +1,66 @@
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarIcon } from "lucide-react";
 
-interface TestimonialCardProps {
-  text: string;
-  rating: number;
+export type TestimonialCardProps = {
+  id: number;
   studentName: string;
-  studentSubject: string;
-  studentInitials: string;
-}
+  studentImage?: string;
+  rating: number;
+  comment?: string;
+  date: Date;
+};
 
-export default function TestimonialCard({
-  text,
-  rating,
+export function TestimonialCard({
   studentName,
-  studentSubject,
-  studentInitials,
+  studentImage,
+  rating,
+  comment,
+  date
 }: TestimonialCardProps) {
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    return parts.length > 1 
+      ? `${parts[0][0]}${parts[1][0]}`
+      : parts[0].substring(0, 2);
+  };
+  
+  // Format date
+  const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex items-center space-x-2 mb-3">
-        {[...Array(5)].map((_, i) => (
-          <StarIcon
-            key={i}
-            className={`h-4 w-4 ${
-              i < rating ? "text-yellow-400 fill-current" : "text-neutral-300"
-            }`}
-          />
-        ))}
-      </div>
-      
-      <p className="text-neutral-800 mb-4">{text}</p>
-      
-      <div className="flex items-center">
-        <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center font-medium mr-3">
-          {studentInitials}
+    <Card className="h-full transition-all duration-300 hover:shadow-md">
+      <CardHeader className="flex flex-row items-center gap-4 pb-2">
+        <Avatar>
+          <AvatarImage src={studentImage} alt={studentName} />
+          <AvatarFallback>{getInitials(studentName)}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <div className="font-medium leading-none mb-1">{studentName}</div>
+          <div className="flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <StarIcon
+                key={i}
+                className={i < rating 
+                  ? "fill-yellow-400 text-yellow-400" 
+                  : "fill-gray-200 text-gray-200"}
+                size={14}
+              />
+            ))}
+          </div>
         </div>
-        <div>
-          <h4 className="font-medium text-neutral-900">{studentName}</h4>
-          <p className="text-sm text-neutral-medium">{studentSubject} Student</p>
-        </div>
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground pb-4">
+        {comment || "Harika bir öğretmen! Çok şey öğrendim."}
+      </CardContent>
+      <CardFooter className="text-xs text-muted-foreground border-t pt-3">
+        {formattedDate}
+      </CardFooter>
+    </Card>
   );
 }

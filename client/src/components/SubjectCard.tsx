@@ -1,23 +1,46 @@
-import { Link } from "wouter";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "wouter";
+import { Icon } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
-interface SubjectCardProps {
+type SubjectCardProps = {
   id: number;
   name: string;
-  icon?: string;
-}
+  icon: string;
+  teacherCount?: number;
+};
 
-export default function SubjectCard({ id, name, icon }: SubjectCardProps) {
-  // Default icon if none provided
-  const defaultIcon = "school";
+export function SubjectCard({ id, name, icon, teacherCount = 0 }: SubjectCardProps) {
+  const navigate = useNavigate();
+  
+  // Dinamik olarak icon'u al
+  const IconComponent = LucideIcons[icon as keyof typeof LucideIcons] as Icon || LucideIcons.Book;
   
   return (
-    <Link href={`/find-teachers?subject=${id}`}>
-      <a className="bg-white hover:bg-blue-50 rounded-lg p-4 flex flex-col items-center justify-center transition duration-150 shadow-sm hover:shadow h-32">
-        <span className="material-icons text-3xl text-primary mb-2">
-          {icon || defaultIcon}
-        </span>
-        <span className="text-center font-medium text-neutral-dark">{name}</span>
-      </a>
-    </Link>
+    <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+      <CardHeader className="flex flex-row items-center gap-4 pb-2">
+        <div className="p-2 rounded-full bg-primary/10 text-primary">
+          {IconComponent && <IconComponent size={24} />}
+        </div>
+        <CardTitle>{name}</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <CardDescription>
+          {teacherCount > 0 
+            ? `${teacherCount} öğretmen bu dersi veriyor`
+            : "Bu dersi veren öğretmenleri keşfedin"}
+        </CardDescription>
+      </CardContent>
+      <CardFooter className="mt-auto pt-2">
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/teachers?subjectId=${id}`)}
+          className="w-full"
+        >
+          Öğretmenleri Gör
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
