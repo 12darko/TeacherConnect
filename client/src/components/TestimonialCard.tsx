@@ -26,12 +26,21 @@ export function TestimonialCard({
       : parts[0].substring(0, 2);
   };
   
-  // Format date
-  const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Format date safely
+  let formattedDate = "";
+  try {
+    if (date) {
+      formattedDate = new Date(date).toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } else {
+      formattedDate = "Tarih belirtilmedi";
+    }
+  } catch (error) {
+    formattedDate = "Geçersiz tarih";
+  }
   
   return (
     <Card className="h-full transition-all duration-300 hover:shadow-md">

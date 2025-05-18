@@ -20,47 +20,49 @@ export default function Home() {
   const { user, isAuthenticated, isLoading } = useAuth();
   
   // Fetch featured subjects
-  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
+  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery<any[]>({
     queryKey: ['/api/subjects'],
   });
 
   // Fetch top teachers
-  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery<any[]>({
     queryKey: ['/api/teachers?featured=true'],
   });
   
   // Fetch testimonials
-  const { data: testimonials = [] } = useQuery({
+  const { data: testimonials = [] } = useQuery<any[]>({
     queryKey: ['/api/reviews?featured=true'],
   });
   
-  // Set up mock testimonials if none are returned from API
-  const displayTestimonials = testimonials.length > 0 ? testimonials : [
+  // Set up testimonials if none are returned from API
+  const mockTestimonials = [
     {
       id: 1,
-      text: "My math skills improved dramatically after just a few sessions. The teacher was patient and explained concepts clearly.",
+      comment: "Harika bir öğretmen! Çok şey öğrendim. Matematik becerilerim birkaç ders sonrasında dramatik şekilde gelişti.",
       rating: 5,
       studentName: "Emma Thompson",
-      studentSubject: "Mathematics",
-      studentInitials: "ET"
+      date: new Date(2023, 11, 15),
+      studentImage: ""
     },
     {
       id: 2,
-      text: "The platform is very user-friendly and finding the right teacher was easy. The video quality during the sessions is excellent.",
+      comment: "Platform çok kullanıcı dostu ve doğru öğretmeni bulmak kolaydı. Oturumlar sırasındaki video kalitesi mükemmel.",
       rating: 4,
       studentName: "Michael Chen",
-      studentSubject: "Physics",
-      studentInitials: "MC"
+      date: new Date(2024, 1, 22),
+      studentImage: ""
     },
     {
       id: 3,
-      text: "I was struggling with my chemistry courses until I found this platform. Now I'm one of the top students in my class!",
+      comment: "Bu platformu bulana kadar kimya derslerimde zorlanıyordum. Şimdi sınıfımın en iyi öğrencilerinden biriyim!",
       rating: 5,
       studentName: "Sophia Rodriguez",
-      studentSubject: "Chemistry",
-      studentInitials: "SR"
+      date: new Date(2024, 3, 10),
+      studentImage: ""
     }
   ];
+  
+  const displayTestimonials = testimonials.length > 0 ? testimonials : mockTestimonials;
   
   return (
     <div>
@@ -174,7 +176,7 @@ export default function Home() {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Popular Subjects</h2>
             <Link href="/find-teachers">
-              <Button variant="outline" className="group">
+              <Button variant="outline" className="group border-primary text-primary hover:bg-primary/10">
                 View All 
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -237,13 +239,15 @@ export default function Home() {
           </div>
           
           <div className="text-center mt-12">
-            <Button 
-              size="lg" 
-              onClick={() => window.location.href = "/api/login"}
-              disabled={isAuthenticated}
-            >
-              {isAuthenticated ? "You're Already Signed In" : "Get Started Today"}
-            </Button>
+            <Link href={isAuthenticated ? "#" : "/auth"}>
+              <Button 
+                size="lg" 
+                disabled={isAuthenticated}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                {isAuthenticated ? "Zaten Giriş Yapmışsınız" : "Hemen Başlayın"}
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -262,11 +266,12 @@ export default function Home() {
             {displayTestimonials.map((testimonial) => (
               <TestimonialCard
                 key={testimonial.id}
-                text={testimonial.text}
+                id={testimonial.id}
+                comment={testimonial.comment}
                 rating={testimonial.rating}
                 studentName={testimonial.studentName}
-                studentSubject={testimonial.studentSubject}
-                studentInitials={testimonial.studentInitials}
+                date={testimonial.date}
+                studentImage={testimonial.studentImage}
               />
             ))}
           </div>
@@ -284,17 +289,18 @@ export default function Home() {
             {isAuthenticated ? (
               <Link href="/find-teachers">
                 <Button size="lg" className="bg-white text-primary hover:bg-white/90">
-                  Find Teachers Now
+                  Öğretmenleri Bul
                 </Button>
               </Link>
             ) : (
-              <Button 
-                size="lg" 
-                className="bg-white text-primary hover:bg-white/90"
-                onClick={() => window.location.href = "/api/login"}
-              >
-                Sign Up Free
-              </Button>
+              <Link href="/auth">
+                <Button 
+                  size="lg" 
+                  className="bg-white text-primary hover:bg-white/90"
+                >
+                  Hemen Üye Ol
+                </Button>
+              </Link>
             )}
           </div>
         </div>
@@ -305,20 +311,44 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">10,000+</div>
-              <p className="text-neutral-600">Students</p>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingSubjects ? (
+                  <div className="h-10 w-20 bg-gray-200 animate-pulse mx-auto rounded"></div>
+                ) : (
+                  "10,000+"
+                )}
+              </div>
+              <p className="text-neutral-600">Öğrenci</p>
             </div>
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">1,000+</div>
-              <p className="text-neutral-600">Expert Teachers</p>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingTeachers ? (
+                  <div className="h-10 w-20 bg-gray-200 animate-pulse mx-auto rounded"></div>
+                ) : (
+                  "1,000+"
+                )}
+              </div>
+              <p className="text-neutral-600">Uzman Öğretmen</p>
             </div>
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">50+</div>
-              <p className="text-neutral-600">Subjects</p>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingSubjects ? (
+                  <div className="h-10 w-16 bg-gray-200 animate-pulse mx-auto rounded"></div>
+                ) : (
+                  `${subjects.length || 50}+`
+                )}
+              </div>
+              <p className="text-neutral-600">Konu</p>
             </div>
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">100,000+</div>
-              <p className="text-neutral-600">Sessions Completed</p>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingSubjects ? (
+                  <div className="h-10 w-24 bg-gray-200 animate-pulse mx-auto rounded"></div>
+                ) : (
+                  "100,000+"
+                )}
+              </div>
+              <p className="text-neutral-600">Tamamlanan Ders</p>
             </div>
           </div>
         </div>

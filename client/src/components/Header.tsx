@@ -119,21 +119,23 @@ export default function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
-                      <Link href={user.role === 'teacher' ? '/teacher-profile' : '/student-profile'}>
+                      <Link href={user.role === 'teacher' ? '/teacher-profile' : '/student-profile'} className="flex items-center w-full">
                         <UserIcon className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/settings">
+                      <Link href="/settings" className="flex items-center w-full">
                         <SettingsIcon className="mr-2 h-4 w-4" />
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOutIcon className="mr-2 h-4 w-4" />
-                      <span>Sign out</span>
+                    <DropdownMenuItem asChild>
+                      <button onClick={handleSignOut} className="flex items-center w-full text-left">
+                        <LogOutIcon className="mr-2 h-4 w-4" />
+                        <span>Sign out</span>
+                      </button>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -156,9 +158,15 @@ export default function Header() {
               <span className="sr-only">
                 {mobileMenuOpen ? 'Close menu' : 'Open menu'}
               </span>
-              <span className="material-icons">
-                {mobileMenuOpen ? 'close' : 'menu'}
-              </span>
+              {mobileMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
+                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu">
+                  <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                </svg>
+              )}
             </Button>
           </div>
         </div>
