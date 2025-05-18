@@ -1,106 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}
-
+/**
+ * Hook to check authentication status and get current user
+ */
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ['/api/auth/user'],
+    queryKey: ["/api/auth/user"],
     retry: false,
   });
-  
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const isStudent = !!user && user.role === 'student';
-  const isTeacher = !!user && user.role === 'teacher';
-  const isAdmin = !!user && user.role === 'admin';
-  
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginCredentials) => {
-      return await apiRequest('POST', '/api/auth/login', credentials);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Could not log in with those credentials.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Register mutation
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterData) => {
-      return await apiRequest('POST', '/api/auth/register', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Registration failed",
-        description: error.message || "Could not create your account.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Logout function
-  const logout = async () => {
-    try {
-      await apiRequest('POST', '/api/auth/logout');
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      navigate('/', { replace: true });
-    } catch (error) {
-      toast({
-        title: "Logout failed",
-        description: "Could not sign out. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Replit Auth login
-  const loginWithReplit = () => {
-    window.location.href = '/api/login';
-  };
 
   return {
     user,
     isLoading,
-    isAuthenticated: !!user,
-    isStudent,
-    isTeacher,
-    isAdmin,
     error,
-    login: loginMutation.mutate,
-    register: registerMutation.mutate,
-    logout,
-    loginWithReplit,
-    loginIsLoading: loginMutation.isPending,
-    registerIsLoading: registerMutation.isPending
+    isAuthenticated: !!user,
+    // Kullanıcının rolüne göre yetkilendirme
+    isStudent: user?.role === "student",
+    isTeacher: user?.role === "teacher",
+    isAdmin: user?.role === "admin",
   };
 }

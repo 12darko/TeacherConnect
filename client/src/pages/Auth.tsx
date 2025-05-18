@@ -1,66 +1,36 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { FcGoogle } from "react-icons/fc";
-import { SiFacebook, SiApple } from "react-icons/si";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { loginSchema, registerSchema } from "@shared/schema";
+import { Google, Facebook, Apple, UserCircle, Lock, Mail, School, User, UserCog } from "lucide-react";
 
-// Login form schema
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters")
-});
-
-// Registration form schema
-const registerSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  role: z.enum(["student", "teacher"]),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
-
-interface AuthProps {
-  mode?: "login" | "register";
-}
-
-export default function Auth({ mode = "login" }: AuthProps) {
-  const [, setLocation] = useLocation();
-  const { isLoading, isAuthenticated } = useAuth();
+export default function Auth() {
+  const [tab, setTab] = useState<"login" | "register">("login");
+  const [role, setRole] = useState<"student" | "teacher">("student");
+  const [, navigate] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<string>(mode);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Login form
-  const loginForm = useForm<LoginFormValues>({
+  // Form için zod validation kullan
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
-      password: ""
-    }
+      password: "",
+    },
   });
 
-  // Registration form
-  const registerForm = useForm<RegisterFormValues>({
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       email: "",
@@ -68,127 +38,97 @@ export default function Auth({ mode = "login" }: AuthProps) {
       confirmPassword: "",
       firstName: "",
       lastName: "",
-      role: "student"
-    }
+      role: "student",
+    },
   });
 
-  // Handle login submission
-  async function onLoginSubmit(data: LoginFormValues) {
-    setIsSubmitting(true);
-    try {
-      const response = await apiRequest('POST', '/api/auth/login', data);
-      const result = await response.json();
+  // API mutasyonları
+  const loginMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof loginSchema>) => {
+      return await apiRequest("POST", "/api/auth/login", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Giriş başarılı",
+        description: "Hoş geldiniz! Panele yönlendiriliyorsunuz.",
+      });
       
-      if (result.success) {
-        toast({
-          title: "Success",
-          description: "You have been logged in successfully!",
-        });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-        
-        if (result.user.role === 'student') {
-          setLocation('/student-dashboard');
-        } else if (result.user.role === 'teacher') {
-          setLocation('/teacher-dashboard');
-        } else if (result.user.role === 'admin') {
-          setLocation('/admin-dashboard');
-        } else {
-          setLocation('/');
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: result.message || "Login failed. Please check your credentials.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
+      // Kullanıcı rolüne göre yönlendirme
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Login failed. Please try again.",
-        variant: "destructive"
+        title: "Giriş başarısız",
+        description: error.message || "Giriş bilgilerinizi kontrol edin.",
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    },
+  });
 
-  // Handle registration submission
-  async function onRegisterSubmit(data: RegisterFormValues) {
-    setIsSubmitting(true);
-    try {
-      const response = await apiRequest('POST', '/api/auth/register', data);
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created. You can now login!",
-        });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-        setActiveTab("login");
-        loginForm.setValue("email", data.email);
-      } else {
-        toast({
-          title: "Registration failed",
-          description: result.message || "There was a problem creating your account.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
+  const registerMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof registerSchema>) => {
+      return await apiRequest("POST", "/api/auth/register", data);
+    },
+    onSuccess: () => {
       toast({
-        title: "Error",
-        description: "Registration failed. Please try again.",
-        variant: "destructive"
+        title: "Kayıt başarılı",
+        description: "Hesabınız oluşturuldu. Şimdi giriş yapabilirsiniz.",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  // Handle social login
-  async function handleSocialLogin(provider: string) {
-    try {
-      if (provider === 'replit') {
-        window.location.href = '/api/login'; // Use Replit Auth
-      } else {
-        window.location.href = `/api/auth/${provider}`;
-      }
-    } catch (error) {
+      setTab("login");
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Failed to sign in with ${provider}. Please try again.`,
-        variant: "destructive"
+        title: "Kayıt başarısız",
+        description: error.message || "Kayıt bilgilerinizi kontrol edin.",
+        variant: "destructive",
       });
-    }
-  }
+    },
+  });
 
-  // If the user is already authenticated, redirect them
-  if (isAuthenticated) {
-    return null; // Redirection will be handled by the AuthRoute component
-  }
+  const handleLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
+    loginMutation.mutate(data);
+  };
+
+  const handleRegisterSubmit = async (data: z.infer<typeof registerSchema>) => {
+    // Role değerini formdan al
+    registerMutation.mutate({
+      ...data,
+      role,
+    });
+  };
+
+  // Replit OAuth ile giriş
+  const handleReplitAuth = () => {
+    window.location.href = "/api/login";
+  };
 
   return (
-    <div className="container max-w-md mx-auto py-10 px-4 sm:px-6">
-      <Card className="shadow-lg">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-heading font-semibold text-center">
-            Welcome to EduConnect
+          <CardTitle className="text-2xl font-bold text-center">
+            {tab === "login" ? "EduConnect'e Giriş Yap" : "EduConnect'e Kaydol"}
           </CardTitle>
           <CardDescription className="text-center">
-            Sign in to access our platform for online teaching and learning
+            {tab === "login" 
+              ? "Hesabınıza giriş yaparak öğrenmeye devam edin" 
+              : role === "student" 
+                ? "Öğrenci hesabı oluşturarak derslere başlayın" 
+                : "Öğretmen hesabı oluşturarak ders vermeye başlayın"}
           </CardDescription>
         </CardHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login" className="space-y-4">
-            <CardContent className="pt-4">
+        <CardContent>
+          <Tabs value={tab} onValueChange={(value) => setTab(value as "login" | "register")}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="login">Giriş</TabsTrigger>
+              <TabsTrigger value="register">Kayıt</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
               <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="space-y-4">
                   <FormField
                     control={loginForm.control}
                     name="email"
@@ -196,7 +136,10 @@ export default function Auth({ mode = "login" }: AuthProps) {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="your.email@example.com" {...field} />
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="email@example.com" className="pl-10" {...field} />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -207,9 +150,12 @@ export default function Auth({ mode = "login" }: AuthProps) {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>Şifre</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" className="pl-10" {...field} />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -218,70 +164,51 @@ export default function Auth({ mode = "login" }: AuthProps) {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isSubmitting}
+                    disabled={loginMutation.isPending}
                   >
-                    {isSubmitting ? "Signing in..." : "Sign in"}
+                    {loginMutation.isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
                   </Button>
                 </form>
               </Form>
-              
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="w-full mb-3 flex items-center justify-center gap-2"
-                onClick={() => handleSocialLogin('replit')}
-              >
-                <div className="h-5 w-5 flex items-center justify-center font-bold text-blue-600">R</div>
-                <span>Login with Replit</span>
-              </Button>
-              
-              <div className="grid grid-cols-3 gap-3">
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('google')}
+            </TabsContent>
+            
+            <TabsContent value="register">
+              {/* Rol Seçimi */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <Button
+                  type="button"
+                  variant={role === "student" ? "default" : "outline"}
+                  className="flex flex-col items-center justify-center h-20 space-y-2"
+                  onClick={() => setRole("student")}
                 >
-                  <FcGoogle className="h-5 w-5" />
+                  <School className="h-6 w-6" />
+                  <span>Öğrenci</span>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('facebook')}
+                <Button
+                  type="button"
+                  variant={role === "teacher" ? "default" : "outline"}
+                  className="flex flex-col items-center justify-center h-20 space-y-2"
+                  onClick={() => setRole("teacher")}
                 >
-                  <SiFacebook className="h-5 w-5 text-blue-600" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('apple')}
-                >
-                  <SiApple className="h-5 w-5" />
+                  <UserCog className="h-6 w-6" />
+                  <span>Öğretmen</span>
                 </Button>
               </div>
-            </CardContent>
-          </TabsContent>
-          
-          <TabsContent value="register" className="space-y-4">
-            <CardContent className="pt-4">
+              
               <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={registerForm.control}
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name</FormLabel>
+                          <FormLabel>Ad</FormLabel>
                           <FormControl>
-                            <Input placeholder="First name" {...field} />
+                            <div className="relative">
+                              <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input className="pl-10" {...field} />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -292,15 +219,16 @@ export default function Auth({ mode = "login" }: AuthProps) {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Last Name</FormLabel>
+                          <FormLabel>Soyad</FormLabel>
                           <FormControl>
-                            <Input placeholder="Last name" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  
                   <FormField
                     control={registerForm.control}
                     name="email"
@@ -308,117 +236,92 @@ export default function Auth({ mode = "login" }: AuthProps) {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="your.email@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>I want to register as a:</FormLabel>
-                        <FormControl>
-                          <div className="flex space-x-4">
-                            <Button
-                              type="button"
-                              variant={field.value === "student" ? "default" : "outline"}
-                              onClick={() => field.onChange("student")}
-                              className="flex-1"
-                            >
-                              Student
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={field.value === "teacher" ? "default" : "outline"}
-                              onClick={() => field.onChange("teacher")}
-                              className="flex-1"
-                            >
-                              Teacher
-                            </Button>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="email@example.com" className="pl-10" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Şifre</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={registerForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Şifre Tekrar</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isSubmitting}
+                    disabled={registerMutation.isPending}
                   >
-                    {isSubmitting ? "Creating Account..." : "Create Account"}
+                    {registerMutation.isPending ? "Kayıt yapılıyor..." : "Kayıt Ol"}
                   </Button>
                 </form>
               </Form>
-              
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or register with</span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-3">
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('google')}
-                >
-                  <FcGoogle className="h-5 w-5" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('facebook')}
-                >
-                  <SiFacebook className="h-5 w-5 text-blue-600" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center"
-                  onClick={() => handleSocialLogin('apple')}
-                >
-                  <SiApple className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardContent>
-          </TabsContent>
-        </Tabs>
-        <CardFooter className="flex justify-center border-t pt-4">
-          <Button variant="ghost" onClick={() => setLocation("/")}>
-            Return to home page
-          </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex flex-col">
+          <div className="relative my-2 w-full">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t"></span>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Veya şununla devam et
+              </span>
+            </div>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            <Button variant="outline" type="button" onClick={handleReplitAuth} className="w-full">
+              <UserCircle className="mr-2 h-4 w-4" />
+              Replit ile {tab === "login" ? "Giriş Yap" : "Kayıt Ol"}
+            </Button>
+            
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" type="button" className="w-full">
+                <Google className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" type="button" className="w-full">
+                <Facebook className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" type="button" className="w-full">
+                <Apple className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardFooter>
       </Card>
     </div>
