@@ -1,25 +1,42 @@
-import { 
-  users, subjects, teacherProfiles, sessions,
-  reviews, exams, examAssignments, studentStats,
-  type User, type Subject, type TeacherProfile, type Session,
-  type Review, type Exam, type ExamAssignment, type StudentStat,
-  type InsertSubject, type InsertTeacherProfile, type InsertSession,
-  type InsertReview, type InsertExam, type InsertExamAssignment, type InsertStudentStats
+import {
+  users,
+  subjects,
+  teacherProfiles,
+  sessions,
+  reviews,
+  exams,
+  examAssignments,
+  studentStats,
+  type User,
+  type Subject,
+  type TeacherProfile,
+  type Session,
+  type Review,
+  type Exam,
+  type ExamAssignment,
+  type StudentStat,
+  type InsertSubject,
+  type InsertTeacherProfile,
+  type InsertSession,
+  type InsertReview,
+  type InsertExam,
+  type InsertExamAssignment,
+  type InsertStudentStats
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    return user || undefined;
   }
 
   async upsertUser(userData: any): Promise<User> {
@@ -40,10 +57,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserRole(id: string, role: string): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
-      .set({ 
-        role, 
-        updatedAt: new Date() 
-      })
+      .set({ role, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
@@ -60,10 +74,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createSubject(subjectData: InsertSubject): Promise<Subject> {
-    const [subject] = await db
-      .insert(subjects)
-      .values(subjectData)
-      .returning();
+    const [subject] = await db.insert(subjects).values(subjectData).returning();
     return subject;
   }
   
@@ -79,16 +90,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createTeacherProfile(profileData: InsertTeacherProfile): Promise<TeacherProfile> {
-    const [profile] = await db
-      .insert(teacherProfiles)
-      .values({
-        userId: profileData.userId,
-        subjectIds: profileData.subjectIds,
-        hourlyRate: profileData.hourlyRate,
-        yearsOfExperience: profileData.yearsOfExperience,
-        availability: profileData.availability,
-      })
-      .returning();
+    const [profile] = await db.insert(teacherProfiles).values(profileData).returning();
     return profile;
   }
   
@@ -97,10 +99,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getTeachersBySubject(subjectId: number): Promise<TeacherProfile[]> {
-    return await db.select().from(teacherProfiles)
-      .where(
-        sql`${teacherProfiles.subjectIds} @> ARRAY[${subjectId}]::integer[]`
-      );
+    // For JSON arrays, we need a more complex query to find profiles where subjectIds contains the value
+    // This is a simplified approach that might need to be adjusted based on your database system
+    const profiles = await db.select().from(teacherProfiles);
+    return profiles.filter(p => 
+      Array.isArray(p.subjectIds) && p.subjectIds.includes(subjectId)
+    );
   }
   
   // Session operations
@@ -122,10 +126,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createSession(sessionData: InsertSession): Promise<Session> {
-    const [session] = await db
-      .insert(sessions)
-      .values(sessionData)
-      .returning();
+    const [session] = await db.insert(sessions).values(sessionData).returning();
     return session;
   }
   
@@ -153,24 +154,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createReview(reviewData: InsertReview): Promise<Review> {
-    const [review] = await db
-      .insert(reviews)
-      .values(reviewData)
-      .returning();
-      
-    // Update teacher's average rating
-    const teacherReviews = await this.getReviewsByTeacher(reviewData.teacherId);
-    const totalRating = teacherReviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = totalRating / teacherReviews.length;
-    
-    await db
-      .update(teacherProfiles)
-      .set({ 
-        averageRating, 
-        totalReviews: teacherReviews.length 
-      })
-      .where(eq(teacherProfiles.userId, reviewData.teacherId));
-    
+    const [review] = await db.insert(reviews).values(reviewData).returning();
     return review;
   }
   
@@ -189,10 +173,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createExam(examData: InsertExam): Promise<Exam> {
-    const [exam] = await db
-      .insert(exams)
-      .values(examData)
-      .returning();
+    const [exam] = await db.insert(exams).values(examData).returning();
     return exam;
   }
   
@@ -211,35 +192,21 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createExamAssignment(assignmentData: InsertExamAssignment): Promise<ExamAssignment> {
-    const [assignment] = await db
-      .insert(examAssignments)
-      .values(assignmentData)
-      .returning();
-      
-    // Update student activity
-    await this.updateStudentActivity(assignmentData.studentId);
-    
+    const [assignment] = await db.insert(examAssignments).values(assignmentData).returning();
     return assignment;
   }
   
   async submitExamAnswers(id: number, answers: any[], score: number): Promise<ExamAssignment | undefined> {
-    const now = new Date();
     const [updatedAssignment] = await db
       .update(examAssignments)
       .set({ 
-        completed: true, 
         answers, 
         score, 
-        submittedAt: now 
+        completed: true, 
+        submittedAt: new Date() 
       })
       .where(eq(examAssignments.id, id))
       .returning();
-      
-    if (updatedAssignment) {
-      // Update student stats
-      await this.updateStudentExamStats(updatedAssignment.studentId, score);
-    }
-    
     return updatedAssignment;
   }
   
@@ -250,79 +217,67 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createStudentStats(statsData: InsertStudentStats): Promise<StudentStat> {
-    const [stats] = await db
-      .insert(studentStats)
-      .values({
-        studentId: statsData.studentId,
-        totalSessionsAttended: 0,
-        totalExamsCompleted: 0,
-        averageExamScore: 0,
-        lastActivity: new Date()
-      })
-      .returning();
+    const [stats] = await db.insert(studentStats).values(statsData).returning();
     return stats;
   }
   
   async updateStudentActivity(studentId: string): Promise<StudentStat | undefined> {
-    const stats = await this.getStudentStats(studentId);
     const now = new Date();
+    const [stats] = await db.select().from(studentStats).where(eq(studentStats.studentId, studentId));
     
     if (!stats) {
-      return await this.createStudentStats({ studentId });
+      return undefined;
     }
     
     const [updatedStats] = await db
       .update(studentStats)
       .set({ lastActivity: now })
-      .where(eq(studentStats.studentId, studentId))
+      .where(eq(studentStats.id, stats.id))
       .returning();
-    
     return updatedStats;
   }
   
   async updateStudentSessionCount(studentId: string): Promise<StudentStat | undefined> {
-    const stats = await this.getStudentStats(studentId);
-    const now = new Date();
+    const [stats] = await db.select().from(studentStats).where(eq(studentStats.studentId, studentId));
     
     if (!stats) {
-      return await this.createStudentStats({ studentId });
+      return undefined;
     }
     
     const [updatedStats] = await db
       .update(studentStats)
       .set({ 
-        lastActivity: now,
-        totalSessionsAttended: sql`${studentStats.totalSessionsAttended} + 1`
+        totalSessionsAttended: (stats.totalSessionsAttended || 0) + 1,
+        lastActivity: new Date()
       })
-      .where(eq(studentStats.studentId, studentId))
+      .where(eq(studentStats.id, stats.id))
       .returning();
-    
     return updatedStats;
   }
   
   async updateStudentExamStats(studentId: string, score: number): Promise<StudentStat | undefined> {
-    const stats = await this.getStudentStats(studentId);
-    const now = new Date();
+    const [stats] = await db.select().from(studentStats).where(eq(studentStats.studentId, studentId));
     
     if (!stats) {
-      return await this.createStudentStats({ studentId });
+      return undefined;
     }
     
+    const examCount = stats.totalExamsCompleted || 0;
+    const currentAvg = stats.averageExamScore || 0;
+    
     // Calculate new average
-    const totalExams = (stats.totalExamsCompleted || 0) + 1;
-    const totalScore = (stats.averageExamScore || 0) * (stats.totalExamsCompleted || 0) + score;
-    const newAverage = totalScore / totalExams;
+    const newExamCount = examCount + 1;
+    const newAvg = ((currentAvg * examCount) + score) / newExamCount;
     
     const [updatedStats] = await db
       .update(studentStats)
       .set({ 
-        lastActivity: now,
-        totalExamsCompleted: sql`${studentStats.totalExamsCompleted} + 1`,
-        averageExamScore: newAverage
+        totalExamsCompleted: newExamCount,
+        averageExamScore: newAvg,
+        lastActivity: new Date()
       })
-      .where(eq(studentStats.studentId, studentId))
+      .where(eq(studentStats.id, stats.id))
       .returning();
-    
     return updatedStats;
   }
 }

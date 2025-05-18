@@ -1,6 +1,5 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
 import { storage } from "./storage";
 import { loginSchema, registerSchema, insertTeacherProfileSchema, insertSessionSchema, insertReviewSchema, insertExamSchema, insertExamAssignmentSchema } from "@shared/schema";
 import { z } from "zod";
@@ -9,10 +8,13 @@ import {
   registerUser, 
   loginUser, 
   logoutUser, 
-  getCurrentUser, 
-  isAuthenticated, 
-  hasRole 
+  getCurrentUser
 } from "./auth";
+import {
+  isAuthenticated,
+  hasRole,
+  setupAuth
+} from "./replitAuth";
 
 // Session type augmentation
 declare module 'express-session' {
@@ -22,26 +24,20 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Simple in-memory session store
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'edu-connect-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    }
-  }));
+  // Session management is now handled by replitAuth.ts
+  // Setup both Replit Auth and our custom auth
+  await setupAuth(app);
   
   // API routes prefix
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
   
-  // Custom authentication routes
+  // Custom authentication routes (local authentication)
   apiRouter.post('/auth/register', registerUser);
   apiRouter.post('/auth/login', loginUser);
   apiRouter.post('/auth/logout', logoutUser);
+  
+  // Note: Replit Auth routes are already set up in replitAuth.ts
   
   // User authentication route - get current user
   apiRouter.get('/auth/user', isAuthenticated, async (req: Request, res: Response) => {

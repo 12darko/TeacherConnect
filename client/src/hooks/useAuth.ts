@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "wouter";
 
 interface LoginCredentials {
   email: string;
@@ -24,6 +25,7 @@ export function useAuth() {
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const isStudent = !!user && user.role === 'student';
   const isTeacher = !!user && user.role === 'teacher';
@@ -32,10 +34,7 @@ export function useAuth() {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      return await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials)
-      });
+      return await apiRequest('POST', '/api/auth/login', credentials);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
@@ -52,10 +51,7 @@ export function useAuth() {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      return await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('POST', '/api/auth/register', data);
     },
     onSuccess: () => {
       toast({
@@ -75,9 +71,9 @@ export function useAuth() {
   // Logout function
   const logout = async () => {
     try {
-      await apiRequest('/api/auth/logout', { method: 'POST' });
+      await apiRequest('POST', '/api/auth/logout');
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      window.location.href = '/';
+      navigate('/', { replace: true });
     } catch (error) {
       toast({
         title: "Logout failed",
@@ -85,6 +81,11 @@ export function useAuth() {
         variant: "destructive"
       });
     }
+  };
+  
+  // Replit Auth login
+  const loginWithReplit = () => {
+    window.location.href = '/api/login';
   };
 
   return {
@@ -98,6 +99,7 @@ export function useAuth() {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,
+    loginWithReplit,
     loginIsLoading: loginMutation.isPending,
     registerIsLoading: registerMutation.isPending
   };

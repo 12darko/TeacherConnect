@@ -76,23 +76,21 @@ export default function Auth({ mode = "login" }: AuthProps) {
   async function onLoginSubmit(data: LoginFormValues) {
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const response = await apiRequest('POST', '/api/auth/login', data);
+      const result = await response.json();
       
-      if (response.success) {
+      if (result.success) {
         toast({
           title: "Success",
           description: "You have been logged in successfully!",
         });
         queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         
-        if (response.user.role === 'student') {
+        if (result.user.role === 'student') {
           setLocation('/student-dashboard');
-        } else if (response.user.role === 'teacher') {
+        } else if (result.user.role === 'teacher') {
           setLocation('/teacher-dashboard');
-        } else if (response.user.role === 'admin') {
+        } else if (result.user.role === 'admin') {
           setLocation('/admin-dashboard');
         } else {
           setLocation('/');
@@ -100,7 +98,7 @@ export default function Auth({ mode = "login" }: AuthProps) {
       } else {
         toast({
           title: "Error",
-          description: response.message || "Login failed. Please check your credentials.",
+          description: result.message || "Login failed. Please check your credentials.",
           variant: "destructive"
         });
       }
@@ -119,12 +117,10 @@ export default function Auth({ mode = "login" }: AuthProps) {
   async function onRegisterSubmit(data: RegisterFormValues) {
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const response = await apiRequest('POST', '/api/auth/register', data);
+      const result = await response.json();
       
-      if (response.success) {
+      if (result.success) {
         toast({
           title: "Registration successful",
           description: "Your account has been created. You can now login!",
@@ -135,7 +131,7 @@ export default function Auth({ mode = "login" }: AuthProps) {
       } else {
         toast({
           title: "Registration failed",
-          description: response.message || "There was a problem creating your account.",
+          description: result.message || "There was a problem creating your account.",
           variant: "destructive"
         });
       }
@@ -153,7 +149,11 @@ export default function Auth({ mode = "login" }: AuthProps) {
   // Handle social login
   async function handleSocialLogin(provider: string) {
     try {
-      window.location.href = `/api/auth/${provider}`;
+      if (provider === 'replit') {
+        window.location.href = '/api/login'; // Use Replit Auth
+      } else {
+        window.location.href = `/api/auth/${provider}`;
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -233,6 +233,15 @@ export default function Auth({ mode = "login" }: AuthProps) {
                   <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
                 </div>
               </div>
+              
+              <Button 
+                variant="outline" 
+                className="w-full mb-3 flex items-center justify-center gap-2"
+                onClick={() => handleSocialLogin('replit')}
+              >
+                <div className="h-5 w-5 flex items-center justify-center font-bold text-blue-600">R</div>
+                <span>Login with Replit</span>
+              </Button>
               
               <div className="grid grid-cols-3 gap-3">
                 <Button 
