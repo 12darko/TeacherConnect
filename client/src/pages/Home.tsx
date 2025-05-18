@@ -330,7 +330,7 @@ export default function Home() {
                   "10,000+"
                 )}
               </div>
-              <p className="text-neutral-600">Öğrenci</p>
+              <p className="text-neutral-600">Students</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
@@ -340,7 +340,7 @@ export default function Home() {
                   "1,000+"
                 )}
               </div>
-              <p className="text-neutral-600">Uzman Öğretmen</p>
+              <p className="text-neutral-600">Expert Teachers</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
@@ -350,7 +350,7 @@ export default function Home() {
                   `${subjects.length || 50}+`
                 )}
               </div>
-              <p className="text-neutral-600">Konu</p>
+              <p className="text-neutral-600">Subjects</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
@@ -360,7 +360,7 @@ export default function Home() {
                   "100,000+"
                 )}
               </div>
-              <p className="text-neutral-600">Tamamlanan Ders</p>
+              <p className="text-neutral-600">Completed Lessons</p>
             </div>
           </div>
         </div>
