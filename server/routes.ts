@@ -1,0 +1,663 @@
+import express, { type Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { loginSchema, registerSchema, insertTeacherProfileSchema, insertSessionSchema, insertReviewSchema, insertExamSchema, insertExamAssignmentSchema } from "@shared/schema";
+import { z } from "zod";
+import { WebSocketServer } from "ws";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // API routes prefix
+  const apiRouter = express.Router();
+  app.use("/api", apiRouter);
+
+  const httpServer = createServer(app);
+
+  // Setup WebSocket server for video calls
+  const wss = new WebSocketServer({ server: httpServer });
+  
+  wss.on("connection", (ws) => {
+    ws.on("message", (message) => {
+      // Broadcast message to all clients except sender
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === 1) {
+          client.send(message);
+        }
+      });
+    });
+  });
+
+  // Authentication routes
+  apiRouter.post("/auth/login", async (req: Request, res: Response) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      const user = await storage.getUserByUsername(data.username);
+      
+      if (!user || user.password !== data.password) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      return res.status(200).json({ 
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        bio: user.bio,
+        profileImage: user.profileImage
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/auth/register", async (req: Request, res: Response) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingUserByUsername = await storage.getUserByUsername(data.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+      
+      const existingUserByEmail = await storage.getUserByEmail(data.email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+      
+      // Create user without confirmPassword
+      const { confirmPassword, ...userData } = data;
+      const user = await storage.createUser(userData);
+      
+      return res.status(201).json({ 
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        bio: user.bio,
+        profileImage: user.profileImage
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Subject routes
+  apiRouter.get("/subjects", async (req: Request, res: Response) => {
+    try {
+      const subjects = await storage.getSubjects();
+      return res.status(200).json(subjects);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.get("/subjects/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid subject ID" });
+      }
+      
+      const subject = await storage.getSubject(id);
+      if (!subject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      return res.status(200).json(subject);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Teacher profile routes
+  apiRouter.get("/teachers", async (req: Request, res: Response) => {
+    try {
+      const subjectId = req.query.subjectId ? parseInt(req.query.subjectId as string) : undefined;
+      
+      let teachers;
+      if (subjectId && !isNaN(subjectId)) {
+        teachers = await storage.getTeachersBySubject(subjectId);
+      } else {
+        teachers = await storage.getTeacherProfiles();
+      }
+      
+      // Get user details for each teacher
+      const teachersWithUserDetails = await Promise.all(
+        teachers.map(async (teacher) => {
+          const user = await storage.getUser(teacher.userId);
+          return {
+            ...teacher,
+            name: user?.name,
+            email: user?.email,
+            username: user?.username,
+            bio: user?.bio,
+            profileImage: user?.profileImage
+          };
+        })
+      );
+      
+      return res.status(200).json(teachersWithUserDetails);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.get("/teachers/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid teacher ID" });
+      }
+      
+      // Get teacher profile and user details
+      const user = await storage.getUser(id);
+      if (!user || user.role !== "teacher") {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      
+      const profile = await storage.getTeacherProfileByUserId(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      
+      // Get subjects this teacher teaches
+      const subjects = await storage.getSubjects();
+      const teacherSubjects = subjects.filter(subject => 
+        Array.isArray(profile.subjectIds) && profile.subjectIds.includes(subject.id)
+      );
+      
+      // Get reviews for this teacher
+      const reviews = await storage.getReviewsByTeacher(id);
+      
+      return res.status(200).json({
+        ...profile,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        bio: user.bio,
+        profileImage: user.profileImage,
+        subjects: teacherSubjects,
+        reviews
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/teachers", async (req: Request, res: Response) => {
+    try {
+      // Validate profile data
+      const profileData = insertTeacherProfileSchema.parse(req.body);
+      
+      // Check if user exists and is a teacher
+      const user = await storage.getUser(profileData.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (user.role !== "teacher") {
+        return res.status(400).json({ message: "User is not a teacher" });
+      }
+      
+      // Check if teacher profile already exists
+      const existingProfile = await storage.getTeacherProfileByUserId(user.id);
+      if (existingProfile) {
+        return res.status(400).json({ message: "Teacher profile already exists" });
+      }
+      
+      // Create profile
+      const profile = await storage.createTeacherProfile(profileData);
+      
+      return res.status(201).json(profile);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Session routes
+  apiRouter.get("/sessions", async (req: Request, res: Response) => {
+    try {
+      const teacherId = req.query.teacherId ? parseInt(req.query.teacherId as string) : undefined;
+      const studentId = req.query.studentId ? parseInt(req.query.studentId as string) : undefined;
+      
+      let sessions;
+      if (teacherId && !isNaN(teacherId)) {
+        sessions = await storage.getSessionsByTeacher(teacherId);
+      } else if (studentId && !isNaN(studentId)) {
+        sessions = await storage.getSessionsByStudent(studentId);
+      } else {
+        sessions = await storage.getSessions();
+      }
+      
+      // Expand sessions with user and subject details
+      const expandedSessions = await Promise.all(
+        sessions.map(async (session) => {
+          const teacher = await storage.getUser(session.teacherId);
+          const student = await storage.getUser(session.studentId);
+          const subject = await storage.getSubject(session.subjectId);
+          
+          return {
+            ...session,
+            teacherName: teacher?.name,
+            studentName: student?.name,
+            subjectName: subject?.name
+          };
+        })
+      );
+      
+      return res.status(200).json(expandedSessions);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.get("/sessions/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+      
+      const session = await storage.getSession(id);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      // Expand session with user and subject details
+      const teacher = await storage.getUser(session.teacherId);
+      const student = await storage.getUser(session.studentId);
+      const subject = await storage.getSubject(session.subjectId);
+      
+      return res.status(200).json({
+        ...session,
+        teacherName: teacher?.name,
+        studentName: student?.name,
+        subjectName: subject?.name
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/sessions", async (req: Request, res: Response) => {
+    try {
+      const sessionData = insertSessionSchema.parse(req.body);
+      
+      // Check if teacher and student exist
+      const teacher = await storage.getUser(sessionData.teacherId);
+      if (!teacher || teacher.role !== "teacher") {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      
+      const student = await storage.getUser(sessionData.studentId);
+      if (!student || student.role !== "student") {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      // Check if subject exists
+      const subject = await storage.getSubject(sessionData.subjectId);
+      if (!subject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      // Create session
+      const session = await storage.createSession(sessionData);
+      
+      return res.status(201).json(session);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.patch("/sessions/:id/status", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+      
+      const { status } = req.body;
+      if (!status || !["scheduled", "completed", "cancelled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      
+      const session = await storage.updateSessionStatus(id, status);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      return res.status(200).json(session);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Review routes
+  apiRouter.get("/reviews", async (req: Request, res: Response) => {
+    try {
+      const teacherId = req.query.teacherId ? parseInt(req.query.teacherId as string) : undefined;
+      
+      let reviews;
+      if (teacherId && !isNaN(teacherId)) {
+        reviews = await storage.getReviewsByTeacher(teacherId);
+      } else {
+        reviews = await storage.getReviews();
+      }
+      
+      // Expand reviews with user details
+      const expandedReviews = await Promise.all(
+        reviews.map(async (review) => {
+          const student = await storage.getUser(review.studentId);
+          
+          return {
+            ...review,
+            studentName: student?.name,
+            studentProfileImage: student?.profileImage
+          };
+        })
+      );
+      
+      return res.status(200).json(expandedReviews);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/reviews", async (req: Request, res: Response) => {
+    try {
+      const reviewData = insertReviewSchema.parse(req.body);
+      
+      // Check if session exists
+      const session = await storage.getSession(reviewData.sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      // Check if student and teacher match the session
+      if (session.studentId !== reviewData.studentId) {
+        return res.status(400).json({ message: "Student ID does not match session" });
+      }
+      
+      if (session.teacherId !== reviewData.teacherId) {
+        return res.status(400).json({ message: "Teacher ID does not match session" });
+      }
+      
+      // Create review
+      const review = await storage.createReview(reviewData);
+      
+      return res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Exam routes
+  apiRouter.get("/exams", async (req: Request, res: Response) => {
+    try {
+      const teacherId = req.query.teacherId ? parseInt(req.query.teacherId as string) : undefined;
+      
+      let exams;
+      if (teacherId && !isNaN(teacherId)) {
+        exams = await storage.getExamsByTeacher(teacherId);
+      } else {
+        exams = await storage.getExams();
+      }
+      
+      // Expand exams with teacher and subject details
+      const expandedExams = await Promise.all(
+        exams.map(async (exam) => {
+          const teacher = await storage.getUser(exam.teacherId);
+          const subject = await storage.getSubject(exam.subjectId);
+          
+          return {
+            ...exam,
+            teacherName: teacher?.name,
+            subjectName: subject?.name
+          };
+        })
+      );
+      
+      return res.status(200).json(expandedExams);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.get("/exams/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid exam ID" });
+      }
+      
+      const exam = await storage.getExam(id);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+      
+      // Expand exam with teacher and subject details
+      const teacher = await storage.getUser(exam.teacherId);
+      const subject = await storage.getSubject(exam.subjectId);
+      
+      return res.status(200).json({
+        ...exam,
+        teacherName: teacher?.name,
+        subjectName: subject?.name
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/exams", async (req: Request, res: Response) => {
+    try {
+      const examData = insertExamSchema.parse(req.body);
+      
+      // Check if teacher exists
+      const teacher = await storage.getUser(examData.teacherId);
+      if (!teacher || teacher.role !== "teacher") {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      
+      // Check if subject exists
+      const subject = await storage.getSubject(examData.subjectId);
+      if (!subject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      // Create exam
+      const exam = await storage.createExam(examData);
+      
+      return res.status(201).json(exam);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Exam assignment routes
+  apiRouter.get("/exam-assignments", async (req: Request, res: Response) => {
+    try {
+      const studentId = req.query.studentId ? parseInt(req.query.studentId as string) : undefined;
+      
+      let assignments;
+      if (studentId && !isNaN(studentId)) {
+        assignments = await storage.getExamAssignmentsByStudent(studentId);
+      } else {
+        assignments = await storage.getExamAssignments();
+      }
+      
+      // Expand assignments with exam and student details
+      const expandedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+          const exam = await storage.getExam(assignment.examId);
+          const student = await storage.getUser(assignment.studentId);
+          
+          return {
+            ...assignment,
+            examTitle: exam?.title,
+            studentName: student?.name
+          };
+        })
+      );
+      
+      return res.status(200).json(expandedAssignments);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.get("/exam-assignments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid assignment ID" });
+      }
+      
+      const assignment = await storage.getExamAssignment(id);
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      
+      // Expand assignment with exam and student details
+      const exam = await storage.getExam(assignment.examId);
+      const student = await storage.getUser(assignment.studentId);
+      
+      return res.status(200).json({
+        ...assignment,
+        examTitle: exam?.title,
+        examDescription: exam?.description,
+        examQuestions: exam?.questions,
+        studentName: student?.name
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/exam-assignments", async (req: Request, res: Response) => {
+    try {
+      const assignmentData = insertExamAssignmentSchema.parse(req.body);
+      
+      // Check if exam exists
+      const exam = await storage.getExam(assignmentData.examId);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+      
+      // Check if student exists
+      const student = await storage.getUser(assignmentData.studentId);
+      if (!student || student.role !== "student") {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      // Create assignment
+      const assignment = await storage.createExamAssignment(assignmentData);
+      
+      return res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  apiRouter.post("/exam-assignments/:id/submit", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid assignment ID" });
+      }
+      
+      const { answers } = req.body;
+      if (!answers || !Array.isArray(answers)) {
+        return res.status(400).json({ message: "Invalid answers format" });
+      }
+      
+      // Get assignment and exam
+      const assignment = await storage.getExamAssignment(id);
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      
+      const exam = await storage.getExam(assignment.examId);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+      
+      // Check if already completed
+      if (assignment.completed) {
+        return res.status(400).json({ message: "Exam already submitted" });
+      }
+      
+      // Calculate score
+      let score = 0;
+      const examQuestions = exam.questions || [];
+      
+      answers.forEach(answer => {
+        const question = examQuestions.find(q => q.id === answer.questionId);
+        if (question && answer.answer === question.correctAnswer) {
+          score += question.points;
+        }
+      });
+      
+      // Calculate percentage score out of total points
+      const totalPoints = examQuestions.reduce((sum, q) => sum + q.points, 0);
+      const percentageScore = Math.round((score / totalPoints) * 100);
+      
+      // Submit answers
+      const updatedAssignment = await storage.submitExamAnswers(id, answers, percentageScore);
+      
+      return res.status(200).json(updatedAssignment);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Student stats routes
+  apiRouter.get("/student-stats/:studentId", async (req: Request, res: Response) => {
+    try {
+      const studentId = parseInt(req.params.studentId);
+      if (isNaN(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID" });
+      }
+      
+      // Check if student exists
+      const student = await storage.getUser(studentId);
+      if (!student || student.role !== "student") {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      // Get student stats
+      const stats = await storage.getStudentStats(studentId);
+      if (!stats) {
+        return res.status(404).json({ message: "Student stats not found" });
+      }
+      
+      return res.status(200).json(stats);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  return httpServer;
+}
