@@ -16,7 +16,7 @@ export function SubjectCard({ id, name, icon, teacherCount = 0 }: SubjectCardPro
   const [, setLocation] = useLocation();
   
   // Dinamik olarak icon'u al
-  const IconComponent = LucideIcons[icon as keyof typeof LucideIcons] as LucideIcon || LucideIcons.Book;
+  const IconComponent = (LucideIcons[icon as keyof typeof LucideIcons] as LucideIcon) || LucideIcons.Book;
   
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">

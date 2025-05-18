@@ -13,7 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { loginSchema, registerSchema } from "@shared/schema";
-import { Google, Facebook, Apple, UserCircle, Lock, Mail, School, User, UserCog } from "lucide-react";
+import { Facebook, Apple, UserCircle, Lock, Mail, School, User, UserCog } from "lucide-react";
 
 export default function Auth() {
   const [tab, setTab] = useState<"login" | "register">("login");
@@ -312,7 +312,7 @@ export default function Auth() {
             
             <div className="grid grid-cols-3 gap-2">
               <Button variant="outline" type="button" className="w-full">
-                <Google className="h-4 w-4" />
+                <UserCircle className="h-4 w-4" />
               </Button>
               <Button variant="outline" type="button" className="w-full">
                 <Facebook className="h-4 w-4" />
