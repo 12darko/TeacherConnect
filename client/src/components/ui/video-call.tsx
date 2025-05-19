@@ -114,12 +114,30 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
       } catch (err) {
         console.error("Kamera erişimi hatası:", err);
         
-        // Eğer kullanıcı izin vermezse burada bilgilendirme göster
+        // Eğer kullanıcı izin vermezse burada daha detaylı bilgilendirme göster
         setMicError("Mikrofon erişimi sağlanamadı. İzinleri kontrol edin.");
         setCameraError("Kamera erişimi sağlanamadı. İzinleri kontrol edin.");
         
-        showPlaceholder(localVideoRef, "Siz (Kamera erişilemedi)");
+        // Görsel bildiri ve yönlendirme için placeholder'ları ayarla
+        showPlaceholder(localVideoRef, "Kamera İzni Gerekli");
         showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+        
+        // Kullanıcıya kamera izinlerini açması için bilgilendirme toast'u göster
+        toast({
+          title: "Kamera ve Mikrofon İzinleri Gerekli",
+          description: "Video dersini başlatmak için tarayıcı izinlerini vermeniz gerekiyor. Adres çubuğundaki kilit simgesine tıklayıp izinleri düzenleyebilirsiniz.",
+          variant: "destructive",
+          duration: 10000, // 10 saniye göster
+          action: (
+            <Button 
+              variant="outline" 
+              className="bg-white" 
+              onClick={() => window.location.reload()}
+            >
+              Yenile
+            </Button>
+          ),
+        });
       }
     };
     
