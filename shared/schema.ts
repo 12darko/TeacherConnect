@@ -169,7 +169,7 @@ export const features = pgTable("features", {
   title: varchar("title").notNull(),
   description: text("description").notNull(),
   icon: varchar("icon").notNull(),
-  order: integer("order").notNull().default(0),
+  order_position: integer("order_position").notNull().default(0),
   visible: boolean("visible").default(true),
 });
 
