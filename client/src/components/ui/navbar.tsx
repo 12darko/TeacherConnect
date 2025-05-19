@@ -185,9 +185,10 @@ export default function Navbar() {
               </>
             ) : !isLoading ? (
               <Button
-                variant={useTransparentHeader ? "outline" : "default"}
-                className={useTransparentHeader ? "border-white text-white hover:bg-white/10" : ""}
                 onClick={() => navigate("/auth")}
+                className={useTransparentHeader 
+                  ? "bg-white text-primary hover:bg-white/90 border-white" 
+                  : "bg-primary text-white hover:bg-primary/90"}
               >
                 Sign In
               </Button>
