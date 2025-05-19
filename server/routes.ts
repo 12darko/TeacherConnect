@@ -497,6 +497,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Classroom routes for session recordings
+  apiRouter.get('/sessions/:sessionId/recordings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const recordings = await storage.getSessionRecordings(sessionId);
+      res.json(recordings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.post('/sessions/:sessionId/recordings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const { userId, recordingUrl, duration } = req.body;
+      
+      const recording = await storage.createSessionRecording({
+        sessionId,
+        userId,
+        recordingUrl,
+        duration: parseInt(duration) || 0
+      });
+      
+      res.status(201).json(recording);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.delete('/sessions/recordings/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSessionRecording(id);
+      
+      if (success) {
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "Recording not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Classroom routes for session notes
+  apiRouter.get('/sessions/:sessionId/notes', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const userId = req.query.userId as string;
+      
+      let notes;
+      if (userId) {
+        notes = await storage.getSessionNotesByUser(sessionId, userId);
+      } else {
+        notes = await storage.getSessionNotes(sessionId);
+      }
+      
+      res.json(notes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.post('/sessions/:sessionId/notes', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const { userId, content, isPrivate } = req.body;
+      
+      const note = await storage.createSessionNote({
+        sessionId,
+        userId,
+        content,
+        isPrivate: isPrivate || false
+      });
+      
+      res.status(201).json(note);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.put('/sessions/notes/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { content } = req.body;
+      
+      const updatedNote = await storage.updateSessionNote(id, content);
+      
+      if (updatedNote) {
+        res.json(updatedNote);
+      } else {
+        res.status(404).json({ message: "Note not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.delete('/sessions/notes/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSessionNote(id);
+      
+      if (success) {
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "Note not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Classroom routes for whiteboard snapshots
+  apiRouter.get('/sessions/:sessionId/whiteboard', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const snapshots = await storage.getWhiteboardSnapshots(sessionId);
+      res.json(snapshots);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.post('/sessions/:sessionId/whiteboard', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const { userId, imageData, title } = req.body;
+      
+      const snapshot = await storage.createWhiteboardSnapshot({
+        sessionId,
+        userId,
+        imageData,
+        title: title || `Snapshot ${new Date().toLocaleTimeString()}`
+      });
+      
+      res.status(201).json(snapshot);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.delete('/sessions/whiteboard/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteWhiteboardSnapshot(id);
+      
+      if (success) {
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "Whiteboard snapshot not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Classroom routes for session files
+  apiRouter.get('/sessions/:sessionId/files', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const userId = req.query.userId as string;
+      
+      let files;
+      if (userId) {
+        files = await storage.getSessionFilesByUser(sessionId, userId);
+      } else {
+        files = await storage.getSessionFiles(sessionId);
+      }
+      
+      res.json(files);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.post('/sessions/:sessionId/files', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const { uploadedBy, fileName, fileUrl, fileType, fileSize } = req.body;
+      
+      const file = await storage.createSessionFile({
+        sessionId,
+        uploadedBy,
+        fileName,
+        fileUrl,
+        fileType,
+        fileSize
+      });
+      
+      res.status(201).json(file);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  apiRouter.delete('/sessions/files/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSessionFile(id);
+      
+      if (success) {
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "File not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Review routes
   // Testimonial routes - Site üzerinde gösterilecek kullanıcı yorumları
   apiRouter.get("/testimonials", async (req: Request, res: Response) => {
