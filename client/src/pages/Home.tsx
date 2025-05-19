@@ -56,6 +56,30 @@ export default function Home() {
     }
   });
   
+  // Fetch site statistics
+  const { data: siteStats = {}, isLoading: isLoadingStats } = useQuery<any>({
+    queryKey: ['/api/statistics'],
+    queryFn: async () => {
+      const response = await fetch('/api/statistics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch statistics');
+      }
+      return response.json();
+    }
+  });
+  
+  // Fetch how it works steps
+  const { data: howItWorksSteps = [], isLoading: isLoadingHowItWorks } = useQuery<any[]>({
+    queryKey: ['/api/features?type=how-it-works'],
+    queryFn: async () => {
+      const response = await fetch('/api/features?type=how-it-works');
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    }
+  });
+  
   // Fetch features from database
   const { data: features = [], isLoading: isLoadingFeatures } = useQuery<any[]>({
     queryKey: ['/api/features'],
@@ -199,7 +223,7 @@ export default function Home() {
               </ul>
               <div className="mt-auto">
                 <Button 
-                  className={`w-full ${plan.recommended ? 'bg-primary hover:bg-primary/90' : 'bg-neutral-100 text-primary hover:bg-neutral-200'}`}
+                  className={`w-full font-medium ${plan.recommended ? 'bg-primary hover:bg-primary/90' : 'bg-neutral-100 text-primary hover:bg-neutral-200'}`}
                 >
                   Şimdi Başla
                 </Button>
@@ -287,12 +311,12 @@ export default function Home() {
                 {isAuthenticated ? (
                   <>
                     <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 border-white">
+                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 border-white font-medium">
                         Go to Dashboard
                       </Button>
                     </Link>
                     <Link href="/find-teachers">
-                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 font-medium">
                         Find Teachers
                       </Button>
                     </Link>
@@ -308,7 +332,7 @@ export default function Home() {
                       </Button>
                     </Link>
                     <Link href="/find-teachers">
-                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 font-medium">
                         Browse Teachers
                       </Button>
                     </Link>
