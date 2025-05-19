@@ -463,6 +463,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Pricing Plans API
+  apiRouter.get("/pricing-plans", async (req: Request, res: Response) => {
+    try {
+      const plans = await storage.getPricingPlans();
+      return res.status(200).json(plans);
+    } catch (error) {
+      console.error("Error retrieving pricing plans:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving pricing plans" });
+    }
+  });
+  
+  // FAQ Items API
+  apiRouter.get("/faq-items", async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const items = await storage.getFaqItems(category);
+      return res.status(200).json(items);
+    } catch (error) {
+      console.error("Error retrieving FAQ items:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving FAQ items" });
+    }
+  });
+  
   // Site Features API
   apiRouter.get("/features", async (req: Request, res: Response) => {
     try {
