@@ -546,12 +546,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // UI Content - FAQ Items
-  async getFaqItems(): Promise<FaqItem[]> {
-    const items = await db
+  async getFaqItems(category?: string): Promise<FaqItem[]> {
+    let query = db
       .select()
       .from(faqItems)
-      .where(eq(faqItems.visible, true))
-      .orderBy(faqItems.order);
+      .where(eq(faqItems.visible, true));
+      
+    if (category) {
+      query = query.where(eq(faqItems.category, category));
+    }
+      
+    const items = await query.orderBy(faqItems.order);
     return items;
   }
 
