@@ -106,10 +106,7 @@ export default function ClassRoom() {
   const [isWhiteboardSaveDialogOpen, setIsWhiteboardSaveDialogOpen] = useState(false);
   
   // Session bilgilerini çekme
-  const { 
-    data: sessionData, 
-    isLoading: isSessionLoading 
-  } = useQuery({
+  const sessionQuery = useQuery({
     queryKey: [`/api/sessions/${sessionId}`],
     queryFn: async () => {
       const res = await fetch(`/api/sessions/${sessionId}`);
@@ -118,6 +115,8 @@ export default function ClassRoom() {
     },
     enabled: !!sessionId
   });
+  
+  const { data: sessionData, isLoading: isSessionLoading } = sessionQuery;
   
   // Session notlarını çekme
   const { 

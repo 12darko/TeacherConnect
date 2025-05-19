@@ -200,6 +200,21 @@ export function ScheduleCalendar() {
                         <Users className="mr-2 h-3.5 w-3.5" />
                         <span>{event.teacher}</span>
                       </div>
+                      
+                      {event.type === 'scheduled' && (
+                        <Button 
+                          size="sm"
+                          variant="default"
+                          className="w-full mt-2"
+                          onClick={() => {
+                            if (event.id) {
+                              navigate(`/classroom/${event.id}`);
+                            }
+                          }}
+                        >
+                          Derse Katıl
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
