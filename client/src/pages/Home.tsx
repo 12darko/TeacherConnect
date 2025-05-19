@@ -91,7 +91,7 @@ export default function Home() {
                 {isAuthenticated ? (
                   <>
                     <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                      <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 border-white">
                         Go to Dashboard
                       </Button>
                     </Link>
@@ -106,7 +106,7 @@ export default function Home() {
                     <Link href="/auth">
                       <Button 
                         size="lg" 
-                        className="bg-white text-primary hover:bg-white/90"
+                        className="bg-white text-primary hover:bg-white/90 border-white"
                       >
                         Get Started
                       </Button>

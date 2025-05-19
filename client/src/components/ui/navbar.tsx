@@ -175,10 +175,8 @@ export default function Navbar() {
               
               {isAuthenticated && !isLoading ? (
                 <>
-                  <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                    <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                      Dashboard
-                    </a>
+                  <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"} className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                    Dashboard
                   </Link>
                   
                   <div className="border-t my-2"></div>
