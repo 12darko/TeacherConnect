@@ -23,7 +23,7 @@ export function useAuth() {
       
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(error || "Giriş yapılırken bir hata oluştu");
+        throw new Error(error || "An error occurred during login");
       }
       
       return response.json();
@@ -45,7 +45,7 @@ export function useAuth() {
       
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(error || "Kayıt olurken bir hata oluştu");
+        throw new Error(error || "An error occurred during registration");
       }
       
       return response.json();
@@ -66,7 +66,7 @@ export function useAuth() {
       
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(error || "Çıkış yapılırken bir hata oluştu");
+        throw new Error(error || "An error occurred during logout");
       }
       
       return response.json();

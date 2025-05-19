@@ -463,14 +463,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Site Özellikleri API
+  // Site Features API
   apiRouter.get("/features", async (req: Request, res: Response) => {
     try {
       const features = await storage.getFeatures();
       return res.status(200).json(features.filter(f => f.visible).sort((a, b) => a.order - b.order));
     } catch (error) {
-      console.error("Özellikleri getirme hatası:", error);
-      return res.status(500).json({ message: "Site özelliklerini getirirken bir hata oluştu" });
+      console.error("Error retrieving features:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving features" });
     }
   });
 

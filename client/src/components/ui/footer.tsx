@@ -38,13 +38,13 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/">
-                  <a className="text-neutral-400 hover:text-white transition-colors">Home</a>
+                <Link href="/" className="text-neutral-400 hover:text-white transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/find-teachers">
-                  <a className="text-neutral-400 hover:text-white transition-colors">Find Teachers</a>
+                <Link href="/find-teachers" className="text-neutral-400 hover:text-white transition-colors">
+                  Find Teachers
                 </Link>
               </li>
               <li>
