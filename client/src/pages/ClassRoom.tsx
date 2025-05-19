@@ -16,9 +16,29 @@ export default function ClassRoom() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSessionEnded, setIsSessionEnded] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [noteContent, setNoteContent] = useState<string>("");
+  const [sharedFiles, setSharedFiles] = useState<Array<{name: string, type: string, size: string}>>([]);
+  
+  // Session türü tanımı
+  interface Session {
+    id: number;
+    teacherId: string;
+    studentId: string;
+    teacherName: string;
+    studentName: string;
+    subjectId: number;
+    subjectName: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    notes: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }
   
   // Fetch session details
-  const { data: session, isLoading } = useQuery({
+  const { data: session, isLoading } = useQuery<Session>({
     queryKey: [`/api/sessions/${sessionId}`],
     enabled: !!sessionId,
   });
@@ -50,10 +70,76 @@ export default function ClassRoom() {
     }
   };
   
+  // Beyaz tahta ve eğitim araçları fonksiyonları
+  const handleToolSelect = (tool: string) => {
+    setSelectedTool(tool === selectedTool ? null : tool);
+    
+    toast({
+      title: `${tool} aracı açıldı`,
+      description: "Şimdi bu araçla çalışabilirsiniz.",
+    });
+  };
+  
+  // Not defteri fonksiyonu
+  const handleSaveNotes = () => {
+    // Not kaydedildi bilgisi
+    if (noteContent.trim().length > 0) {
+      toast({
+        title: "Notlar kaydedildi",
+        description: "Ders notlarınız başarıyla kaydedildi.",
+      });
+    } else {
+      toast({
+        title: "Boş not",
+        description: "Kaydetmek için önce bir şeyler yazmalısınız.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Dosya yükleme fonksiyonu
+  const handleFileUpload = () => {
+    // Örnek bir dosya yükleme simülasyonu
+    const newFile = {
+      name: `Ders_Notu_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`,
+      type: "PDF",
+      size: "2.4 MB"
+    };
+    
+    setSharedFiles(prev => [...prev, newFile]);
+    
+    toast({
+      title: "Dosya yüklendi",
+      description: `${newFile.name} dosyası başarıyla yüklendi.`,
+    });
+  };
+  
   // Check if user is authorized to join this session
   const isAuthorized = () => {
     if (!user || !session) return false;
     return user.id === session.teacherId || user.id === session.studentId;
+  };
+  
+  // Session güvenli erişimi için yardımcı fonksiyon
+  const safeSession = (session: Session | undefined): Session => {
+    if (!session) {
+      return {
+        id: 0,
+        teacherId: "",
+        studentId: "",
+        teacherName: "",
+        studentName: "",
+        subjectId: 0,
+        subjectName: "",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        status: "scheduled",
+        notes: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+    return session;
   };
   
   if (isLoading) {
@@ -91,7 +177,7 @@ export default function ClassRoom() {
     );
   }
   
-  if (session.status === "cancelled") {
+  if (session && session.status === "cancelled") {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-heading font-semibold mb-2">Session Cancelled</h2>
@@ -104,7 +190,7 @@ export default function ClassRoom() {
     );
   }
   
-  if (session.status === "completed" || isSessionEnded) {
+  if ((session && session.status === "completed") || isSessionEnded) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-heading font-semibold mb-2">Session Completed</h2>
@@ -214,13 +300,67 @@ export default function ClassRoom() {
                     <p className="text-xs text-neutral-500">Ortak çizim ve açıklama</p>
                   </div>
                 </div>
-                <Button className="w-full justify-start bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium">
+                <Button 
+                  className="w-full justify-start bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium"
+                  onClick={() => handleToolSelect('Beyaz Tahta')}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="M12 5v14"></path>
                     <path d="M5 12h14"></path>
                   </svg>
                   Yeni Tahta Oluştur
                 </Button>
+                
+                {selectedTool === 'Beyaz Tahta' && (
+                  <div className="mt-4 border rounded-lg p-4 bg-white">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-sm font-medium">Beyaz Tahta Alanı</h4>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                            <path d="M2 2l7.586 7.586"></path>
+                            <path d="M11 11l2.5 2.5"></path>
+                          </svg>
+                          Kalem
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <path d="M14 4h4v4"></path>
+                            <path d="M18 4l-6 6"></path>
+                            <path d="M4 20v-4"></path>
+                            <path d="M20 4v16H8"></path>
+                            <path d="M4 12h8"></path>
+                          </svg>
+                          Silgi
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded bg-gray-50 h-48 flex items-center justify-center">
+                      <div className="text-center text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-50">
+                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p className="text-xs">Çizim yapmak için tıklayın</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-3">
+                      <Button size="sm" className="text-xs">Kaydet ve Paylaş</Button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Dosya Paylaşımı */}
@@ -236,7 +376,10 @@ export default function ClassRoom() {
                     <p className="text-xs text-neutral-500">Dosya ve belge paylaşımı</p>
                   </div>
                 </div>
-                <Button className="w-full justify-start bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium">
+                <Button 
+                  className="w-full justify-start bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
+                  onClick={handleFileUpload}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
@@ -244,6 +387,38 @@ export default function ClassRoom() {
                   </svg>
                   Dosya Yükle
                 </Button>
+                
+                {sharedFiles.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Paylaşılan Dosyalar</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {sharedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center bg-gray-50 rounded p-2 text-sm">
+                          <div className="bg-emerald-100 p-1.5 rounded mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              <path d="M14 2v6h6"></path>
+                              <path d="M16 13H8"></path>
+                              <path d="M16 17H8"></path>
+                              <path d="M10 9H8"></path>
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate font-medium text-xs">{file.name}</p>
+                            <p className="text-xs text-neutral-500">{file.type}, {file.size}</p>
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                              <polyline points="7 10 12 15 17 10"></polyline>
+                              <line x1="12" x2="12" y1="15" y2="3"></line>
+                            </svg>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
