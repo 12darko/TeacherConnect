@@ -407,35 +407,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/sessions", async (req: Request, res: Response) => {
+  apiRouter.post("/sessions", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const sessionData = insertSessionSchema.parse(req.body);
+      const { studentId, subjectId, title, description, startTime } = req.body;
       
-      // Check if teacher and student exist
-      const teacher = await storage.getUser(sessionData.teacherId);
-      if (!teacher || teacher.role !== "teacher") {
-        return res.status(404).json({ message: "Teacher not found" });
+      if (!req.user) {
+        return res.status(401).json({ message: "User not authenticated" });
       }
       
-      const student = await storage.getUser(sessionData.studentId);
+      if (req.user.role !== "teacher") {
+        return res.status(403).json({ message: "Only teachers can create sessions" });
+      }
+      
+      // Validate required fields
+      if (!studentId || !subjectId || !title || !startTime) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Check if student exists
+      const student = await storage.getUser(studentId);
       if (!student || student.role !== "student") {
-        return res.status(404).json({ message: "Student not found" });
+        return res.status(404).json({ message: "Student not found or is not a student" });
       }
       
       // Check if subject exists
-      const subject = await storage.getSubject(sessionData.subjectId);
+      const subject = await storage.getSubject(parseInt(subjectId));
       if (!subject) {
         return res.status(404).json({ message: "Subject not found" });
       }
       
       // Create session
-      const session = await storage.createSession(sessionData);
+      const session = await storage.createSession({
+        teacherId: req.user.id,
+        studentId,
+        subjectId: parseInt(subjectId),
+        title,
+        description: description || null,
+        startTime: new Date(startTime),
+        status: "scheduled",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       
       return res.status(201).json(session);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
+      console.error("Error creating session:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
