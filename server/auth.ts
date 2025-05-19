@@ -128,8 +128,16 @@ export const registerUser = async (req: Request, res: Response) => {
 
     console.log("Creating user with data:", { ...userData, password_hash: '**hidden**' });
 
-    // Create user
+    // Ayrıntılı log çıktısı ekliyorum, ne gönderiliyor ve ne dönüyor?
+    console.log("Sending data to database:", {
+      ...userData,
+      password_hash: "**hidden**" // Gerçek değeri gizleyerek
+    });
     const user = await storage.upsertUser(userData);
+    console.log("Database returned user:", {
+      ...user,
+      passwordHash: user.passwordHash ? "**exists**" : "**missing**"
+    });
 
     // Create initial student stats if student
     if (role === "student") {
