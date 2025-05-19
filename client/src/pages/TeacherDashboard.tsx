@@ -1231,12 +1231,27 @@ export default function TeacherDashboard() {
                               new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
                             )[0];
                             
-                            // Çevrimiçi durumu belirle - öğrencinin son 30 dakika içinde bir dersi varsa çevrimiçi say
-                            const isRecentlyActive = lastSession && 
-                              (new Date().getTime() - new Date(lastSession.endTime).getTime()) < 30 * 60 * 1000;
+                            // Şu anki zamanı al
+                            const currentTime = new Date();
                             
-                            // Son dersin durumuna göre gerçek çevrimiçi durumu kontrol et
-                            const isOnline = isRecentlyActive && lastSession.status === "active";
+                            // Öğrencinin aktif bir dersi olup olmadığını kontrol et
+                            // "active" durumundaki dersler veya şu an devam eden "scheduled" dersler
+                            const activeSession = studentSessions.find(s => {
+                              // Dersin durumu "active" ise öğrenci kesinlikle aktiftir
+                              if (s.status === "active") return true;
+                              
+                              // Dersin planlanmış zamanında olup olmadığını kontrol et
+                              const sessionStart = new Date(s.startTime);
+                              const sessionEnd = new Date(s.endTime);
+                              
+                              // Şu anki saat ders saati aralığında mı?
+                              return s.status === "scheduled" && 
+                                     currentTime >= sessionStart && 
+                                     currentTime <= sessionEnd;
+                            });
+                            
+                            // Ders aktifse öğrenci çevrimiçi, değilse çevrimdışı
+                            const isOnline = !!activeSession;
                             
                             return (
                               <TableRow key={studentId}>
@@ -1268,8 +1283,13 @@ export default function TeacherDashboard() {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center">
-                                    <div className={`h-2.5 w-2.5 rounded-full mr-2 ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                                    <span>{isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}</span>
+                                    <div className={`h-2.5 w-2.5 rounded-full mr-2 ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                                    <span className={isOnline ? 'text-green-600 font-medium' : 'text-red-500'}>{isOnline ? 'Derste' : 'Çevrimdışı'}</span>
+                                    {activeSession && (
+                                      <span className="ml-2 text-xs text-muted-foreground">
+                                        ({format(new Date(activeSession.startTime), 'HH:mm', { locale: tr })} - {format(new Date(activeSession.endTime), 'HH:mm', { locale: tr })})
+                                      </span>
+                                    )}
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-right">
