@@ -19,8 +19,8 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [messages, setMessages] = useState<{ sender: string; text: string; time: string }[]>([
-    { sender: "Sistem", text: "Hoş geldiniz! Nasılsınız?", time: "Şimdi" },
+  const [messages, setMessages] = useState<{ sender: string; text: string; time: string; isSelf: boolean; role: "teacher" | "student" | "system" }[]>([
+    { sender: "Sistem", text: "Hoş geldiniz! Nasılsınız?", time: "Şimdi", isSelf: false, role: "system" },
   ]);
   const [newMessage, setNewMessage] = useState("");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -424,11 +424,19 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
       const now = new Date();
       const timeString = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
       
+      // Kullanıcı rolünü belirle
+      const userRole = isTeacher ? "teacher" : "student";
+      const displayName = isTeacher ? 
+        (sessionInfo?.teacherName || "Öğretmen") : 
+        (sessionInfo?.studentName || "Öğrenci");
+      
       // Yeni mesaj objesi
       const newMessageObj = {
-        sender: "Siz", 
+        sender: displayName, 
         text: newMessage.trim(),
-        time: timeString
+        time: timeString,
+        isSelf: true,
+        role: userRole
       };
       
       // State güncelleme - eski array'i referans ile değil, kopya oluşturarak güncelle
@@ -446,8 +454,40 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
         }
       }, 50);
       
-      // Demo cevap mesajını kaldırdık
-      // Gerçek bir entegrasyon için burada WebSocket veya başka bir protokol kullanılabilir
+      // Demo otomatik cevap (gerçek sistemde WebSocket veya başka bir protokol kullanılacak)
+      if (updatedMessages.length % 3 === 0) {
+        setTimeout(() => {
+          const autoResponseName = isTeacher ? 
+            (sessionInfo?.studentName || "Öğrenci") : 
+            (sessionInfo?.teacherName || "Öğretmen");
+          
+          const autoResponseObj = {
+            sender: autoResponseName,
+            text: "Mesajınızı aldım, teşekkürler!",
+            time: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+            isSelf: false,
+            role: isTeacher ? "student" : "teacher"
+          };
+          
+          setMessages(prev => [...prev, autoResponseObj]);
+          
+          // Yeni mesaj bildirimi
+          if (!isChatOpen) {
+            toast({
+              title: "Yeni Mesaj",
+              description: `${autoResponseName}: Mesajınızı aldım, teşekkürler!`,
+            });
+          }
+          
+          // Otomatik scroll - yeni mesajın görünmesini sağla
+          setTimeout(() => {
+            const chatContainer = document.querySelector('.flex-grow.p-3.overflow-y-auto.bg-white');
+            if (chatContainer) {
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+          }, 50);
+        }, 1500);
+      }
     } catch (error) {
       console.error("Mesaj gönderme hatası:", error);
       
@@ -638,19 +678,35 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               {messages.map((message, i) => (
                 <div 
                   key={i} 
-                  className={`flex flex-col ${message.sender === "Siz" ? "items-end" : "items-start"}`}
+                  className={`flex flex-col ${message.isSelf ? "items-end" : "items-start"}`}
                 >
                   <div className="inline-flex items-center text-xs mb-1 text-gray-500">
-                    <span>{message.sender}</span>
+                    <span className="font-medium">
+                      {message.sender}
+                      {message.role === "system" ? 
+                        " (Sistem)" : 
+                        message.role === "teacher" ? 
+                          " (Öğretmen)" : 
+                          message.role === "student" ? 
+                            " (Öğrenci)" : ""}
+                    </span>
                     <span className="mx-1">•</span>
                     <span>{message.time}</span>
                   </div>
                   
                   <div 
                     className={`px-3 py-2 rounded-lg max-w-[85%] ${
-                      message.sender === "Siz" 
-                        ? "bg-primary text-white" 
-                        : "bg-gray-100"
+                      message.role === "system" 
+                        ? "bg-gray-200 text-gray-800 border border-gray-300" 
+                        : message.role === "teacher" 
+                          ? message.isSelf
+                            ? "bg-primary text-white" 
+                            : "bg-blue-100 text-blue-800 border border-blue-200"
+                          : message.role === "student"
+                            ? message.isSelf
+                              ? "bg-primary text-white"
+                              : "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-gray-100"
                     }`}
                   >
                     <p className="text-sm">{message.text}</p>
