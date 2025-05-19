@@ -623,30 +623,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/exams", async (req: Request, res: Response) => {
+  apiRouter.post("/exams", isAuthenticated, hasRole("teacher"), async (req: Request, res: Response) => {
     try {
-      const examData = insertExamSchema.parse(req.body);
+      // Oturum açmış öğretmenin ID'sini kullanıyoruz
+      const examData = {
+        ...req.body,
+        teacherId: req.user?.id
+      };
       
-      // Check if teacher exists
-      const teacher = await storage.getUser(examData.teacherId);
-      if (!teacher || teacher.role !== "teacher") {
-        return res.status(404).json({ message: "Teacher not found" });
-      }
+      // Request validasyonu
+      const validatedData = insertExamSchema.parse(examData);
       
       // Check if subject exists
-      const subject = await storage.getSubject(examData.subjectId);
+      const subject = await storage.getSubject(validatedData.subjectId);
       if (!subject) {
         return res.status(404).json({ message: "Subject not found" });
       }
       
+      // Validating the questions array
+      if (!validatedData.questions || !Array.isArray(validatedData.questions) || validatedData.questions.length === 0) {
+        return res.status(400).json({ message: "At least one question is required" });
+      }
+
+      // Make sure all questions have the required fields
+      for (let i = 0; i < validatedData.questions.length; i++) {
+        const q = validatedData.questions[i];
+        if (!q.question || !q.correctAnswer || !q.type || !q.points) {
+          return res.status(400).json({ 
+            message: `Question at index ${i} is missing required fields (question, correctAnswer, type, points)` 
+          });
+        }
+        
+        // For multiple-choice questions, ensure options exist
+        if (q.type === 'multiple-choice' && (!q.options || !Array.isArray(q.options) || q.options.length < 2)) {
+          return res.status(400).json({ 
+            message: `Multiple-choice question at index ${i} requires at least 2 options` 
+          });
+        }
+      }
+      
       // Create exam
-      const exam = await storage.createExam(examData);
+      const exam = await storage.createExam(validatedData);
       
       return res.status(201).json(exam);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
+        return res.status(400).json({ 
+          message: "Validation error",
+          errors: error.errors 
+        });
       }
+      console.error("Error creating exam:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -654,10 +681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Exam assignment routes
   apiRouter.get("/exam-assignments", async (req: Request, res: Response) => {
     try {
-      const studentId = req.query.studentId ? parseInt(req.query.studentId as string) : undefined;
+      const studentId = req.query.studentId as string;
       
       let assignments;
-      if (studentId && !isNaN(studentId)) {
+      if (studentId) {
         assignments = await storage.getExamAssignmentsByStudent(studentId);
       } else {
         assignments = await storage.getExamAssignments();
@@ -668,17 +695,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignments.map(async (assignment) => {
           const exam = await storage.getExam(assignment.examId);
           const student = await storage.getUser(assignment.studentId);
+          const subject = exam ? await storage.getSubject(exam.subjectId) : null;
+          const teacher = exam ? await storage.getUser(exam.teacherId) : null;
           
           return {
             ...assignment,
             examTitle: exam?.title,
-            studentName: student?.name
+            subjectName: subject?.name,
+            teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : null,
+            studentName: student ? `${student.firstName} ${student.lastName}` : null,
+            questionCount: exam?.questions?.length || 0,
+            timeLimit: 60, // Default time limit in minutes
           };
         })
       );
       
       return res.status(200).json(expandedAssignments);
     } catch (error) {
+      console.error("Error fetching exam assignments:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -711,31 +745,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/exam-assignments", async (req: Request, res: Response) => {
+  apiRouter.post("/exam-assignments", isAuthenticated, hasRole("teacher"), async (req: Request, res: Response) => {
     try {
-      const assignmentData = insertExamAssignmentSchema.parse(req.body);
+      // Validate request body
+      const { examId, studentIds, dueDate } = req.body;
+      
+      if (!examId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ 
+          message: "Invalid request body. Required: examId, studentIds (array of at least one student)" 
+        });
+      }
       
       // Check if exam exists
-      const exam = await storage.getExam(assignmentData.examId);
+      const exam = await storage.getExam(examId);
       if (!exam) {
         return res.status(404).json({ message: "Exam not found" });
       }
       
-      // Check if student exists
-      const student = await storage.getUser(assignmentData.studentId);
-      if (!student || student.role !== "student") {
-        return res.status(404).json({ message: "Student not found" });
+      // Check if the teacher owns this exam
+      if (req.user?.id !== exam.teacherId) {
+        return res.status(403).json({ message: "You can only assign exams that you created" });
       }
       
-      // Create assignment
-      const assignment = await storage.createExamAssignment(assignmentData);
+      // Batch create assignments for all students
+      const assignmentResults = [];
+      const failedAssignments = [];
       
-      return res.status(201).json(assignment);
+      for (const studentId of studentIds) {
+        try {
+          // Check if student exists
+          const student = await storage.getUser(studentId);
+          if (!student || student.role !== "student") {
+            failedAssignments.push({ studentId, reason: "Student not found or not a student" });
+            continue;
+          }
+          
+          // Check if an assignment already exists for this student and exam
+          const existingAssignments = await storage.getExamAssignmentsByStudent(studentId);
+          const alreadyAssigned = existingAssignments.some(a => a.examId === examId);
+          
+          if (alreadyAssigned) {
+            failedAssignments.push({ studentId, reason: "Exam already assigned to this student" });
+            continue;
+          }
+          
+          // Create assignment
+          const assignmentData = {
+            examId,
+            studentId,
+            dueDate: dueDate ? new Date(dueDate) : undefined
+          };
+          
+          const assignment = await storage.createExamAssignment(assignmentData);
+          assignmentResults.push(assignment);
+        } catch (error) {
+          console.error(`Error assigning exam to student ${studentId}:`, error);
+          failedAssignments.push({ studentId, reason: "Internal error during assignment" });
+        }
+      }
+      
+      // Return results
+      return res.status(201).json({
+        success: true,
+        assignedCount: assignmentResults.length,
+        assignments: assignmentResults,
+        failedAssignments: failedAssignments.length > 0 ? failedAssignments : undefined
+      });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Error creating exam assignments:", error);
+      return res.status(500).json({ message: "Internal server error", error: String(error) });
     }
   });
   
