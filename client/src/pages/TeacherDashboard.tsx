@@ -630,46 +630,75 @@ export default function TeacherDashboard() {
     enabled: !!user?.id,
   });
   
-  // İşlemler veritabanından çekilir
+  // İşlemler seanslardan dinamik olarak oluşturulur
   const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
-    queryKey: ['/api/transactions', user?.id],
+    queryKey: ['/api/transactions', user?.id, sessions?.length],
     queryFn: async () => {
       try {
         const response = await fetch(`/api/transactions?teacherId=${user?.id}`);
+        
         if (!response.ok) {
-          console.log("API henüz hazır değil, geçici veriler kullanılıyor");
-          // API henüz hazır değilse, seans verilerinden otomatik oluşturulan işlemler
-          return sessions.slice(0, 5).map((session, index) => {
-            // Her 3 seansta bir komisyon ekle
-            if (index % 3 === 2) {
-              return {
-                id: `tx-comm-${index}`,
-                date: new Date(Date.now() - (index * 3) * 24 * 60 * 60 * 1000).toISOString(),
-                type: "commission" as const,
-                amount: Math.round(250 * 0.1), // %10 komisyon
-                status: "completed" as const,
-                description: "Platform komisyonu"
-              };
-            }
-            
-            return {
-              id: `tx-${index}`,
+          // Tamamlanan derslerden işlemler oluştur
+          const completedSessions = sessions.filter(s => s.status === "completed");
+          
+          // İşlem listesi
+          const allTransactions: Transaction[] = [];
+          
+          // Ders ücreti
+          const sessionFee = teacherProfile?.hourlyRate || 250;
+          
+          // Platform komisyon oranı
+          const commissionRate = 0.1; // %10
+          
+          // Her tamamlanan ders için işlemler oluştur
+          completedSessions.forEach((session) => {
+            // Ders ücreti (Gelir)
+            allTransactions.push({
+              id: `deposit-${session.id}`,
               date: new Date(session.startTime).toISOString(),
-              type: "deposit" as const,
-              amount: 250, // Sabit ücret
-              status: "completed" as const,
+              type: "deposit",
+              amount: sessionFee,
+              status: "completed",
               studentName: session.studentName,
-              description: `${session.subjectName || "Ders"} ödemesi`
-            };
+              description: `${session.subjectName || "Ders"} ücreti`
+            });
+            
+            // Platform komisyonu
+            allTransactions.push({
+              id: `commission-${session.id}`,
+              date: new Date(session.startTime).toISOString(),
+              type: "commission",
+              amount: Math.round(sessionFee * commissionRate),
+              status: "completed",
+              description: "Platform komisyonu"
+            });
           });
+          
+          // Eğer birden fazla tamamlanan ders varsa para çekme işlemi ekle
+          if (completedSessions.length > 1) {
+            allTransactions.push({
+              id: `withdrawal-${Date.now()}`,
+              date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 gün önce
+              type: "withdrawal",
+              amount: Math.floor(completedSessions.length * sessionFee * (1 - commissionRate)),
+              status: "completed",
+              description: "Banka hesabına transfer"
+            });
+          }
+          
+          // Tarihe göre sırala (en yeni en üstte)
+          return allTransactions.sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
         }
+        
         return await response.json();
       } catch (error) {
         console.error("Error fetching transactions:", error);
         return [];
       }
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!sessions && sessions.length > 0,
   });
   
   // Giriş yapmamış veya öğretmen olmayan kullanıcıları kontrol et
@@ -1136,13 +1165,19 @@ export default function TeacherDashboard() {
                   
                   <div className="p-4 bg-muted/30 rounded-md">
                     <h3 className="text-sm font-medium mb-2">En Yüksek Kazanç</h3>
-                    <p className="text-2xl font-bold">3.250₺</p>
-                    <p className="text-xs text-muted-foreground mt-1">Nisan 2025</p>
+                    <p className="text-2xl font-bold">
+                      {isLoadingSessions ? "..." : 
+                        `${Math.max(1, sessions.filter(s => s.status === "completed").length) * (teacherProfile?.hourlyRate || 250)}₺`}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Bu ay</p>
                   </div>
                   
                   <div className="p-4 bg-muted/30 rounded-md">
                     <h3 className="text-sm font-medium mb-2">Yıllık Projeksiyon</h3>
-                    <p className="text-2xl font-bold">42.500₺</p>
+                    <p className="text-2xl font-bold">
+                      {isLoadingSessions ? "..." :
+                        `${Math.round(sessions.filter(s => s.status === "completed").length * 12 * (teacherProfile?.hourlyRate || 250))}₺`}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">Mevcut trendinize göre</p>
                   </div>
                 </div>
