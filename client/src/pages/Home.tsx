@@ -34,6 +34,11 @@ export default function Home() {
     queryKey: ['/api/testimonials?featured=true'],
   });
   
+  // Fetch features from database
+  const { data: features = [], isLoading: isLoadingFeatures } = useQuery<any[]>({
+    queryKey: ['/api/features'],
+  });
+  
   // Set up testimonials if none are returned from API
   const mockTestimonials = [
     {
@@ -142,41 +147,82 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <Video className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Live Video Sessions</h3>
-                <p className="text-neutral-600">
-                  Connect with teachers in real-time through high-quality video conferencing with built-in tools for an interactive learning experience.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <BookOpen className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Custom Assessments</h3>
-                <p className="text-neutral-600">
-                  Teachers create personalized exams and assignments to track your progress and identify areas for improvement.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Verified Teachers</h3>
-                <p className="text-neutral-600">
-                  All teachers on our platform are verified professionals with expertise in their subjects, providing quality education.
-                </p>
-              </CardContent>
-            </Card>
+            {isLoadingFeatures ? (
+              // Loading state for features
+              [...Array(3)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="pt-6">
+                    <div className="bg-gray-200 animate-pulse h-12 w-12 rounded-full mb-4"></div>
+                    <div className="bg-gray-200 animate-pulse h-6 w-3/4 rounded mb-3"></div>
+                    <div className="bg-gray-200 animate-pulse h-4 w-full rounded mb-2"></div>
+                    <div className="bg-gray-200 animate-pulse h-4 w-5/6 rounded mb-2"></div>
+                    <div className="bg-gray-200 animate-pulse h-4 w-4/6 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : features.length > 0 ? (
+              // Display features from database
+              features.map((feature) => (
+                <Card key={feature.id}>
+                  <CardContent className="pt-6">
+                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                      {/* Dynamic icon based on feature icon name */}
+                      {feature.icon === 'video' && <Video className="h-6 w-6" />}
+                      {feature.icon === 'book' && <BookOpen className="h-6 w-6" />}
+                      {feature.icon === 'users' && <Users className="h-6 w-6" />}
+                      {feature.icon === 'clock' && <Clock className="h-6 w-6" />}
+                      {feature.icon === 'check' && <CheckCircle className="h-6 w-6" />}
+                      {!['video', 'book', 'users', 'clock', 'check'].includes(feature.icon) && 
+                        <GraduationCap className="h-6 w-6" />
+                      }
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                    <p className="text-neutral-600">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              // Fallback if no features are in database
+              <>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                      <Video className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Live Video Sessions</h3>
+                    <p className="text-neutral-600">
+                      Connect with teachers in real-time through high-quality video conferencing with built-in tools for an interactive learning experience.
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Custom Assessments</h3>
+                    <p className="text-neutral-600">
+                      Teachers create personalized exams and assignments to track your progress and identify areas for improvement.
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                      <Users className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Verified Teachers</h3>
+                    <p className="text-neutral-600">
+                      All teachers on our platform are verified professionals with expertise in their subjects, providing quality education.
+                    </p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
       </section>
