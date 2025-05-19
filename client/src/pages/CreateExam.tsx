@@ -171,16 +171,41 @@ export default function CreateExam() {
   const onSubmit = (data: ExamFormValues) => {
     if (!user) return;
     
+    // Ekstra doğrulama kontrolü
+    const validatedQuestions = data.questions.map(q => {
+      const correctAnswer = q.type === "multiple-choice" 
+        ? parseInt(q.correctAnswer as string) 
+        : q.correctAnswer.toString();
+        
+      return {
+        question: q.question.trim(),
+        type: q.type,
+        options: q.type === "multiple-choice" ? q.options : undefined,
+        correctAnswer: correctAnswer,
+        points: q.points,
+      };
+    });
+    
+    // Form verilerinin doğruluğunu kontrol et
+    const invalidQuestions = validatedQuestions.filter(
+      q => !q.question || (q.type === "multiple-choice" && !q.options)
+    );
+    
+    if (invalidQuestions.length > 0) {
+      toast({
+        title: "Form hatası",
+        description: "Lütfen tüm soru alanlarını doldurun.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     createExam.mutate({
       teacherId: user.id,
       subjectId: parseInt(data.subjectId),
       title: data.title,
       description: data.description,
-      questions: data.questions.map(q => ({
-        ...q,
-        // Convert correctAnswer to number for multiple choice
-        correctAnswer: q.type === "multiple-choice" ? parseInt(q.correctAnswer as string) : q.correctAnswer,
-      })),
+      questions: validatedQuestions,
     });
   };
   
