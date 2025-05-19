@@ -153,11 +153,11 @@ export const registerUser = async (req: Request, res: Response) => {
     const userDataToReturn = {
       id: user.id,
       email: user.email,
-      firstName: user.first_name || firstName,
-      lastName: user.last_name || lastName,
+      firstName: user.firstName || firstName,
+      lastName: user.lastName || lastName,
       role: user.role,
       bio: user.bio,
-      profileImageUrl: user.profile_image_url
+      profileImageUrl: user.profileImageUrl
     };
 
     console.log("Registration successful for user:", email);
@@ -180,17 +180,23 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await storage.getUserByEmail(email);
     console.log("User found:", user ? "Yes" : "No");
 
-    // Sütun adı kontrolü 
-    const passwordField = user?.password_hash ? 'password_hash' : 'passwordHash';
-    const authProviderField = user?.auth_provider ? 'auth_provider' : 'authProvider';
-
-    if (!user || !user[passwordField] || user[authProviderField] !== "local") {
+    // Eğer kullanıcı bulunamadıysa
+    if (!user) {
+      console.log("User not found with email:", email);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
+    // Kontrol et: passwordHash veya password_hash
+    const passwordHash = user.passwordHash || user.password_hash;
+    const authProvider = user.authProvider || user.auth_provider;
+    
+    if (!passwordHash || authProvider !== "local") {
       console.log("Invalid credentials: user not found or not using local auth");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Şifre kontrolü
-    const isPasswordValid = await comparePassword(password, user[passwordField]);
+    const isPasswordValid = await comparePassword(password, passwordHash);
     console.log("Password valid:", isPasswordValid ? "Yes" : "No");
     
     if (!isPasswordValid) {
@@ -216,10 +222,10 @@ export const loginUser = async (req: Request, res: Response) => {
     const userDataToReturn = {
       id: user.id,
       email: user.email,
-      firstName: user.first_name || user.firstName,
-      lastName: user.last_name || user.lastName, 
+      firstName: user.firstName,
+      lastName: user.lastName, 
       role: user.role,
-      profileImageUrl: user.profile_image_url || user.profileImageUrl,
+      profileImageUrl: user.profileImageUrl,
       bio: user.bio
     };
     

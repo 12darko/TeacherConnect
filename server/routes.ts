@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // These routes are no longer needed as we use the /api/login and /api/logout endpoints from replitAuth.ts
   
   // Route to request role upgrade (for teachers)
-  apiRouter.post("/auth/request-role", isAuthenticated, async (req: Request, res: Response) => {
+  apiRouter.post("/api/auth/request-role", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       const { requestedRole } = req.body;
