@@ -405,8 +405,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json({
         ...session,
-        teacherName: teacher?.name,
-        studentName: student?.name,
+        teacherName: teacher ? `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() : "İsim bilgisi yok",
+        studentName: student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : "İsim bilgisi yok",
+        teacherEmail: teacher?.email,
+        studentEmail: student?.email,
         subjectName: subject?.name
       });
     } catch (error) {

@@ -68,8 +68,21 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     };
     
     if (!isSessionActive) {
-      showPlaceholder(localVideoRef, "Siz");
-      showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+      // Kullanıcı adlarını ekle - varsa session bilgisiyle
+      const localLabel = "Siz";
+      let remoteLabel = isTeacher ? "Öğrenci" : "Öğretmen";
+      
+      // Eğer oturum bilgisi varsa, isim bilgilerini ekleyelim
+      if (sessionInfo) {
+        if (isTeacher && sessionInfo.studentName) {
+          remoteLabel = sessionInfo.studentName;
+        } else if (!isTeacher && sessionInfo.teacherName) {
+          remoteLabel = sessionInfo.teacherName;
+        }
+      }
+      
+      showPlaceholder(localVideoRef, localLabel);
+      showPlaceholder(remoteVideoRef, remoteLabel);
       return;
     }
     
