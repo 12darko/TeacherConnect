@@ -21,7 +21,7 @@ export default function Auth() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Form için zod validation kullan
+  // Use zod validation for forms
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -42,11 +42,11 @@ export default function Auth() {
     },
   });
 
-  // API mutasyonları
+  // API mutations
   const loginMutation = useMutation({
     mutationFn: async (data: z.infer<typeof loginSchema>) => {
       try {
-        console.log("Giriş isteği gönderiliyor:", data);
+        console.log("Sending login request:", data);
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
@@ -58,24 +58,24 @@ export default function Auth() {
         
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || "Giriş işlemi sırasında bir hata oluştu");
+          throw new Error(errorText || "An error occurred during login");
         }
         
         const responseData = await response.json();
-        console.log("Giriş yanıtı:", responseData);
+        console.log("Login response:", responseData);
         return responseData;
       } catch (error) {
-        console.error("Giriş işlemi başarısız:", error);
+        console.error("Login failed:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
       toast({
-        title: "Giriş başarılı",
-        description: "Hoş geldiniz! Panele yönlendiriliyorsunuz.",
+        title: "Login successful",
+        description: "Welcome! Redirecting you to the dashboard.",
       });
       
-      // Kullanıcı rolüne göre yönlendirme
+      // Redirect based on user role
       setTimeout(() => {
         const role = data.user?.role;
         if (role === "student") {
