@@ -118,44 +118,75 @@ export default function ClassRoom() {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-heading font-semibold mb-1">
-            {session.subjectName} Class
-          </h1>
-          <p className="text-neutral-medium">
-            {user?.id === session.teacherId 
-              ? `Session with ${session.studentName}`
-              : `Session with ${session.teacherName}`
-            }
-          </p>
-        </div>
-        <div className="mt-4 md:mt-0 flex items-center gap-2">
-          <Button variant="outline" onClick={() => window.history.back()}>
-            <ArrowLeftIcon className="mr-2 h-4 w-4" />
-            Exit
-          </Button>
-          {user?.id === session.teacherId && (
-            <Button variant="destructive" onClick={handleEndSession}>
-              End Session
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-b from-gray-50 to-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Üst bilgi ve kontrol alanı */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div>
+            <div className="inline-flex items-center gap-2 mb-2">
+              <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-sm font-medium text-green-600">Aktif Ders</span>
+            </div>
+            <h1 className="text-3xl font-bold mb-1">
+              {session.subjectName} <span className="text-primary">Dersi</span>
+            </h1>
+            <p className="text-neutral-600">
+              {user?.id === session.teacherId 
+                ? `${session.studentName} ile eğitim oturumu`
+                : `${session.teacherName} ile eğitim oturumu`
+              }
+            </p>
+          </div>
+          
+          <div className="mt-6 md:mt-0 flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => window.history.back()}
+              className="rounded-full border-neutral-200 hover:bg-neutral-50 transition-all duration-300"
+            >
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Çıkış
             </Button>
-          )}
+            
+            {user?.id === session.teacherId && (
+              <Button 
+                variant="destructive" 
+                onClick={handleEndSession}
+                className="rounded-full transition-all duration-300 hover:scale-105"
+              >
+                Dersi Bitir
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Video Call</CardTitle>
-              <CardDescription>
-                {format(new Date(session.startTime), "MMMM d, yyyy 'at' h:mm a")} - 
-                {format(new Date(session.endTime), " h:mm a")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-[600px] p-4">
+        
+        {/* Ana içerik alanı */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Video alanı */}
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-100">
+              <div className="p-6 border-b border-neutral-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold mb-1 flex items-center">
+                      <span className="inline-block h-2 w-2 bg-red-500 rounded-full mr-2"></span>
+                      Canlı Video Bağlantısı
+                    </h2>
+                    <p className="text-neutral-500 text-sm">
+                      {format(new Date(session.startTime), "d MMMM yyyy, HH:mm")} - 
+                      {format(new Date(session.endTime), " HH:mm")}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-primary/5 text-primary text-sm px-3 py-1 rounded-full font-medium">
+                    {session.status === "scheduled" ? "Planlı" : 
+                     session.status === "active" ? "Devam Ediyor" : 
+                     session.status === "completed" ? "Tamamlandı" : "İptal Edildi"}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="h-[600px]">
                 <VideoCall 
                   sessionId={sessionId.toString()} 
                   teacherName={session.teacherName} 
@@ -163,75 +194,177 @@ export default function ClassRoom() {
                   onEndCall={user?.id === session.teacherId ? handleEndSession : undefined}
                 />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-1">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Session Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-medium">Subject</h3>
-                  <p className="text-lg">{session.subjectName}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-medium">
-                    {user?.id === session.teacherId ? "Student" : "Teacher"}
-                  </h3>
-                  <p className="text-lg">
-                    {user?.id === session.teacherId ? session.studentName : session.teacherName}
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-medium">Date</h3>
-                  <p className="text-lg">{format(new Date(session.startTime), "MMMM d, yyyy")}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-medium">Time</h3>
-                  <p className="text-lg">
-                    {format(new Date(session.startTime), "h:mm a")} - 
-                    {format(new Date(session.endTime), " h:mm a")}
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-medium">Status</h3>
-                  <p className="text-lg capitalize">{session.status}</p>
-                </div>
+            </div>
+          </div>
+          
+          {/* Yan panel - Oturum bilgileri ve araçlar */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Oturum bilgileri */}
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+              <div className="p-5 border-b border-neutral-100">
+                <h3 className="font-semibold text-lg">Ders Bilgileri</h3>
               </div>
               
-              {user?.id === session.teacherId && (
-                <div className="mt-6 space-y-4">
-                  <h3 className="text-lg font-medium">Teacher Tools</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="w-full" disabled>
-                      <span className="material-icons mr-2">assignment</span>
-                      Assign Exam
+              <div className="p-5 space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-blue-50 p-2.5 text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500">Konu</h4>
+                    <p className="text-lg font-medium">{session.subjectName}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-purple-50 p-2.5 text-purple-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 21a8 8 0 0 0-16 0"></path>
+                      <circle cx="10" cy="8" r="5"></circle>
+                      <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500">
+                      {user?.id === session.teacherId ? "Öğrenci" : "Öğretmen"}
+                    </h4>
+                    <p className="text-lg font-medium">
+                      {user?.id === session.teacherId ? session.studentName : session.teacherName}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-green-50 p-2.5 text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                      <line x1="16" x2="16" y1="2" y2="6"></line>
+                      <line x1="8" x2="8" y1="2" y2="6"></line>
+                      <line x1="3" x2="21" y1="10" y2="10"></line>
+                      <path d="M8 14h.01"></path>
+                      <path d="M12 14h.01"></path>
+                      <path d="M16 14h.01"></path>
+                      <path d="M8 18h.01"></path>
+                      <path d="M12 18h.01"></path>
+                      <path d="M16 18h.01"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500">Tarih</h4>
+                    <p className="text-lg font-medium">{format(new Date(session.startTime), "d MMMM yyyy")}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-amber-50 p-2.5 text-amber-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500">Saat</h4>
+                    <p className="text-lg font-medium">
+                      {format(new Date(session.startTime), "HH:mm")} - 
+                      {format(new Date(session.endTime), " HH:mm")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Öğretmen Araçları */}
+            {user?.id === session.teacherId && (
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+                <div className="p-5 border-b border-neutral-100">
+                  <h3 className="font-semibold text-lg">Öğretmen Araçları</h3>
+                  <p className="text-sm text-neutral-500 mt-1">Öğrenciye yardımcı olabilecek ek araçlar</p>
+                </div>
+                
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button className="flex items-center justify-start text-left py-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="bg-primary-dark/10 rounded-full p-2.5 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-dark">
+                          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                          <path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"></path>
+                          <path d="M8 10h8"></path>
+                          <path d="M8 14h8"></path>
+                          <path d="M8 18h8"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-0.5">Sınav Gönder</h4>
+                        <p className="text-xs text-neutral-500">Öğrenciye özel sınav ata</p>
+                      </div>
                     </Button>
-                    <Button variant="outline" className="w-full" disabled>
-                      <span className="material-icons mr-2">description</span>
-                      Share Notes
+                    
+                    <Button variant="outline" className="flex items-center justify-start text-left py-6 rounded-xl border-neutral-200 transition-all duration-300">
+                      <div className="bg-blue-50 rounded-full p-2.5 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path>
+                          <path d="M13 2v7h7"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-0.5">Notları Paylaş</h4>
+                        <p className="text-xs text-neutral-500">Ders notlarını gönder</p>
+                      </div>
                     </Button>
-                    <Button variant="outline" className="w-full" disabled>
-                      <span className="material-icons mr-2">send</span>
-                      Send Resources
-                    </Button>
-                    <Button variant="outline" className="w-full" disabled>
-                      <span className="material-icons mr-2">assessment</span>
-                      Record Progress
+                    
+                    <Button variant="outline" className="flex items-center justify-start text-left py-6 rounded-xl border-neutral-200 transition-all duration-300">
+                      <div className="bg-amber-50 rounded-full p-2.5 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" x2="12" y1="16" y2="12"></line>
+                          <line x1="12" x2="12.01" y1="8" y2="8"></line>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-0.5">İlerleme Durumu</h4>
+                        <p className="text-xs text-neutral-500">Öğrenci gelişimini kaydet</p>
+                      </div>
                     </Button>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+            
+            {/* Öğrenci ise, kaynaklar */}
+            {user?.id === session.studentId && (
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+                <div className="p-5 border-b border-neutral-100">
+                  <h3 className="font-semibold text-lg">Ders Kaynakları</h3>
+                  <p className="text-sm text-neutral-500 mt-1">Öğretmeninizin paylaştığı kaynaklar</p>
+                </div>
+                
+                <div className="p-5">
+                  <div className="text-center py-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-neutral-300 mb-3">
+                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path>
+                      <path d="M13 2v7h7"></path>
+                    </svg>
+                    <p className="text-neutral-500">Henüz paylaşılan bir kaynak bulunmuyor</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Ders süresi */}
+            <div className="bg-gradient-to-r from-primary to-primary-dark rounded-2xl shadow-md overflow-hidden">
+              <div className="p-5 text-white">
+                <h3 className="font-semibold text-lg text-white/90">Kalan Süre</h3>
+                <div className="mt-3 flex items-center justify-center py-4">
+                  <div className="text-5xl font-bold">45:00</div>
+                </div>
+                <p className="text-center text-white/70 text-sm">
+                  Toplam ders süresi: 60 dakika
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
