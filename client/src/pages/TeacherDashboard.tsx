@@ -1261,15 +1261,17 @@ export default function TeacherDashboard() {
                             const isRecentlyActive = lastActivityTime && 
                                 (currentTime.getTime() - lastActivityTime.getTime() < 10 * 60 * 1000); // Son 10 dakika içinde aktifse
                             
-                            // İşte bu demo için çevrimiçi durumunu, öğrenci durumuna bakılmaksızın her zaman çevrimiçi sayalım
-                            // Bu gerçek bir senaryoda WebSocket veya polling ile değiştirilmelidir
-                            const isActive = true; // Demo için her zaman çevrimiçi
+                            // Öğrencinin durumunu sadece ders durumuna göre belirleyelim
+                            // Gerçek bir uygulamada WebSocket ile öğrencinin sitede olup olmadığı kontrol edilmelidir
                             const isInClass = !!activeClass; // Aktif ders var mı?
                             
-                            // Öğrencinin durumu - basitleştirilmiş
+                            // Öğrencinin durumu
+                            // Demo için sadece iki durum kullanıyoruz: derste veya çevrimdışı
                             let status = "offline"; // varsayılan: çevrimdışı
+                            
+                            // Eğer aktif bir ders varsa, öğrenci "Derste" olarak işaretlenir
                             if (isInClass) {
-                              status = "in-class"; // Öğrenci dersteyse, her zaman derstedir (demo için)
+                              status = "in-class";
                             }
                             
                             return (
