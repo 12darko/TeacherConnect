@@ -166,13 +166,17 @@ export default function Navbar() {
                         Create Exam
                       </Link>
                     )}
-                    <a 
-                      href="/api/logout" 
-                      className="block px-4 py-2 text-sm text-red-600 hover:bg-neutral-100"
+                    <Link 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = "/api/logout";
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100"
                     >
                       <LogOut className="h-4 w-4 inline-block mr-2" />
                       Sign Out
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </>

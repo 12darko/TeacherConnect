@@ -85,8 +85,9 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
+      // Doğru logout endpoint'ini kullanıyoruz
+      const response = await fetch("/api/logout", {
+        method: "GET", // API GET metodu kullanıyor
         headers: {
           "Content-Type": "application/json",
         },
@@ -97,12 +98,18 @@ export function useAuth() {
         throw new Error(error || "An error occurred during logout");
       }
       
-      return response.json();
+      // Başarılı logout için boş obje döndürüyoruz
+      return {};
     },
     onSuccess: () => {
+      // Kullanıcı bilgisini null yapıyoruz
       queryClient.setQueryData(["/api/auth/user"], null);
+      
       // Çıkış sonrası tüm verileri yeniden yüklüyoruz
       queryClient.invalidateQueries();
+      
+      // Ana sayfaya yönlendirme
+      window.location.href = "/";
     },
   });
 
