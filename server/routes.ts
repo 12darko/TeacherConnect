@@ -13,9 +13,9 @@ import {
 } from "./auth";
 import {
   isAuthenticated,
-  hasRole,
-  setupAuth
-} from "./replitAuth";
+  hasRole
+} from "./auth";
+import session from "express-session";
 
 // Session type augmentation
 declare module 'express-session' {
@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post('/auth/login', loginUser);
   apiRouter.post('/auth/logout', logoutUser);
   
-  // Note: Replit Auth routes are already set up in replitAuth.ts
+  // We're using our local authentication system for this application
   
   // User authentication route - get current user
   apiRouter.get('/auth/user', isAuthenticated, async (req: Request, res: Response) => {
