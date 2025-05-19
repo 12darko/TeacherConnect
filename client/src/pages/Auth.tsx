@@ -233,7 +233,7 @@ export default function Auth() {
                     className="w-full" 
                     disabled={loginMutation.isPending}
                   >
-                    {loginMutation.isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
+                    {loginMutation.isPending ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </Form>
@@ -249,7 +249,7 @@ export default function Auth() {
                   onClick={() => setRole("student")}
                 >
                   <School className="h-6 w-6" />
-                  <span>Öğrenci</span>
+                  <span>Student</span>
                 </Button>
                 <Button
                   type="button"
@@ -258,7 +258,7 @@ export default function Auth() {
                   onClick={() => setRole("teacher")}
                 >
                   <UserCog className="h-6 w-6" />
-                  <span>Öğretmen</span>
+                  <span>Teacher</span>
                 </Button>
               </div>
               
@@ -270,7 +270,7 @@ export default function Auth() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ad</FormLabel>
+                          <FormLabel>First Name</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
