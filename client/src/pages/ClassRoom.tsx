@@ -1,14 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useRoute } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VideoCall } from "@/components/ui/video-call";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, Trash2, Clock, Download, PlusCircle, Save, RefreshCw, Upload, X } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ClassRoom() {
   const [, params] = useRoute("/classroom/:id");
@@ -18,7 +24,16 @@ export default function ClassRoom() {
   const [isSessionEnded, setIsSessionEnded] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState<string>("");
-  const [sharedFiles, setSharedFiles] = useState<Array<{name: string, type: string, size: string}>>([]);
+  const [notePrivate, setNotePrivate] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("notes");
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState("");
+  const [fileSize, setFileSize] = useState<number>(0);
+  const [recordingUrl, setRecordingUrl] = useState("");
+  const [recordingDuration, setRecordingDuration] = useState<number>(0);
+  const [isRecordingDialogOpen, setIsRecordingDialogOpen] = useState(false);
   
   // Beyaz tahta için gerekli değişkenler
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,7 +42,7 @@ export default function ClassRoom() {
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
   
-  // Session türü tanımı
+  // Veri tipleri
   interface Session {
     id: number;
     teacherId: string;
@@ -44,10 +59,274 @@ export default function ClassRoom() {
     updatedAt: string;
   }
   
-  // Fetch session details
+  interface SessionNote {
+    id: number;
+    sessionId: number;
+    userId: string;
+    content: string;
+    isPrivate: boolean;
+    createdAt: string;
+    updatedAt: string;
+    userName?: string;
+  }
+  
+  interface SessionFile {
+    id: number;
+    sessionId: number;
+    uploadedBy: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+    uploadedAt: string;
+    uploaderName?: string;
+  }
+  
+  interface WhiteboardSnapshot {
+    id: number;
+    sessionId: number;
+    userId: string;
+    imageData: string;
+    title: string;
+    createdAt: string;
+    userName?: string;
+  }
+  
+  interface SessionRecording {
+    id: number;
+    sessionId: number;
+    userId: string;
+    recordingUrl: string;
+    duration: number;
+    createdAt: string;
+    userName?: string;
+  }
+  
+  // Fetch session details and related content
   const { data: session, isLoading } = useQuery<Session>({
     queryKey: [`/api/sessions/${sessionId}`],
     enabled: !!sessionId,
+  });
+
+  // Fetch session notes
+  const { data: notes = [] } = useQuery<SessionNote[]>({
+    queryKey: [`/api/sessions/${sessionId}/notes`],
+    enabled: !!sessionId && !isSessionEnded,
+  });
+
+  // Fetch session files
+  const { data: files = [] } = useQuery<SessionFile[]>({
+    queryKey: [`/api/sessions/${sessionId}/files`],
+    enabled: !!sessionId && !isSessionEnded,
+  });
+
+  // Fetch whiteboard snapshots
+  const { data: whiteboardSnapshots = [] } = useQuery<WhiteboardSnapshot[]>({
+    queryKey: [`/api/sessions/${sessionId}/whiteboard`],
+    enabled: !!sessionId && !isSessionEnded,
+  });
+
+  // Fetch session recordings
+  const { data: recordings = [] } = useQuery<SessionRecording[]>({
+    queryKey: [`/api/sessions/${sessionId}/recordings`],
+    enabled: !!sessionId && !isSessionEnded,
+  });
+
+  // Mutations for interacting with the session content
+  const saveNoteMutation = useMutation({
+    mutationFn: async (noteData: { userId: string, content: string, isPrivate: boolean }) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/sessions/${sessionId}/notes`, 
+        noteData
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/notes`] });
+      setNoteContent("");
+      setNotePrivate(false);
+      toast({
+        title: "Not Kaydedildi",
+        description: "Ders notunuz başarıyla kaydedildi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Not Kaydedilemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const uploadFileMutation = useMutation({
+    mutationFn: async (fileData: { uploadedBy: string, fileName: string, fileUrl: string, fileType: string, fileSize: number }) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/sessions/${sessionId}/files`, 
+        fileData
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/files`] });
+      setIsFileDialogOpen(false);
+      setFileUrl("");
+      setFileName("");
+      setFileType("");
+      setFileSize(0);
+      toast({
+        title: "Dosya Yüklendi",
+        description: "Dosyanız başarıyla yüklendi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Dosya Yüklenemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const saveWhiteboardMutation = useMutation({
+    mutationFn: async (whiteboardData: { userId: string, imageData: string, title: string }) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/sessions/${sessionId}/whiteboard`, 
+        whiteboardData
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/whiteboard`] });
+      // Clear the whiteboard after saving
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      toast({
+        title: "Tahta Kaydedildi",
+        description: "Beyaz tahta görüntüsü başarıyla kaydedildi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Tahta Kaydedilemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const saveRecordingMutation = useMutation({
+    mutationFn: async (recordingData: { userId: string, recordingUrl: string, duration: number }) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/sessions/${sessionId}/recordings`, 
+        recordingData
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/recordings`] });
+      setIsRecordingDialogOpen(false);
+      setRecordingUrl("");
+      setRecordingDuration(0);
+      toast({
+        title: "Kayıt Eklendi",
+        description: "Ders kaydı başarıyla eklendi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Kayıt Eklenemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (noteId: number) => {
+      await apiRequest("DELETE", `/api/sessions/notes/${noteId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/notes`] });
+      toast({
+        title: "Not Silindi",
+        description: "Seçilen not başarıyla silindi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Not Silinemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteFileMutation = useMutation({
+    mutationFn: async (fileId: number) => {
+      await apiRequest("DELETE", `/api/sessions/files/${fileId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/files`] });
+      toast({
+        title: "Dosya Silindi",
+        description: "Seçilen dosya başarıyla silindi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Dosya Silinemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteWhiteboardMutation = useMutation({
+    mutationFn: async (snapshotId: number) => {
+      await apiRequest("DELETE", `/api/sessions/whiteboard/${snapshotId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/whiteboard`] });
+      toast({
+        title: "Tahta Silindi",
+        description: "Seçilen tahta görüntüsü başarıyla silindi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Tahta Silinemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteRecordingMutation = useMutation({
+    mutationFn: async (recordingId: number) => {
+      await apiRequest("DELETE", `/api/sessions/recordings/${recordingId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/sessions/${sessionId}/recordings`] });
+      toast({
+        title: "Kayıt Silindi",
+        description: "Seçilen kayıt başarıyla silindi.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Kayıt Silinemedi",
+        description: error.message || "Bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
   });
   
   // End session function
@@ -155,37 +434,109 @@ export default function ClassRoom() {
     }
   }, [selectedTool]);
   
-  // Not defteri fonksiyonu
+  // Helper functions for classroom tools
   const handleSaveNotes = () => {
-    // Not kaydedildi bilgisi
-    if (noteContent.trim().length > 0) {
-      toast({
-        title: "Notlar kaydedildi",
-        description: "Ders notlarınız başarıyla kaydedildi.",
-      });
-    } else {
+    if (noteContent.trim().length === 0) {
       toast({
         title: "Boş not",
         description: "Kaydetmek için önce bir şeyler yazmalısınız.",
         variant: "destructive",
       });
+      return;
     }
+    
+    if (!user) {
+      toast({
+        title: "Kullanıcı bilgisi alınamadı",
+        description: "Oturum bilgileriniz doğrulanamadı. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveNoteMutation.mutate({
+      userId: user.id,
+      content: noteContent,
+      isPrivate: notePrivate
+    });
   };
   
-  // Dosya yükleme fonksiyonu
+  // File upload function
   const handleFileUpload = () => {
-    // Örnek bir dosya yükleme simülasyonu
-    const newFile = {
-      name: `Ders_Notu_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`,
-      type: "PDF",
-      size: "2.4 MB"
-    };
+    if (!fileUrl || !fileName || !fileType) {
+      toast({
+        title: "Eksik bilgi",
+        description: "Lütfen tüm dosya bilgilerini doldurun.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    setSharedFiles(prev => [...prev, newFile]);
+    if (!user) {
+      toast({
+        title: "Kullanıcı bilgisi alınamadı",
+        description: "Oturum bilgileriniz doğrulanamadı. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    toast({
-      title: "Dosya yüklendi",
-      description: `${newFile.name} dosyası başarıyla yüklendi.`,
+    uploadFileMutation.mutate({
+      uploadedBy: user.id,
+      fileName,
+      fileUrl,
+      fileType,
+      fileSize: fileSize || 0
+    });
+  };
+  
+  // Save whiteboard function
+  const saveWhiteboard = () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const imageData = canvas.toDataURL("image/png");
+    
+    if (!user) {
+      toast({
+        title: "Kullanıcı bilgisi alınamadı",
+        description: "Oturum bilgileriniz doğrulanamadı. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveWhiteboardMutation.mutate({
+      userId: user.id,
+      imageData,
+      title: `Tahta - ${new Date().toLocaleTimeString()}`
+    });
+  };
+  
+  // Add recording function
+  const handleAddRecording = () => {
+    if (!recordingUrl) {
+      toast({
+        title: "Eksik bilgi",
+        description: "Lütfen kayıt URL'sini girin.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({
+        title: "Kullanıcı bilgisi alınamadı",
+        description: "Oturum bilgileriniz doğrulanamadı. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveRecordingMutation.mutate({
+      userId: user.id,
+      recordingUrl,
+      duration: recordingDuration
     });
   };
   
