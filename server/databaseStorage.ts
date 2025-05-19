@@ -197,11 +197,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSessionsByTeacher(teacherId: string): Promise<Session[]> {
-    return db.select().from(sessions).where(eq(sessions.teacherId, teacherId));
+    console.log(`[DATABASE] Getting sessions for teacher: ${teacherId}`);
+    const result = await db.select().from(sessions).where(eq(sessions.teacherId, teacherId));
+    console.log(`[DATABASE] Found ${result.length} sessions for teacher`);
+    return result;
   }
 
   async getSessionsByStudent(studentId: string): Promise<Session[]> {
-    return db.select().from(sessions).where(eq(sessions.studentId, studentId));
+    console.log(`[DATABASE] Getting sessions for student: ${studentId}`);
+    const result = await db.select().from(sessions).where(eq(sessions.studentId, studentId));
+    console.log(`[DATABASE] Found ${result.length} sessions for student`);
+    return result;
   }
 
   async createSession(sessionData: InsertSession): Promise<Session> {

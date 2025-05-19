@@ -373,9 +373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             ...session,
-            teacherName: teacher?.name,
-            studentName: student?.name,
-            subjectName: subject?.name
+            teacherName: teacher ? `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() : 'Unknown Teacher',
+            studentName: student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : 'Unknown Student',
+            subjectName: subject?.name || 'Unknown Subject'
           };
         })
       );
