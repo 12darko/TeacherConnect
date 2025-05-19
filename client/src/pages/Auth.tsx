@@ -85,7 +85,7 @@ export default function Auth() {
         } else if (role === "admin") {
           navigate("/admin-dashboard");
         } else {
-          navigate("/"); // Rol bulunamazsa ana sayfaya yönlendir
+          navigate("/"); // Redirect to home page if no role is found
         }
       }, 1000);
     },
@@ -153,7 +153,7 @@ export default function Auth() {
     });
   };
 
-  // Farklı login seçenekleri
+  // Different login options
   
   const handleGoogleAuth = () => {
     // Google OAuth API isteği gönderilecek
