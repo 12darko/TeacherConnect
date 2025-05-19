@@ -484,6 +484,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // How It Works API
+  apiRouter.get("/how-it-works", async (req: Request, res: Response) => {
+    try {
+      const steps = await storage.getHowItWorksSteps();
+      return res.status(200).json(steps);
+    } catch (error) {
+      console.error("Error getting 'how it works' steps:", error);
+      return res.status(500).json({ error: "Failed to fetch 'how it works' steps" });
+    }
+  });
+  
   // Site Features API
   apiRouter.get("/features", async (req: Request, res: Response) => {
     try {

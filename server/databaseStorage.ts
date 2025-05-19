@@ -748,43 +748,56 @@ export class DatabaseStorage implements IStorage {
   // How it works operations
   async getHowItWorksSteps(): Promise<any[]> {
     try {
-      // Use raw SQL to query the how_it_works_steps table
+      // Check if the how_it_works_steps table exists
       const result = await db.execute(sql`
-        SELECT * FROM how_it_works_steps 
-        ORDER BY order_index ASC
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'how_it_works_steps'
+        );
       `);
       
-      if (result.rowCount === 0) {
-        // Return default steps if no records exist
-        return [
-          {
-            id: 1,
-            number: 1,
-            title: "Find Your Teacher",
-            description: "Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.",
-            icon: "search",
-            order_index: 1
-          },
-          {
-            id: 2,
-            number: 2,
-            title: "Schedule a Session",
-            description: "Book a session at a time that works for you. Our flexible scheduling system makes it easy to find a convenient time.",
-            icon: "calendar",
-            order_index: 2
-          },
-          {
-            id: 3,
-            number: 3,
-            title: "Learn and Grow",
-            description: "Connect through our integrated video platform for interactive lessons. Track your progress and get personalized feedback.",
-            icon: "video",
-            order_index: 3
-          }
-        ];
+      const tableExists = result.rows[0].exists;
+      
+      if (tableExists) {
+        // Get steps from the database
+        const stepsResult = await db.execute(sql`
+          SELECT id, number, title, description, icon, order_index 
+          FROM how_it_works_steps 
+          ORDER BY order_index ASC
+        `);
+        
+        if (stepsResult.rowCount > 0) {
+          return stepsResult.rows;
+        }
       }
       
-      return result.rows;
+      // Return default steps if table doesn't exist or no records found
+      return [
+        {
+          id: 1,
+          number: 1,
+          title: "Find Your Teacher",
+          description: "Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.",
+          icon: "search",
+          order_index: 1
+        },
+        {
+          id: 2,
+          number: 2,
+          title: "Schedule a Session",
+          description: "Book a session at a time that works for you. Our flexible scheduling system makes it easy to find a convenient time.",
+          icon: "calendar",
+          order_index: 2
+        },
+        {
+          id: 3,
+          number: 3,
+          title: "Learn and Grow",
+          description: "Connect through our integrated video platform for interactive lessons. Track your progress and get personalized feedback.",
+          icon: "video",
+          order_index: 3
+        }
+      ];
     } catch (error) {
       console.error("Error getting how it works steps:", error);
       // Return default steps on error
