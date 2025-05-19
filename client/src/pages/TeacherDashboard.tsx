@@ -168,11 +168,17 @@ const WeeklySchedule = ({ sessions = [] }: { sessions: any[] }) => {
                                 <span className="text-xs text-muted-foreground">
                                   {format(new Date(session.startTime), 'dd MMMM HH:mm', { locale: tr })}
                                 </span>
-                                <Link href={`/classroom/${session.id}`}>
-                                  <Button size="sm" variant="outline">
-                                    Derse Git
+                                {session.status !== "completed" ? (
+                                  <Link href={`/classroom/${session.id}`}>
+                                    <Button size="sm" variant="outline">
+                                      Derse Git
+                                    </Button>
+                                  </Link>
+                                ) : (
+                                  <Button size="sm" variant="outline" disabled>
+                                    Tamamlandı
                                   </Button>
-                                </Link>
+                                )}
                               </div>
                             </div>
                           ))}

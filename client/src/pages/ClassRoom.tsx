@@ -599,8 +599,15 @@ export default function ClassRoom() {
   };
 
   // Dersi sonlandırma
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  
   const handleEndSession = () => {
-    endSessionMutation.mutate();
+    if (showEndConfirm) {
+      endSessionMutation.mutate();
+      setShowEndConfirm(false);
+    } else {
+      setShowEndConfirm(true);
+    }
   };
 
   // Sayfa yüklendiğinde session durumunu kontrol et
@@ -917,10 +924,10 @@ export default function ClassRoom() {
                         {!isSessionEnded && (
                           <div className="flex justify-end">
                             <label htmlFor="file-upload" className="cursor-pointer">
-                              <Button as="span">
+                              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                                 <Upload className="h-4 w-4 mr-2" />
                                 Dosya Yükle
-                              </Button>
+                              </div>
                               <input 
                                 id="file-upload" 
                                 type="file" 
