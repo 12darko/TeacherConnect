@@ -36,6 +36,51 @@ export const subjects = pgTable("subjects", {
   icon: text("icon").notNull(),
 });
 
+// Class session recordings and materials
+export const sessionRecordings = pgTable("session_recordings", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => sessions.id),
+  recordingUrl: text("recording_url").notNull(),
+  duration: integer("duration").notNull(), // in seconds
+  thumbnail: text("thumbnail"),
+  createdAt: timestamp("created_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+});
+
+// Session notes - for teacher and student notes during sessions
+export const sessionNotes = pgTable("session_notes", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => sessions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  isPrivate: boolean("is_private").default(false),
+});
+
+// Session whiteboard snapshots
+export const whiteboardSnapshots = pgTable("whiteboard_snapshots", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => sessions.id),
+  imageUrl: text("image_url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  name: varchar("name").default("Whiteboard Snapshot"),
+});
+
+// Shared files during sessions
+export const sessionFiles = pgTable("session_files", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => sessions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  fileName: varchar("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileType: varchar("file_type").notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  description: text("description"),
+});
+
 // Teacher profiles with additional information
 export const teacherProfiles = pgTable("teacher_profiles", {
   id: serial("id").primaryKey(),
@@ -284,6 +329,24 @@ export type Feature = typeof features.$inferSelect;
 export type PricingPlan = typeof pricingPlans.$inferSelect;
 export type FaqItem = typeof faqItems.$inferSelect;
 export type MenuItem = typeof menuItems.$inferSelect;
+
+// Session content types
+export type SessionNote = typeof sessionNotes.$inferSelect;
+export type SessionFile = typeof sessionFiles.$inferSelect;
+export type WhiteboardSnapshot = typeof whiteboardSnapshots.$inferSelect;
+export type SessionRecording = typeof sessionRecordings.$inferSelect;
+
+// Insert schemas for session content
+export const insertSessionNoteSchema = createInsertSchema(sessionNotes).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSessionFileSchema = createInsertSchema(sessionFiles).omit({ id: true, uploadedAt: true });
+export const insertWhiteboardSnapshotSchema = createInsertSchema(whiteboardSnapshots).omit({ id: true, createdAt: true });
+export const insertSessionRecordingSchema = createInsertSchema(sessionRecordings).omit({ id: true, createdAt: true });
+
+// Insert types for session content
+export type InsertSessionNote = z.infer<typeof insertSessionNoteSchema>;
+export type InsertSessionFile = z.infer<typeof insertSessionFileSchema>;
+export type InsertWhiteboardSnapshot = z.infer<typeof insertWhiteboardSnapshotSchema>;
+export type InsertSessionRecording = z.infer<typeof insertSessionRecordingSchema>;
 
 // Extended schemas for validation
 export const loginSchema = z.object({
