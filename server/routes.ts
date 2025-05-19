@@ -822,6 +822,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "An error occurred while retrieving menu items" });
     }
   });
+  
+  // Site statistics endpoints
+  apiRouter.get("/statistics", async (req: Request, res: Response) => {
+    try {
+      const stats = await storage.getSiteStatistics();
+      return res.json(stats);
+    } catch (error) {
+      console.error("Error retrieving site statistics:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving site statistics" });
+    }
+  });
+  
+  // How it works steps endpoints
+  apiRouter.get("/how-it-works", async (req: Request, res: Response) => {
+    try {
+      const steps = await storage.getHowItWorksSteps();
+      return res.json(steps);
+    } catch (error) {
+      console.error("Error retrieving how it works steps:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving how it works steps" });
+    }
+  });
 
   return httpServer;
 }

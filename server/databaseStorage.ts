@@ -664,6 +664,106 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return item;
   }
+  
+  // Site statistics operations
+  async getSiteStatistics(): Promise<any> {
+    try {
+      const [stats] = await db
+        .select()
+        .from(siteStatistics)
+        .limit(1);
+      
+      if (!stats) {
+        // Return default statistics if no record exists
+        return {
+          totalStudents: 1250,
+          totalTeachers: 380,
+          totalSubjects: 24,
+          totalSessions: 8500,
+          lastUpdated: new Date()
+        };
+      }
+      
+      return stats;
+    } catch (error) {
+      console.error("Error getting site statistics:", error);
+      // Return default values on error
+      return {
+        totalStudents: 1250,
+        totalTeachers: 380,
+        totalSubjects: 24,
+        totalSessions: 8500,
+        lastUpdated: new Date()
+      };
+    }
+  }
+  
+  async updateSiteStatistics(data: any): Promise<any> {
+    try {
+      const [stats] = await db
+        .select()
+        .from(siteStatistics)
+        .limit(1);
+      
+      if (!stats) {
+        // Create first statistics record if none exists
+        const [newStats] = await db
+          .insert(siteStatistics)
+          .values({
+            ...data,
+            lastUpdated: new Date()
+          })
+          .returning();
+        return newStats;
+      }
+      
+      // Update existing record
+      const [updatedStats] = await db
+        .update(siteStatistics)
+        .set({
+          ...data,
+          lastUpdated: new Date()
+        })
+        .where(eq(siteStatistics.id, stats.id))
+        .returning();
+      
+      return updatedStats;
+    } catch (error) {
+      console.error("Error updating site statistics:", error);
+      throw error;
+    }
+  }
+  
+  // How it works operations
+  async getHowItWorksSteps(): Promise<any[]> {
+    try {
+      const steps = await db
+        .select()
+        .from(howItWorksSteps)
+        .where(eq(howItWorksSteps.visible, true))
+        .orderBy(howItWorksSteps.stepNumber);
+      
+      return steps;
+    } catch (error) {
+      console.error("Error getting how it works steps:", error);
+      // Return empty array on error
+      return [];
+    }
+  }
+  
+  async createHowItWorksStep(data: any): Promise<any> {
+    try {
+      const [step] = await db
+        .insert(howItWorksSteps)
+        .values(data)
+        .returning();
+      
+      return step;
+    } catch (error) {
+      console.error("Error creating how it works step:", error);
+      throw error;
+    }
+  }
 }
 
 // Interface for storage operations
@@ -719,6 +819,14 @@ export interface IStorage {
   updateStudentActivity(studentId: string): Promise<StudentStat | undefined>;
   updateStudentSessionCount(studentId: string): Promise<StudentStat | undefined>;
   updateStudentExamStats(studentId: string, score: number): Promise<StudentStat | undefined>;
+  
+  // Site statistics operations
+  getSiteStatistics(): Promise<any>;
+  updateSiteStatistics(data: any): Promise<any>;
+  
+  // How it works operations
+  getHowItWorksSteps(): Promise<any[]>;
+  createHowItWorksStep(data: any): Promise<any>;
 }
 
 export const storage = new DatabaseStorage();
