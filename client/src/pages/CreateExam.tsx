@@ -131,8 +131,8 @@ export default function CreateExam() {
           dueDate: form.getValues().dueDate,
         });
       } else {
-        // Navigate back to teacher exams
-        setLocation("/teacher-exams");
+        // Navigate back to teacher dashboard
+        setLocation("/teacher-dashboard?tab=exams");
       }
     },
     onError: (error) => {
