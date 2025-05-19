@@ -711,6 +711,522 @@ export default function ClassRoom() {
             </div>
             
             {/* İnteraktif öğrenme araçları */}
+            <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-100 p-0">
+              <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="p-6 border-b border-neutral-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Eğitim Araçları</h2>
+                  </div>
+                  
+                  <TabsList className="grid grid-cols-4 mb-0">
+                    <TabsTrigger value="notes" className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      Notlar
+                    </TabsTrigger>
+                    <TabsTrigger value="whiteboard" className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
+                        <path d="M2 3h20"></path>
+                        <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
+                        <path d="m7 21 5-5 5 5"></path>
+                      </svg>
+                      Beyaz Tahta
+                    </TabsTrigger>
+                    <TabsTrigger value="files" className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                      Dosyalar
+                    </TabsTrigger>
+                    <TabsTrigger value="recordings" className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-600">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      Kayıtlar
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                {/* Notlar Sekmesi */}
+                <TabsContent value="notes" className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">Notlar</h3>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => { setNoteContent(""); setNotePrivate(false); }}
+                        >
+                          <PlusCircle size={16} />
+                          Yeni Not
+                        </Button>
+                      </div>
+                      
+                      <div className="border rounded-md p-4 bg-gray-50 mb-4">
+                        <Textarea
+                          placeholder="Ders notunuzu buraya yazın..."
+                          className="min-h-[150px] bg-white mb-2"
+                          value={noteContent}
+                          onChange={(e) => setNoteContent(e.target.value)}
+                        />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              id="privateNote" 
+                              checked={notePrivate}
+                              onChange={(e) => setNotePrivate(e.target.checked)}
+                              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                            />
+                            <label htmlFor="privateNote" className="text-sm text-gray-700">
+                              Özel not (sadece siz göreceksiniz)
+                            </label>
+                          </div>
+                          <Button onClick={handleSaveNotes} size="sm" className="flex items-center gap-2">
+                            <Save size={16} />
+                            Kaydet
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium mb-4">Kaydedilen Notlar</h3>
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        {notes.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>Henüz not eklenmemiş</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {notes.map((note) => (
+                              <div key={note.id} className="border rounded-md p-3 bg-white">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex gap-2 items-center">
+                                    <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-semibold text-sm">
+                                      {note.userName ? note.userName.charAt(0) : 'U'}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">{note.userName || 'Kullanıcı'}</p>
+                                      <p className="text-xs text-gray-500">
+                                        {format(new Date(note.createdAt), "d MMM yyyy, HH:mm")}
+                                        {note.isPrivate && " (Özel)"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {user?.id === note.userId && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-7 w-7 text-gray-500"
+                                      onClick={() => deleteNoteMutation.mutate(note.id)}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                                <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Beyaz Tahta Sekmesi */}
+                <TabsContent value="whiteboard" className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">Beyaz Tahta</h3>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setStrokeColor("#000000")}
+                            className="h-8 w-8 p-0 rounded-full"
+                            style={{ background: strokeColor === "#000000" ? "#f1f5f9" : "white" }}
+                          >
+                            <div className="w-4 h-4 bg-black rounded-full"></div>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setStrokeColor("#ff0000")}
+                            className="h-8 w-8 p-0 rounded-full"
+                            style={{ background: strokeColor === "#ff0000" ? "#f1f5f9" : "white" }}
+                          >
+                            <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setStrokeColor("#0000ff")}
+                            className="h-8 w-8 p-0 rounded-full"
+                            style={{ background: strokeColor === "#0000ff" ? "#f1f5f9" : "white" }}
+                          >
+                            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={clearWhiteboard}
+                          >
+                            Temizle
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={saveWhiteboard}
+                          >
+                            <Save size={16} className="mr-2" />
+                            Kaydet
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="border rounded-md p-4 bg-gray-50">
+                        <canvas 
+                          ref={canvasRef}
+                          className="w-full h-[300px] bg-white border rounded"
+                          onMouseDown={startDrawing}
+                          onMouseUp={finishDrawing}
+                          onMouseOut={finishDrawing}
+                          onMouseMove={draw}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium mb-4">Kaydedilen Görüntüler</h3>
+                      <ScrollArea className="h-[372px] rounded-md border p-4">
+                        {whiteboardSnapshots.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>Henüz görüntü kaydedilmemiş</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-4">
+                            {whiteboardSnapshots.map((snapshot) => (
+                              <div key={snapshot.id} className="border rounded-md p-3 bg-white">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex gap-2 items-center">
+                                    <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
+                                      {snapshot.userName ? snapshot.userName.charAt(0) : 'U'}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">{snapshot.title}</p>
+                                      <p className="text-xs text-gray-500">{format(new Date(snapshot.createdAt), "d MMM yyyy, HH:mm")}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  {user?.id === snapshot.userId && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-7 w-7 text-gray-500"
+                                      onClick={() => deleteWhiteboardMutation.mutate(snapshot.id)}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                                <div className="border rounded overflow-hidden my-2">
+                                  <img src={snapshot.imageData} alt={snapshot.title} className="w-full h-auto" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Dosyalar Sekmesi */}
+                <TabsContent value="files" className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">Dosya Paylaşımı</h3>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => setIsFileDialogOpen(true)}
+                        >
+                          <Upload size={16} />
+                          Dosya Yükle
+                        </Button>
+                      </div>
+                      
+                      <div className="border rounded-md p-6 bg-gray-50 flex flex-col items-center justify-center min-h-[150px]">
+                        <div className="bg-emerald-100 p-3 rounded-full mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                          </svg>
+                        </div>
+                        <p className="text-gray-700 mb-1">Ders materyallerinizi paylaşın</p>
+                        <p className="text-sm text-gray-500 mb-3">PDF, Word, Excel, PowerPoint ve diğer dosyalar</p>
+                        <Button onClick={() => setIsFileDialogOpen(true)}>Dosya Yükle</Button>
+                      </div>
+                      
+                      <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Dosya Yükle</DialogTitle>
+                            <DialogDescription>
+                              Paylaşmak istediğiniz dosya bilgilerini girin
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="fileName">Dosya Adı</Label>
+                              <Input
+                                id="fileName"
+                                value={fileName}
+                                onChange={(e) => setFileName(e.target.value)}
+                                placeholder="Örnek: Matematik Ders Notu.pdf"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="fileUrl">Dosya URL</Label>
+                              <Input
+                                id="fileUrl"
+                                value={fileUrl}
+                                onChange={(e) => setFileUrl(e.target.value)}
+                                placeholder="https://example.com/dosya.pdf"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="fileType">Dosya Türü</Label>
+                                <Input
+                                  id="fileType"
+                                  value={fileType}
+                                  onChange={(e) => setFileType(e.target.value)}
+                                  placeholder="PDF, DOCX, vb."
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="fileSize">Dosya Boyutu (KB)</Label>
+                                <Input
+                                  id="fileSize"
+                                  type="number"
+                                  value={fileSize || ""}
+                                  onChange={(e) => setFileSize(parseInt(e.target.value) || 0)}
+                                  placeholder="1024"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsFileDialogOpen(false)}>İptal</Button>
+                            <Button onClick={handleFileUpload}>Yükle</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium mb-4">Paylaşılan Dosyalar</h3>
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        {files.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>Henüz dosya paylaşılmamış</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {files.map((file) => (
+                              <div key={file.id} className="flex items-center border rounded-md p-3 bg-white">
+                                <div className="bg-emerald-100 p-2 rounded mr-3">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                    <polyline points="13 2 13 9 20 9"></polyline>
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <p className="font-medium text-sm">{file.fileName}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {(file.fileSize / 1024).toFixed(1)} MB
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs text-gray-500">
+                                      {file.fileType} · {format(new Date(file.uploadedAt), "d MMM")}
+                                    </p>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-gray-500 hover:text-primary"
+                                        asChild
+                                      >
+                                        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+                                          <Download size={14} />
+                                        </a>
+                                      </Button>
+                                      
+                                      {user?.id === file.uploadedBy && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-gray-500 hover:text-red-500"
+                                          onClick={() => deleteFileMutation.mutate(file.id)}
+                                        >
+                                          <Trash2 size={14} />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Kayıtlar Sekmesi */}
+                <TabsContent value="recordings" className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">Oturum Kayıtları</h3>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => setIsRecordingDialogOpen(true)}
+                        >
+                          <PlusCircle size={16} />
+                          Kayıt Ekle
+                        </Button>
+                      </div>
+                      
+                      <div className="border rounded-md p-6 bg-gray-50 flex flex-col items-center justify-center min-h-[150px]">
+                        <div className="bg-rose-100 p-3 rounded-full mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-600">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                          </svg>
+                        </div>
+                        <p className="text-gray-700 mb-1">Oturum kayıtlarına erişin</p>
+                        <p className="text-sm text-gray-500 mb-3">Kaçırdığınız derslere sonra göz atabilirsiniz</p>
+                        <Button onClick={() => setIsRecordingDialogOpen(true)}>Kayıt Ekle</Button>
+                      </div>
+                      
+                      <Dialog open={isRecordingDialogOpen} onOpenChange={setIsRecordingDialogOpen}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Kayıt Ekle</DialogTitle>
+                            <DialogDescription>
+                              Ders kaydı URL'sini ve süresini girin
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="recordingUrl">Kayıt URL</Label>
+                              <Input
+                                id="recordingUrl"
+                                value={recordingUrl}
+                                onChange={(e) => setRecordingUrl(e.target.value)}
+                                placeholder="https://example.com/recording.mp4"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="recordingDuration">Süre (dakika)</Label>
+                              <Input
+                                id="recordingDuration"
+                                type="number"
+                                value={recordingDuration || ""}
+                                onChange={(e) => setRecordingDuration(parseInt(e.target.value) || 0)}
+                                placeholder="45"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsRecordingDialogOpen(false)}>İptal</Button>
+                            <Button onClick={handleAddRecording}>Ekle</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium mb-4">Eklenen Kayıtlar</h3>
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        {recordings.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>Henüz kayıt eklenmemiş</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {recordings.map((recording) => (
+                              <div key={recording.id} className="border rounded-md p-3 bg-white">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <div className="bg-rose-100 p-2 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-600">
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex justify-between">
+                                      <p className="font-medium text-sm">Ders Kaydı</p>
+                                      <div className="flex items-center text-xs text-gray-500">
+                                        <Clock size={12} className="mr-1" />
+                                        {recording.duration} dakika
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                      {format(new Date(recording.createdAt), "d MMM yyyy, HH:mm")}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs h-8"
+                                    asChild
+                                  >
+                                    <a href={recording.recordingUrl} target="_blank" rel="noopener noreferrer">
+                                      İzle
+                                    </a>
+                                  </Button>
+                                  
+                                  {user?.id === recording.userId && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-gray-500 hover:text-red-500"
+                                      onClick={() => deleteRecordingMutation.mutate(recording.id)}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Beyaz Tahta */}
               <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
