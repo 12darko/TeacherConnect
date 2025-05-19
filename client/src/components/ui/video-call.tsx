@@ -3,15 +3,16 @@ import { Button } from "@/components/ui/button";
 import { MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, PhoneOffIcon, MessagesSquareIcon, ScreenShareIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface VideoCallProps {
-  sessionId: string;
-  teacherName: string;
-  studentName: string;
+  sessionId: number;
+  isTeacher: boolean;
+  isSessionActive: boolean;
   onEndCall?: () => void;
 }
 
-export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: VideoCallProps) {
+export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: VideoCallProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -19,67 +20,84 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [messages, setMessages] = useState<{ sender: string; text: string; time: string }[]>([
-    { sender: teacherName, text: "Hoş geldiniz! Nasılsınız?", time: "Şimdi" },
+    { sender: "Sistem", text: "Hoş geldiniz! Nasılsınız?", time: "Şimdi" },
   ]);
   const [newMessage, setNewMessage] = useState("");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [sessionInfo, setSessionInfo] = useState<any>(null);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   
-  // İki video akışı hazırlayan fonksiyon
+  // Session bilgilerini çekme
   useEffect(() => {
-    const prepareMedia = async () => {
+    const fetchSessionInfo = async () => {
       try {
-        // Kamera ve mikrofon erişimi için izin isteyelim
-        navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
-          .then(stream => {
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = stream;
-              setLocalStream(stream);
-            }
-            
-            // Yeni bir özellik ekledik - bu çalıştığında toast gösterilecek
-            toast({
-              title: "Kamera ve mikrofon bağlandı",
-              description: "Görüntülü görüşme başlatıldı",
-            });
-          })
-          .catch(err => {
-            console.log("Video izni hatası:", err);
-            toast({
-              title: "Kamera/mikrofon erişimi sağlanamadı",
-              description: "Lütfen izinleri kontrol edin",
-              variant: "destructive",
-            });
-            
-            // Yerel video için canvas arka plan oluşturalım
-            createCanvasBackground(localVideoRef, "Siz");
-          });
-          
-        // Uzak video için test amaçlı bir canvas arka plan
-        createCanvasBackground(remoteVideoRef, "Diğer kullanıcı");
+        const response = await fetch(`/api/sessions/${sessionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSessionInfo(data);
+        }
       } catch (error) {
-        console.error("Medya erişiminde hata:", error);
-        toast({
-          title: "Medya erişim hatası",
-          description: "Video görüşme başlatılamadı",
-          variant: "destructive",
-        });
+        console.error("Session bilgisi alınamadı:", error);
       }
     };
     
-    prepareMedia();
+    if (sessionId) {
+      fetchSessionInfo();
+    }
+  }, [sessionId]);
+  
+  // Kamera ve mikrofon erişimi
+  useEffect(() => {
+    if (!isSessionActive) return;
     
-    // Temizleme işlemi
+    const initializeMedia = async () => {
+      try {
+        const constraints = { video: true, audio: true };
+        
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+            setLocalStream(stream);
+          }
+          
+          toast({
+            title: "Kamera bağlandı",
+            description: "Görüntülü görüşme başlatıldı",
+          });
+        } catch (err) {
+          console.log("Kamera izni hatası:", err);
+          toast({
+            title: "Kamera erişimi sağlanamadı",
+            description: "İzinleri kontrol edin",
+            variant: "destructive",
+          });
+          
+          // Kamera izni alınamadığında test için canvas arka plan oluştur
+          createCanvasBackground(localVideoRef, "Siz");
+        }
+        
+        // Diğer katılımcı için test amaçlı canvas arka plan
+        createCanvasBackground(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+      } catch (error) {
+        console.error("Medya erişiminde hata:", error);
+      }
+    };
+    
+    initializeMedia();
+    
     return () => {
+      // Temizleme işlemi
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [toast]);
+  }, [isSessionActive, toast, isTeacher]);
   
-  // Canvas arka plan oluşturma - test için
+  // Canvas arka plan oluşturma (kamera olmadığında)
   const createCanvasBackground = (videoRef: React.RefObject<HTMLVideoElement>, label: string) => {
     if (!videoRef.current) return;
     
@@ -89,7 +107,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
     const ctx = canvas.getContext('2d');
     
     if (ctx) {
-      // Gradient arka plan oluştur
+      // Gradient arka plan
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, '#3b82f6');
       gradient.addColorStop(1, '#1e40af');
@@ -145,7 +163,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
   const toggleScreenShare = async () => {
     try {
       if (isScreenSharing) {
-        // Ekran paylaşımını durdur ve kameraya geri dön
+        // Ekran paylaşımını durdur ve kameraya dön
         if (localStream) {
           localStream.getTracks().forEach(track => track.stop());
         }
@@ -177,11 +195,12 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
             localVideoRef.current.srcObject = displayMedia;
           }
           
-          // Ses için orijinal streamden alıyoruz
+          // Ses için orijinal stream'den al
           if (localStream) {
-            localStream.getAudioTracks().forEach(track => {
-              displayMedia.addTrack(track);
-            });
+            const audioTracks = localStream.getAudioTracks();
+            if (audioTracks.length > 0) {
+              displayMedia.addTrack(audioTracks[0]);
+            }
           }
           
           // Kullanıcı tarayıcıdan durdurunca otomatik kapat
@@ -194,7 +213,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
           
           toast({
             title: "Ekran paylaşımı başlatıldı",
-            description: "Ekranınız diğer kullanıcıya gösteriliyor"
+            description: "Ekranınız diğer katılımcıya gösteriliyor"
           });
         } catch (err) {
           console.error("Ekran paylaşımı hatası:", err);
@@ -228,16 +247,41 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
     
     // Simüle edilmiş yanıt
     setTimeout(() => {
-      const replyName = user?.role === "teacher" ? studentName : teacherName;
       setMessages(prev => [
         ...prev,
         { 
-          sender: replyName, 
+          sender: isTeacher ? "Öğrenci" : "Öğretmen", 
           text: "Mesajınız için teşekkürler! Size nasıl yardımcı olabilirim?", 
           time: "Şimdi" 
         },
       ]);
     }, 2000);
+  };
+  
+  // Dersi sonlandır
+  const handleEndCall = async () => {
+    if (onEndCall) {
+      onEndCall();
+    }
+    
+    // Medya kaynaklarını temizle
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Session durumunu güncelle
+    try {
+      await apiRequest("PATCH", `/api/sessions/${sessionId}`, { 
+        status: "completed" 
+      });
+      
+      toast({
+        title: "Ders sonlandırıldı",
+        description: "Ders başarıyla tamamlandı",
+      });
+    } catch (error) {
+      console.error("Ders sonlandırma hatası:", error);
+    }
   };
   
   return (
@@ -257,7 +301,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
             {/* Kullanıcı bilgisi - Diğer katılımcı */}
             <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center">
               <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-              {user?.role === "teacher" ? studentName : teacherName}
+              {isTeacher ? sessionInfo?.studentName || "Öğrenci" : sessionInfo?.teacherName || "Öğretmen"}
             </div>
             
             {/* Yerel video (siz) */}
@@ -289,13 +333,14 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
             </div>
           </div>
           
-          {/* Video kontrolleri - Modern tasarım */}
+          {/* Video kontrolleri */}
           <div className="flex items-center justify-center space-x-3 sm:space-x-5 my-4 px-4">
             <Button
               variant={isAudioEnabled ? "secondary" : "destructive"}
               size="icon"
               onClick={toggleAudio}
               className="rounded-full h-14 w-14 shadow-md hover:shadow-lg transition-all duration-300"
+              disabled={!isSessionActive}
             >
               {isAudioEnabled ? <MicIcon className="h-6 w-6" /> : <MicOffIcon className="h-6 w-6" />}
             </Button>
@@ -305,6 +350,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
               size="icon"
               onClick={toggleVideo}
               className="rounded-full h-14 w-14 shadow-md hover:shadow-lg transition-all duration-300"
+              disabled={!isSessionActive}
             >
               {isVideoEnabled ? <VideoIcon className="h-6 w-6" /> : <VideoOffIcon className="h-6 w-6" />}
             </Button>
@@ -314,6 +360,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
               size="icon"
               onClick={toggleScreenShare}
               className="rounded-full h-14 w-14 shadow-md hover:shadow-lg transition-all duration-300"
+              disabled={!isSessionActive}
             >
               <ScreenShareIcon className="h-6 w-6" />
             </Button>
@@ -332,11 +379,11 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
               )}
             </Button>
             
-            {onEndCall && (
+            {isSessionActive && (
               <Button
                 variant="destructive"
                 size="icon"
-                onClick={onEndCall}
+                onClick={handleEndCall}
                 className="rounded-full h-14 w-14 shadow-md hover:shadow-lg transition-all duration-300"
               >
                 <PhoneOffIcon className="h-6 w-6" />
@@ -345,7 +392,7 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
           </div>
         </div>
         
-        {/* Chat / Sohbet paneli - Modern tasarım */}
+        {/* Sohbet paneli */}
         {isChatOpen && (
           <div className="md:col-span-4 flex flex-col h-full border rounded-xl overflow-hidden shadow-md bg-white">
             <div className="p-4 bg-primary/5 border-b">
@@ -385,11 +432,13 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Mesajınızı yazın..."
                 className="flex-grow px-4 py-2.5 rounded-full border focus:outline-none focus:ring-2 focus:ring-primary/30 mr-2"
+                disabled={!isSessionActive}
               />
               <Button 
                 type="submit" 
                 size="sm"
                 className="rounded-full px-4"
+                disabled={!isSessionActive || !newMessage.trim()}
               >
                 Gönder
               </Button>
