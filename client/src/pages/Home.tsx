@@ -373,8 +373,7 @@ export default function Home() {
                     <Link href="/find-teachers">
                       <Button 
                         size="lg" 
-                        variant="outline" 
-                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm py-6 whitespace-nowrap"
+                        className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-primary-dark/30 px-8 py-6 whitespace-nowrap"
                       >
                         Öğretmenlere Göz At
                       </Button>
