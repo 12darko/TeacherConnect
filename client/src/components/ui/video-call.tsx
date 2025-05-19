@@ -722,7 +722,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               
               {!isVideoEnabled && (
                 <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-                  <VideoOffIcon className="h-6 w-6 text-white/60" /> 
+                  <VideoOff className="h-6 w-6 text-white/60" /> 
                 </div>
               )}
             </div>
@@ -802,7 +802,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
                 className="flex items-center px-4 py-2"
                 size="sm"
               >
-                <PhoneOffIcon className="h-4 w-4 mr-2" />
+                <PhoneOff className="h-4 w-4 mr-2" />
                 Dersi Bitir
               </Button>
             )}
