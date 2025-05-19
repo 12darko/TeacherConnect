@@ -478,7 +478,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(features)
       .where(eq(features.visible, true))
-      .orderBy(features.order);
+      .orderBy(features.order_position);
     return featuresList;
   }
 
