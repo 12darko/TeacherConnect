@@ -536,15 +536,27 @@ export default function Home() {
           </div>
           
           <div className="text-center mt-12">
-            <Link href={isAuthenticated ? "#" : "/auth"}>
-              <Button 
-                size="lg" 
-                disabled={isAuthenticated}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                {isAuthenticated ? "You're Already Logged In" : "Get Started Now"}
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href={user?.role === "student" ? "/student-dashboard" : 
+                           user?.role === "teacher" ? "/teacher-dashboard" :
+                           user?.role === "admin" ? "/admin-dashboard" : "/"}>
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth">
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  Get Started Now
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>
