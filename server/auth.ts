@@ -128,8 +128,20 @@ export const registerUser = async (req: Request, res: Response) => {
       await storage.createStudentStats({ studentId: id });
     }
 
-    // Set session
-    req.session.userId = user.id;
+    // Set session safely
+    if (req.session) {
+      req.session.userId = user.id;
+      await new Promise<void>((resolve) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+          }
+          resolve();
+        });
+      });
+    } else {
+      console.error("Session object is undefined during registration");
+    }
 
     // Return user without sensitive data
     const { passwordHash: _, ...userData } = user;
@@ -159,8 +171,20 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Set session
-    req.session.userId = user.id;
+    // Set session safely
+    if (req.session) {
+      req.session.userId = user.id;
+      await new Promise<void>((resolve) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+          }
+          resolve();
+        });
+      });
+    } else {
+      console.error("Session object is undefined during login");
+    }
 
     // Return user without sensitive data
     const { passwordHash: _, ...userData } = user;
