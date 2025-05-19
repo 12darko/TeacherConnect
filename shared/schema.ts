@@ -384,3 +384,66 @@ export const teacherProfileSchema = insertTeacherProfileSchema.extend({
 export const reviewSchema = insertReviewSchema.extend({
   rating: z.number().min(1).max(5, "Rating must be between 1 and 5"),
 });
+
+// About Us page
+export const aboutUs = pgTable("about_us", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  mission: text("mission"),
+  vision: text("vision"),
+  values: text("values"),
+  teamSectionTitle: varchar("team_section_title", { length: 255 }),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Team members for About page
+export const teamMembers = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  position: varchar("position", { length: 255 }).notNull(),
+  bio: text("bio"),
+  imageUrl: varchar("image_url", { length: 255 }),
+  orderPosition: integer("order_position").default(0),
+  visible: boolean("visible").default(true),
+});
+
+// Privacy Policy page
+export const privacyPolicy = pgTable("privacy_policy", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Terms of Service page
+export const termsOfService = pgTable("terms_of_service", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Contact page
+export const contactPage = pgTable("contact_page", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  subtitle: text("subtitle"),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 255 }),
+  address: text("address"),
+  mapEmbedUrl: text("map_embed_url"),
+  formTitle: varchar("form_title", { length: 255 }),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Contact messages
+export const contactMessages = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});

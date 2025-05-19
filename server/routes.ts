@@ -1316,5 +1316,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // About us page endpoint
+  apiRouter.get("/about", async (req: Request, res: Response) => {
+    try {
+      const aboutData = await storage.getAboutUsData();
+      return res.json(aboutData);
+    } catch (error) {
+      console.error("Error retrieving about us data:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving about us data" });
+    }
+  });
+
+  // Team members endpoint
+  apiRouter.get("/team-members", async (req: Request, res: Response) => {
+    try {
+      const teamMembers = await storage.getTeamMembers();
+      return res.json(teamMembers);
+    } catch (error) {
+      console.error("Error retrieving team members:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving team members" });
+    }
+  });
+
+  // Privacy policy endpoint
+  apiRouter.get("/privacy", async (req: Request, res: Response) => {
+    try {
+      const privacyData = await storage.getPrivacyPolicy();
+      return res.json(privacyData);
+    } catch (error) {
+      console.error("Error retrieving privacy policy:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving privacy policy" });
+    }
+  });
+
+  // Terms of service endpoint
+  apiRouter.get("/terms", async (req: Request, res: Response) => {
+    try {
+      const termsData = await storage.getTermsOfService();
+      return res.json(termsData);
+    } catch (error) {
+      console.error("Error retrieving terms of service:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving terms of service" });
+    }
+  });
+
+  // Contact page data endpoint
+  apiRouter.get("/contact-page", async (req: Request, res: Response) => {
+    try {
+      const contactData = await storage.getContactPageData();
+      return res.json(contactData);
+    } catch (error) {
+      console.error("Error retrieving contact page data:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving contact page data" });
+    }
+  });
+
+  // Contact message submission endpoint
+  apiRouter.post("/contact-message", async (req: Request, res: Response) => {
+    try {
+      const { name, email, subject, message } = req.body;
+      
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      
+      // Store the contact message
+      await storage.createContactMessage({ name, email, subject, message });
+      
+      return res.status(201).json({ success: true, message: "Message sent successfully" });
+    } catch (error) {
+      console.error("Error creating contact message:", error);
+      return res.status(500).json({ message: "An error occurred while sending your message" });
+    }
+  });
+
   return httpServer;
 }
