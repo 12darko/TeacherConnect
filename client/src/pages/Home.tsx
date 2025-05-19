@@ -353,8 +353,7 @@ export default function Home() {
                     <Link href="/find-teachers">
                       <Button 
                         size="lg" 
-                        variant="outline" 
-                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm whitespace-nowrap"
+                        className="bg-white text-primary hover:bg-white/90 border-white font-semibold shadow-lg shadow-primary-dark/20 whitespace-nowrap"
                       >
                         Öğretmen Bul
                       </Button>
