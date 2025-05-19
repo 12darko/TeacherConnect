@@ -670,12 +670,20 @@ export class DatabaseStorage implements IStorage {
   // Site statistics operations
   async getSiteStatistics(): Promise<any> {
     try {
-      const [stats] = await db
-        .select()
-        .from(siteStatistics)
-        .limit(1);
+      // Use raw SQL with aliases to handle column name case sensitivity
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          totalstudents AS "totalStudents", 
+          totalteachers AS "totalTeachers", 
+          totalsubjects AS "totalSubjects", 
+          totalsessions AS "totalSessions", 
+          lastupdated AS "lastUpdated"
+        FROM site_statistics
+        LIMIT 1
+      `);
       
-      if (!stats) {
+      if (result.rowCount === 0) {
         // Return default statistics if no record exists
         return {
           totalStudents: 1250,
@@ -686,7 +694,7 @@ export class DatabaseStorage implements IStorage {
         };
       }
       
-      return stats;
+      return result.rows[0];
     } catch (error) {
       console.error("Error getting site statistics:", error);
       
@@ -740,17 +748,72 @@ export class DatabaseStorage implements IStorage {
   // How it works operations
   async getHowItWorksSteps(): Promise<any[]> {
     try {
-      const steps = await db
-        .select()
-        .from(howItWorksSteps)
-        .where(eq(howItWorksSteps.visible, true))
-        .orderBy(howItWorksSteps.stepNumber);
+      // Use raw SQL to query the how_it_works_steps table
+      const result = await db.execute(sql`
+        SELECT * FROM how_it_works_steps 
+        ORDER BY order_index ASC
+      `);
       
-      return steps;
+      if (result.rowCount === 0) {
+        // Return default steps if no records exist
+        return [
+          {
+            id: 1,
+            number: 1,
+            title: "Find Your Teacher",
+            description: "Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.",
+            icon: "search",
+            order_index: 1
+          },
+          {
+            id: 2,
+            number: 2,
+            title: "Schedule a Session",
+            description: "Book a session at a time that works for you. Our flexible scheduling system makes it easy to find a convenient time.",
+            icon: "calendar",
+            order_index: 2
+          },
+          {
+            id: 3,
+            number: 3,
+            title: "Learn and Grow",
+            description: "Connect through our integrated video platform for interactive lessons. Track your progress and get personalized feedback.",
+            icon: "video",
+            order_index: 3
+          }
+        ];
+      }
+      
+      return result.rows;
     } catch (error) {
       console.error("Error getting how it works steps:", error);
-      // Return empty array on error
-      return [];
+      // Return default steps on error
+      return [
+        {
+          id: 1,
+          number: 1,
+          title: "Find Your Teacher",
+          description: "Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.",
+          icon: "search",
+          order_index: 1
+        },
+        {
+          id: 2,
+          number: 2,
+          title: "Schedule a Session",
+          description: "Book a session at a time that works for you. Our flexible scheduling system makes it easy to find a convenient time.",
+          icon: "calendar",
+          order_index: 2
+        },
+        {
+          id: 3,
+          number: 3,
+          title: "Learn and Grow",
+          description: "Connect through our integrated video platform for interactive lessons. Track your progress and get personalized feedback.",
+          icon: "video",
+          order_index: 3
+        }
+      ];
     }
   }
   

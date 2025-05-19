@@ -47,10 +47,16 @@ export default function Home() {
   // Fetch testimonials
   const { data: testimonials = [], isLoading: isLoadingTestimonials } = useQuery<any[]>({
     queryKey: ['/api/testimonials?featured=true'],
+    
+  });
+  
+  // Fetch how it works steps
+  const { data: howItWorksSteps = [], isLoading: isLoadingHowItWorks } = useQuery<any[]>({
+    queryKey: ['/api/how-it-works'],
     queryFn: async () => {
-      const response = await fetch('/api/testimonials?featured=true');
+      const response = await fetch('/api/how-it-works');
       if (!response.ok) {
-        throw new Error('Failed to fetch testimonials');
+        throw new Error('Failed to fetch how it works steps');
       }
       return response.json();
     }
@@ -488,29 +494,45 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
-              <h3 className="text-xl font-bold mb-2">Find Your Teacher</h3>
-              <p className="text-neutral-600">
-                Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
-              <h3 className="text-xl font-bold mb-2">Book a Session</h3>
-              <p className="text-neutral-600">
-                Schedule a session at a time that works for you. Our flexible booking system makes it easy to find convenient slots.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
-              <h3 className="text-xl font-bold mb-2">Start Learning</h3>
-              <p className="text-neutral-600">
-                Connect for your live video session and access personalized learning materials, assignments, and exams.
-              </p>
-            </div>
+            {howItWorksSteps.length > 0 ? (
+              howItWorksSteps.map((step) => (
+                <div key={step.id} className="text-center">
+                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                    {step.number}
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-neutral-600">
+                    {step.description}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="text-center">
+                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                  <h3 className="text-xl font-bold mb-2">Find Your Teacher</h3>
+                  <p className="text-neutral-600">
+                    Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.
+                  </p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                  <h3 className="text-xl font-bold mb-2">Book a Session</h3>
+                  <p className="text-neutral-600">
+                    Schedule a session at a time that works for you. Our flexible booking system makes it easy to find convenient slots.
+                  </p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                  <h3 className="text-xl font-bold mb-2">Start Learning</h3>
+                  <p className="text-neutral-600">
+                    Connect for your live video session and access personalized learning materials, assignments, and exams.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
           
           <div className="text-center mt-12">

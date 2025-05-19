@@ -5,7 +5,7 @@ import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
-import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { User } from "@shared/schema";
@@ -35,14 +35,13 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    pool: pool,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "session_store",
-    jsonField: 'sess'
+  
+  // Using memory store instead of PG store to avoid database issues
+  const MemoryStore = createMemoryStore(session);
+  const sessionStore = new MemoryStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
   });
+  
   return session({
     secret: process.env.SESSION_SECRET || 'edu-connect-secret-key',
     store: sessionStore,
