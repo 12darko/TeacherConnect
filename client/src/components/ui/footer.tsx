@@ -1,7 +1,21 @@
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { MenuItem } from "@shared/schema";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+
+  // Fetch footer menu items
+  const { data: footerItems, isLoading: isFooterLoading } = useQuery<MenuItem[]>({
+    queryKey: ["/api/menu-items", "footer"],
+    queryFn: async () => {
+      const response = await fetch("/api/menu-items?location=footer");
+      if (!response.ok) {
+        throw new Error("Failed to fetch footer items");
+      }
+      return response.json();
+    }
+  });
   
   return (
     <footer className="bg-neutral-900 text-white pt-12 pb-6">
@@ -37,25 +51,39 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li>
-                <Link href="/" className="text-neutral-400 hover:text-white transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/find-teachers" className="text-neutral-400 hover:text-white transition-colors">
-                  Find Teachers
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Pricing</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Testimonials</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">FAQ</a>
-              </li>
+              {footerItems ? (
+                // Veritabanından gelen menü öğeleri
+                footerItems.map((item) => (
+                  <li key={item.id}>
+                    <Link href={item.url} className="text-neutral-400 hover:text-white transition-colors">
+                      {item.title}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                // Yedek statik menu itemları
+                <>
+                  <li>
+                    <Link href="/" className="text-neutral-400 hover:text-white transition-colors">
+                      Home
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/find-teachers" className="text-neutral-400 hover:text-white transition-colors">
+                      Find Teachers
+                    </Link>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Pricing</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Testimonials</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">FAQ</a>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
           

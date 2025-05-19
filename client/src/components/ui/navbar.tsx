@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Menu,
   AlignJustify,
@@ -11,12 +12,25 @@ import {
   BookOpen,
   LayoutDashboard
 } from "lucide-react";
+import { MenuItem } from "@shared/schema";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
+  
+  // Fetch menu items from API
+  const { data: menuItems, isLoading: isMenuLoading } = useQuery<MenuItem[]>({
+    queryKey: ["/api/menu-items", "main"],
+    queryFn: async () => {
+      const response = await fetch("/api/menu-items?location=main");
+      if (!response.ok) {
+        throw new Error("Failed to fetch menu items");
+      }
+      return response.json();
+    }
+  });
   
   // Handle scrolling effect
   useEffect(() => {
@@ -56,29 +70,47 @@ export default function Navbar() {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <Link href="/find-teachers" className={`px-4 py-2 rounded-md transition-colors ${
-                !isScrolled && location === "/" 
-                  ? "text-white hover:bg-white/10" 
-                  : "text-neutral-700 hover:bg-neutral-100"
-              } ${location === "/find-teachers" ? "font-medium" : ""}`}>
-                Find Teachers
-            </Link>
+            {menuItems && menuItems.map((item) => (
+              <Link 
+                key={item.id} 
+                href={item.url} 
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  !isScrolled && location === "/" 
+                    ? "text-white hover:bg-white/10" 
+                    : "text-neutral-700 hover:bg-neutral-100"
+                } ${location === item.url ? "font-medium" : ""}`}
+              >
+                {item.title}
+              </Link>
+            ))}
             
-            <Link href="/#subjects" className={`px-4 py-2 rounded-md transition-colors ${
-                !isScrolled && location === "/" 
-                  ? "text-white hover:bg-white/10" 
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}>
-                Subjects
-            </Link>
-            
-            <Link href="/#how-it-works" className={`px-4 py-2 rounded-md transition-colors ${
-                !isScrolled && location === "/" 
-                  ? "text-white hover:bg-white/10" 
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}>
-                How It Works
-            </Link>
+            {!menuItems && !isMenuLoading && (
+              <>
+                <Link href="/find-teachers" className={`px-4 py-2 rounded-md transition-colors ${
+                    !isScrolled && location === "/" 
+                      ? "text-white hover:bg-white/10" 
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  } ${location === "/find-teachers" ? "font-medium" : ""}`}>
+                    Find Teachers
+                </Link>
+                
+                <Link href="/#subjects" className={`px-4 py-2 rounded-md transition-colors ${
+                    !isScrolled && location === "/" 
+                      ? "text-white hover:bg-white/10" 
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}>
+                    Subjects
+                </Link>
+                
+                <Link href="/#how-it-works" className={`px-4 py-2 rounded-md transition-colors ${
+                    !isScrolled && location === "/" 
+                      ? "text-white hover:bg-white/10" 
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}>
+                    How It Works
+                </Link>
+              </>
+            )}
             
             {isAuthenticated && !isLoading ? (
               <>
@@ -161,17 +193,31 @@ export default function Navbar() {
         {isMenuOpen && (
           <nav className="md:hidden pt-4 pb-4 border-t mt-4">
             <div className="space-y-2">
-              <Link href="/find-teachers" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                Find Teachers
-              </Link>
+              {menuItems && menuItems.map((item) => (
+                <Link 
+                  key={item.id} 
+                  href={item.url} 
+                  className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors"
+                >
+                  {item.title}
+                </Link>
+              ))}
               
-              <Link href="/#subjects" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                Subjects
-              </Link>
-              
-              <Link href="/#how-it-works" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                How It Works
-              </Link>
+              {!menuItems && !isMenuLoading && (
+                <>
+                  <Link href="/find-teachers" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                    Find Teachers
+                  </Link>
+                  
+                  <Link href="/#subjects" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                    Subjects
+                  </Link>
+                  
+                  <Link href="/#how-it-works" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                    How It Works
+                  </Link>
+                </>
+              )}
               
               {isAuthenticated && !isLoading ? (
                 <>
