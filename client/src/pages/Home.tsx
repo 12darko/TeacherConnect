@@ -125,7 +125,7 @@ export default function Home() {
                     <Link href="/auth">
                       <Button 
                         size="lg" 
-                        className="bg-white text-primary hover:bg-white/90 border-white"
+                        className="bg-white text-primary hover:bg-white/90 border-white font-medium"
                       >
                         Get Started
                       </Button>
@@ -383,7 +383,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 justify-center">
             {isAuthenticated ? (
               <Link href="/find-teachers">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-medium">
                   Find Teachers
                 </Button>
               </Link>
@@ -391,7 +391,7 @@ export default function Home() {
               <Link href="/auth">
                 <Button 
                   size="lg" 
-                  className="bg-white text-primary hover:bg-white/90"
+                  className="bg-white text-primary hover:bg-white/90 font-medium"
                 >
                   Sign Up Now
                 </Button>
