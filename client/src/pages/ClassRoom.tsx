@@ -618,42 +618,39 @@ export default function ClassRoom() {
 
   return (
     <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-          <h1 className="text-2xl font-bold ml-2">
-            {isSessionLoading ? "Yükleniyor..." : sessionData?.subjectName} Dersi
-          </h1>
-        </div>
-        
-        {!isSessionEnded && (
-          <Button 
-            variant="destructive" 
-            onClick={handleEndSession}
-            disabled={endSessionMutation.isPending}
-            className="ml-auto flex items-center"
-          >
-            {showEndConfirm ? "Emin misiniz? Tıklayın" : "Dersi Sonlandır"}
-            {endSessionMutation.isPending && (
-              <div className="ml-2 animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-            )}
-          </Button>
-        )}
-      </div>
-      
       {isSessionLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       ) : (
         <>
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+          <div className="w-full mx-auto mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Geri
+                </Button>
+              </div>
+              
+              {!isSessionEnded && (
+                <Button 
+                  variant="destructive" 
+                  onClick={handleEndSession}
+                  disabled={endSessionMutation.isPending}
+                  className="ml-auto flex items-center"
+                >
+                  {showEndConfirm ? "Emin misiniz? Tıklayın" : "Dersi Sonlandır"}
+                  {endSessionMutation.isPending && (
+                    <div className="ml-2 animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            <div className="mt-4 pb-3 border-b">
               <h1 className="text-2xl font-bold">{sessionData?.subjectName || "Ders"}</h1>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground mt-1">
                 {sessionData?.startTime && format(new Date(sessionData.startTime), "PPP")} | 
                 {sessionData?.startTime && format(new Date(sessionData.startTime), "HH:mm")} - 
                 {sessionData?.endTime && format(new Date(sessionData.endTime), "HH:mm")}
