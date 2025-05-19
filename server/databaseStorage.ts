@@ -101,6 +101,10 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
+  
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
 
   async upsertUser(userData: any): Promise<User> {
     const [user] = await db
@@ -850,6 +854,7 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   upsertUser(user: any): Promise<User>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
   

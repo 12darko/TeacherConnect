@@ -194,6 +194,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for getting users by role
+  apiRouter.get("/users", async (req: Request, res: Response) => {
+    try {
+      const role = req.query.role as string;
+      
+      if (!role) {
+        return res.status(200).json([]);
+      }
+      
+      // Get all users with specified role
+      const users = await storage.getAllUsers();
+      const filteredUsers = users.filter(user => user.role === role);
+      
+      return res.status(200).json(filteredUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // API endpoint for getting teacher profile by user ID
   apiRouter.get("/teachers/profile", async (req: Request, res: Response) => {
     try {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 
 // İşlem tipi tanımı
 type Transaction = {
@@ -13,7 +13,9 @@ type Transaction = {
   studentName?: string;
   description?: string;
 };
-import { useQuery } from "@tanstack/react-query";
+
+// Ders planlama bileşeni
+import SessionFormDialog from "@/components/ui/CreateSessionForm";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -253,8 +255,8 @@ const createSessionSchema = z.object({
   duration: z.string().min(1, "Ders süresini seçmelisiniz"),
 });
 
-// Ders oluşturma formu bileşeni
-function CreateSessionForm() {
+// Eski ders oluşturma formu bileşeni - artık kullanılmıyor
+function OldCreateSessionForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -681,7 +683,7 @@ export default function TeacherDashboard() {
           <p className="text-muted-foreground">Hoş geldiniz, {user?.firstName || user?.email}</p>
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
-          <CreateSessionForm />
+          <SessionFormDialog />
           <Link href="/create-exam">
             <Button variant="outline">
               <PlusCircle className="mr-2 h-4 w-4" />
