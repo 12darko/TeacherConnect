@@ -503,27 +503,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Yeni endpoint: /sessions/:id - doğrudan dersi günceller (istemcinin kullandığı)
   apiRouter.patch("/sessions/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log("PATCH request received for session update with body:", req.body);
+      
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        console.error("Invalid session ID:", req.params.id);
         return res.status(400).json({ message: "Invalid session ID" });
       }
       
       // Gelen veriyi kontrol et
       const { status } = req.body;
       if (status && !["scheduled", "completed", "cancelled"].includes(status)) {
+        console.error("Invalid status value:", status);
         return res.status(400).json({ message: "Invalid status value" });
       }
       
       // Status değişikliği varsa, sessionStatus'u güncelle
       if (status) {
+        console.log(`Updating session ${id} status to ${status}`);
         const session = await storage.updateSessionStatus(id, status);
         if (!session) {
+          console.error(`Session with id ${id} not found`);
           return res.status(404).json({ message: "Session not found" });
         }
+        console.log("Session successfully updated:", session);
         return res.status(200).json(session);
       }
       
       // İleride başka alan güncellemeleri gerekirse buraya eklenebilir
+      console.error("No valid update fields provided in request body");
       return res.status(400).json({ message: "No valid update fields provided" });
     } catch (error) {
       console.error("Error updating session:", error);

@@ -355,13 +355,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSessionStatus(id: number, status: string): Promise<Session | undefined> {
-    const [updatedSession] = await db
-      .update(sessions)
-      .set({ status })
-      .where(eq(sessions.id, id))
-      .returning();
-    
-    return updatedSession;
+    try {
+      // İlk olarak oturumu bul
+      const existingSession = await this.getSession(id);
+      if (!existingSession) {
+        console.error(`Session with id ${id} not found`);
+        return undefined;
+      }
+      
+      // Oturumu güncelle
+      const [updatedSession] = await db
+        .update(sessions)
+        .set({ 
+          status,
+          updatedAt: new Date() // Güncelleme zamanını da değiştir
+        })
+        .where(eq(sessions.id, id))
+        .returning();
+      
+      // Eğer ders tamamlandıysa, öğrenci istatistiklerini güncelle
+      if (status === 'completed' && existingSession) {
+        await this.updateStudentSessionCount(existingSession.studentId);
+      }
+      
+      return updatedSession;
+    } catch (error) {
+      console.error(`Error updating session status for session ${id}:`, error);
+      return undefined;
+    }
   }
   
   // Review operations
