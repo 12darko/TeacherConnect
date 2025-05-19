@@ -2,7 +2,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 
 // Pages
 import Home from "@/pages/Home";
@@ -43,6 +43,10 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/subjects" component={SubjectsPage} />
+      <Route path="/about" component={React.lazy(() => import('@/pages/About'))} />
+      <Route path="/privacy" component={React.lazy(() => import('@/pages/Privacy'))} />
+      <Route path="/terms" component={React.lazy(() => import('@/pages/Terms'))} />
+      <Route path="/contact" component={React.lazy(() => import('@/pages/Contact'))} />
       
       {/* Öğrenci sayfaları */}
       <Route path="/student-dashboard">
