@@ -648,20 +648,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "At least one question is required" });
       }
 
-      // Make sure all questions have the required fields
+      // Gelen verileri debug olarak yazdır
+      console.log("Questions data structure:", JSON.stringify(validatedData.questions, null, 2));
+
+      // Daha esnek doğrulama yapısı
       for (let i = 0; i < validatedData.questions.length; i++) {
         const q = validatedData.questions[i];
-        if (!q.question || !q.correctAnswer || !q.type || !q.points) {
+        console.log(`Question ${i} fields:`, Object.keys(q));
+        
+        // Zorunlu alanların varlığını kontrol et
+        const missingFields = [];
+        if (!q.question) missingFields.push('question');
+        if (q.correctAnswer === undefined || q.correctAnswer === null) missingFields.push('correctAnswer');
+        if (!q.type) missingFields.push('type');
+        if (q.points === undefined || q.points === null) missingFields.push('points');
+        
+        if (missingFields.length > 0) {
           return res.status(400).json({ 
-            message: `Question at index ${i} is missing required fields (question, correctAnswer, type, points)` 
+            message: `Question at index ${i} is missing required fields (${missingFields.join(', ')})` 
           });
         }
         
-        // For multiple-choice questions, ensure options exist
-        if (q.type === 'multiple-choice' && (!q.options || !Array.isArray(q.options) || q.options.length < 2)) {
-          return res.status(400).json({ 
-            message: `Multiple-choice question at index ${i} requires at least 2 options` 
-          });
+        // Çoktan seçmeli sorular için seçeneklerin kontrolü
+        if (q.type === 'multiple-choice') {
+          if (!q.options || !Array.isArray(q.options)) {
+            return res.status(400).json({ 
+              message: `Multiple-choice question at index ${i} requires options array` 
+            });
+          }
+          
+          // Boş seçenekleri filtrele
+          q.options = q.options.filter(opt => opt && opt.trim());
+          
+          if (q.options.length < 2) {
+            return res.status(400).json({ 
+              message: `Multiple-choice question at index ${i} requires at least 2 options` 
+            });
+          }
         }
       }
       
