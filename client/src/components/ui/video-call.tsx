@@ -572,9 +572,13 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
             
             <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
               <div className="flex items-center">
-                {/* Oturum aktifse ve tamamlanmamışsa çevrimiçi göster */}
-                {sessionInfo?.status === "scheduled" && (
+                {/* Sadece oturum durumu "active" olduğunda çevrimiçi göster */}
+                {sessionInfo?.status === "active" && (
                   <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                )}
+                {/* Planlanmış ama henüz aktif olmayan durumlar için gri gösterge */}
+                {sessionInfo?.status === "scheduled" && (
+                  <span className="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
                 )}
                 {isTeacher 
                   ? sessionInfo?.studentName 
@@ -585,6 +589,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
                     : "Öğretmen"
                 }
                 {sessionInfo?.status === "completed" && " (Ders tamamlandı)"}
+                {sessionInfo?.status === "scheduled" && " (Planlandı)"}
               </div>
             </div>
             
