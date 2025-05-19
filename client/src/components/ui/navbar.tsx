@@ -16,7 +16,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   
   // Handle scrolling effect
   useEffect(() => {
@@ -143,8 +143,9 @@ export default function Navbar() {
                 <Button
                   variant={(!isScrolled && location === "/") ? "outline" : "default"}
                   className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                  asChild
                 >
-                  Sign In
+                  <a>Sign In</a>
                 </Button>
               </Link>
             ) : null}
@@ -223,13 +224,12 @@ export default function Navbar() {
                 </>
               ) : !isLoading ? (
                 <div className="pt-2">
-                  <Link href="/auth">
-                    <Button
-                      className="w-full"
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Sign In
+                  </Button>
                 </div>
               ) : null}
             </div>
