@@ -552,9 +552,14 @@ export default function TeacherDashboard() {
       if (!response.ok) {
         throw new Error('Failed to fetch sessions');
       }
-      return response.json();
+      const data = await response.json();
+      console.log("Öğretmen dersleri yüklendi:", data);
+      return data;
     },
     enabled: !!user?.id,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 10000 // Her 10 saniyede bir yenile
   });
   
   // Bekleyen ders taleplerini getir
