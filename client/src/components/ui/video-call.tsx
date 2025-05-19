@@ -252,33 +252,51 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     }
   };
   
-  // Sohbet mesajı gönderme
+  // Geliştirilmiş sohbet mesajı gönderme
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Boş mesaj kontrolü
     if (!newMessage.trim()) return;
     
-    const now = new Date();
-    const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, "0");
-    
-    // Mesajı ekle
-    setMessages(prev => [
-      ...prev,
-      { sender: "Siz", text: newMessage, time },
-    ]);
-    
-    setNewMessage("");
-    
-    // Demo yanıt
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: isTeacher ? "Öğrenci" : "Öğretmen", 
-          text: "Mesajınızı aldım, teşekkürler. Size nasıl yardımcı olabilirim?", 
-          time: now.getHours() + ":" + now.getMinutes().toString().padStart(2, "0")
-        },
-      ]);
-    }, 1500);
+    try {
+      // Formatlanmış zaman
+      const now = new Date();
+      const timeString = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+      
+      // Yeni mesaj objesi
+      const newMessageObj = {
+        sender: "Siz", 
+        text: newMessage.trim(),
+        time: timeString
+      };
+      
+      // State güncelleme - eski array'i referans ile değil, kopya oluşturarak güncelle
+      const updatedMessages = [...messages, newMessageObj];
+      setMessages(updatedMessages);
+      
+      // Input temizle
+      setNewMessage("");
+      
+      // Otomatik scroll
+      setTimeout(() => {
+        const chatContainer = document.querySelector('.flex-grow.p-3.overflow-y-auto.bg-white');
+        if (chatContainer) {
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      }, 50);
+      
+      // Demo cevap mesajını kaldırdık
+      // Gerçek bir entegrasyon için burada WebSocket veya başka bir protokol kullanılabilir
+    } catch (error) {
+      console.error("Mesaj gönderme hatası:", error);
+      
+      toast({
+        title: "Mesaj Gönderilemedi",
+        description: "Lütfen tekrar deneyiniz.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Dersi sonlandır
