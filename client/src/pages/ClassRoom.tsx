@@ -617,7 +617,7 @@ export default function ClassRoom() {
   }, [sessionData]);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 mt-16">
       {isSessionLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
