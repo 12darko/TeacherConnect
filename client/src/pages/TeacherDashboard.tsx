@@ -34,6 +34,32 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
@@ -55,8 +81,11 @@ import {
   GraduationCap,
   CreditCard
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addHours } from "date-fns";
 import { tr } from "date-fns/locale";
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 // Haftalık takvim bileşeni
 const WeeklySchedule = ({ sessions = [] }: { sessions: any[] }) => {
@@ -212,6 +241,296 @@ const SessionRequest = ({
     </div>
   );
 };
+
+// Ders oluşturma formu için tanımlama
+const createSessionSchema = z.object({
+  studentId: z.string().min(1, "Öğrenci seçmelisiniz"),
+  subjectId: z.string().min(1, "Konu seçmelisiniz"),
+  date: z.date({
+    required_error: "Ders tarihini seçmelisiniz",
+  }),
+  time: z.string().min(1, "Ders saatini seçmelisiniz"),
+  duration: z.string().min(1, "Ders süresini seçmelisiniz"),
+});
+
+// Ders oluşturma formu bileşeni
+function CreateSessionForm() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // Öğrenci listesi için query
+  const { data: students = [] } = useQuery<any[]>({
+    queryKey: ['/api/users/students'],
+    queryFn: async () => {
+      const response = await fetch(`/api/users?role=student`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch students');
+      }
+      return response.json();
+    },
+  });
+  
+  // Konu listesi için query
+  const { data: subjects = [] } = useQuery<any[]>({
+    queryKey: ['/api/subjects'],
+    queryFn: async () => {
+      const response = await fetch('/api/subjects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subjects');
+      }
+      return response.json();
+    },
+  });
+
+  // Form tanımlaması
+  const form = useForm<z.infer<typeof createSessionSchema>>({
+    resolver: zodResolver(createSessionSchema),
+    defaultValues: {
+      studentId: "",
+      subjectId: "",
+      time: "10:00",
+      duration: "60",
+    },
+  });
+
+  // Form gönderildiğinde çalışacak fonksiyon
+  const onSubmit = async (values: z.infer<typeof createSessionSchema>) => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Başlangıç ve bitiş zamanlarını hesapla
+      const startTime = new Date(values.date);
+      const [hours, minutes] = values.time.split(':').map(Number);
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // Bitiş zamanını dakika olarak verilen süre kadar ilerlet
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + parseInt(values.duration));
+      
+      // API'ye gönderilecek veri
+      const sessionData = {
+        teacherId: user.id,
+        studentId: values.studentId,
+        subjectId: parseInt(values.subjectId),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        status: "scheduled",
+        sessionUrl: `/classroom/${Date.now()}`, // Benzersiz URL oluştur
+      };
+      
+      // API isteği yap
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Ders oluşturulurken bir hata oluştu');
+      }
+      
+      const result = await response.json();
+      
+      // Başarı mesajı göster
+      toast({
+        title: "Ders başarıyla oluşturuldu",
+        description: `${values.time} saatinde ders oluşturuldu.`,
+      });
+      
+      // Query cache'i güncelle ve modalı kapat
+      queryClient.invalidateQueries({ queryKey: ['/api/sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sessions/pending'] });
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error("Ders oluşturulurken hata:", error);
+      toast({
+        title: "Hata",
+        description: "Ders oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Yeni Ders Oluştur
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Yeni Ders Oluştur</DialogTitle>
+          <DialogDescription>
+            Yeni bir ders oluşturmak için aşağıdaki formu doldurun.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="studentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Öğrenci</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Öğrenci seçin" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.firstName} {student.lastName || ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="subjectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Konu</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Konu seçin" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id.toString()}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Tarih</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className="w-full pl-3 text-left font-normal"
+                        >
+                          {field.value ? (
+                            format(field.value, "dd MMMM yyyy", { locale: tr })
+                          ) : (
+                            <span>Tarih seçin</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Saat</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Saat seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.from({ length: 14 }, (_, i) => {
+                          const hour = i + 8; // 8:00'den 21:00'e kadar
+                          return (
+                            <SelectItem key={hour} value={`${hour}:00`}>
+                              {hour}:00
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Süre (dakika)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Süre seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="30">30 dakika</SelectItem>
+                        <SelectItem value="60">60 dakika</SelectItem>
+                        <SelectItem value="90">90 dakika</SelectItem>
+                        <SelectItem value="120">120 dakika</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && (
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                )}
+                Ders Oluştur
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // Ana öğretmen dashboard bileşeni
 export default function TeacherDashboard() {
