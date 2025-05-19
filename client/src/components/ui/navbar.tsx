@@ -48,56 +48,47 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/">
-            <a className="flex items-center">
-              <span className={`text-2xl font-bold ${!isScrolled && !isMenuOpen && location === "/" ? "text-white" : "text-primary"}`}>
-                EduConnect
-              </span>
-            </a>
+          <Link href="/" className="flex items-center">
+            <span className={`text-2xl font-bold ${!isScrolled && !isMenuOpen && location === "/" ? "text-white" : "text-primary"}`}>
+              EduConnect
+            </span>
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <Link href="/find-teachers">
-              <a className={`px-4 py-2 rounded-md transition-colors ${
+            <Link href="/find-teachers" className={`px-4 py-2 rounded-md transition-colors ${
                 !isScrolled && location === "/" 
                   ? "text-white hover:bg-white/10" 
                   : "text-neutral-700 hover:bg-neutral-100"
               } ${location === "/find-teachers" ? "font-medium" : ""}`}>
                 Find Teachers
-              </a>
             </Link>
             
-            <Link href="/#subjects">
-              <a className={`px-4 py-2 rounded-md transition-colors ${
+            <Link href="/#subjects" className={`px-4 py-2 rounded-md transition-colors ${
                 !isScrolled && location === "/" 
                   ? "text-white hover:bg-white/10" 
                   : "text-neutral-700 hover:bg-neutral-100"
               }`}>
                 Subjects
-              </a>
             </Link>
             
-            <Link href="/#how-it-works">
-              <a className={`px-4 py-2 rounded-md transition-colors ${
+            <Link href="/#how-it-works" className={`px-4 py-2 rounded-md transition-colors ${
                 !isScrolled && location === "/" 
                   ? "text-white hover:bg-white/10" 
                   : "text-neutral-700 hover:bg-neutral-100"
               }`}>
                 How It Works
-              </a>
             </Link>
             
             {isAuthenticated && !isLoading ? (
               <>
-                <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                  <a className={`px-4 py-2 rounded-md transition-colors ${
+                <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"} 
+                  className={`px-4 py-2 rounded-md transition-colors ${
                     !isScrolled && location === "/" 
                       ? "text-white hover:bg-white/10" 
                       : "text-neutral-700 hover:bg-neutral-100"
                   } ${location.includes("dashboard") ? "font-medium" : ""}`}>
                     Dashboard
-                  </a>
                 </Link>
                 
                 <div className="relative ml-2 group">
@@ -114,18 +105,15 @@ export default function Navbar() {
                     <div className="px-4 py-2 text-sm text-neutral-500 border-b">
                       Signed in as <span className="font-medium text-neutral-900">{user?.email}</span>
                     </div>
-                    <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                      <a className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
+                    <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"} 
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
                         <LayoutDashboard className="h-4 w-4 inline-block mr-2" />
                         Dashboard
-                      </a>
                     </Link>
                     {user?.role === "teacher" && (
-                      <Link href="/create-exam">
-                        <a className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
-                          <BookOpen className="h-4 w-4 inline-block mr-2" />
-                          Create Exam
-                        </a>
+                      <Link href="/create-exam" className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
+                        <BookOpen className="h-4 w-4 inline-block mr-2" />
+                        Create Exam
                       </Link>
                     )}
                     <a 
@@ -173,22 +161,16 @@ export default function Navbar() {
         {isMenuOpen && (
           <nav className="md:hidden pt-4 pb-4 border-t mt-4">
             <div className="space-y-2">
-              <Link href="/find-teachers">
-                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                  Find Teachers
-                </a>
+              <Link href="/find-teachers" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                Find Teachers
               </Link>
               
-              <Link href="/#subjects">
-                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                  Subjects
-                </a>
+              <Link href="/#subjects" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                Subjects
               </Link>
               
-              <Link href="/#how-it-works">
-                <a className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
-                  How It Works
-                </a>
+              <Link href="/#how-it-works" className="block px-4 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 transition-colors">
+                How It Works
               </Link>
               
               {isAuthenticated && !isLoading ? (
