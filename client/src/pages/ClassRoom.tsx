@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,13 @@ export default function ClassRoom() {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState<string>("");
   const [sharedFiles, setSharedFiles] = useState<Array<{name: string, type: string, size: string}>>([]);
+  
+  // Beyaz tahta için gerekli değişkenler
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [strokeColor, setStrokeColor] = useState("#000000");
+  const [strokeWidth, setStrokeWidth] = useState(3);
+  const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
   
   // Session türü tanımı
   interface Session {
@@ -79,6 +86,74 @@ export default function ClassRoom() {
       description: "Şimdi bu araçla çalışabilirsiniz.",
     });
   };
+  
+  // Beyaz tahta fonksiyonları
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setIsDrawing(true);
+    setCurrentPosition({ x, y });
+  };
+  
+  const finishDrawing = () => {
+    setIsDrawing(false);
+  };
+  
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(currentPosition.x, currentPosition.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    
+    setCurrentPosition({ x, y });
+  };
+  
+  const clearWhiteboard = () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    toast({
+      title: "Beyaz Tahta Temizlendi",
+      description: "Tüm çizimler temizlendi."
+    });
+  };
+  
+  // Canvas boyutları için useEffect
+  useEffect(() => {
+    if (canvasRef.current && selectedTool === "whiteboard") {
+      const canvas = canvasRef.current;
+      const container = canvas.parentElement;
+      if (!container) return;
+      
+      // Canvas boyutlarını container'a göre ayarla
+      canvas.width = container.clientWidth;
+      canvas.height = 288; // 72px (h-72 sınıfı) height değeri
+    }
+  }, [selectedTool]);
   
   // Not defteri fonksiyonu
   const handleSaveNotes = () => {
