@@ -29,7 +29,7 @@ export function SubjectCard({ id, name, icon, teacherCount = 0, description }: S
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="flex flex-row items-center gap-4 pb-2">
-        <div className="p-2 rounded-full bg-primary/10 text-primary flex items-center justify-center w-12 h-12">
+        <div className="p-2 rounded-full bg-primary/10 text-primary flex items-center justify-center min-w-[3rem] h-12">
           {IconComponent ? (
             <IconComponent size={24} />
           ) : (
@@ -37,7 +37,7 @@ export function SubjectCard({ id, name, icon, teacherCount = 0, description }: S
             <span className="text-2xl">{icon}</span>
           )}
         </div>
-        <CardTitle>{name}</CardTitle>
+        <CardTitle className="line-clamp-2">{name}</CardTitle>
       </CardHeader>
       <CardContent className="pb-2">
         <CardDescription>

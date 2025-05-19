@@ -37,7 +37,7 @@ export function TeacherCard({
   
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-      <CardHeader className="flex items-center">
+      <CardHeader className="flex flex-col items-center text-center">
         <Avatar className="h-20 w-20 mb-2">
           <AvatarImage src={profileImageUrl} alt={fullName} />
           <AvatarFallback>{initials || "ÖĞ"}</AvatarFallback>

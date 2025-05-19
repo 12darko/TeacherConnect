@@ -700,19 +700,21 @@ export default function TeacherDashboard() {
       </div>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 md:w-[600px]">
-          <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
-          <TabsTrigger value="schedule">Ders Programı</TabsTrigger>
-          <TabsTrigger value="students">
-            Öğrenciler
-            {pendingRequests.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {pendingRequests.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="earnings">Kazançlar</TabsTrigger>
-        </TabsList>
+        <div className="border-b">
+          <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
+            <TabsTrigger value="overview" className="whitespace-nowrap">Genel Bakış</TabsTrigger>
+            <TabsTrigger value="schedule" className="whitespace-nowrap">Ders Programı</TabsTrigger>
+            <TabsTrigger value="students" className="whitespace-nowrap">
+              Öğrenciler
+              {pendingRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {pendingRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="earnings" className="whitespace-nowrap">Kazançlar</TabsTrigger>
+          </TabsList>
+        </div>
         
         {/* Genel Bakış Sekmesi */}
         <TabsContent value="overview">
