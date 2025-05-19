@@ -37,10 +37,10 @@ export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conObject: pool,
+    pool: pool,
     createTableIfMissing: true,
     ttl: sessionTtl,
-    tableName: "session_store",
+    tableName: "auth_sessions",
   });
   return session({
     secret: process.env.SESSION_SECRET || 'edu-connect-secret-key',

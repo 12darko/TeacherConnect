@@ -611,40 +611,40 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingSubjects ? (
+                {isLoadingStatistics ? (
                   <div className="h-10 w-20 bg-gray-200 animate-pulse mx-auto rounded"></div>
                 ) : (
-                  "10,000+"
+                  `${statistics?.totalStudents?.toLocaleString() || '10,000'}+`
                 )}
               </div>
               <p className="text-neutral-600">Students</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingTeachers ? (
+                {isLoadingStatistics ? (
                   <div className="h-10 w-20 bg-gray-200 animate-pulse mx-auto rounded"></div>
                 ) : (
-                  "1,000+"
+                  `${statistics?.totalTeachers?.toLocaleString() || '1,000'}+`
                 )}
               </div>
               <p className="text-neutral-600">Expert Teachers</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingSubjects ? (
+                {isLoadingStatistics ? (
                   <div className="h-10 w-16 bg-gray-200 animate-pulse mx-auto rounded"></div>
                 ) : (
-                  `${subjects.length || 50}+`
+                  `${statistics?.totalSubjects?.toLocaleString() || '50'}+`
                 )}
               </div>
               <p className="text-neutral-600">Subjects</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingSubjects ? (
+                {isLoadingStatistics ? (
                   <div className="h-10 w-24 bg-gray-200 animate-pulse mx-auto rounded"></div>
                 ) : (
-                  "100,000+"
+                  `${statistics?.totalSessions?.toLocaleString() || '100,000'}+`
                 )}
               </div>
               <p className="text-neutral-600">Completed Lessons</p>

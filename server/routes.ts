@@ -430,20 +430,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Site Statistics API
   apiRouter.get("/statistics", async (req: Request, res: Response) => {
     try {
-      // Calculate actual statistics from database
-      const users = await storage.getUsers();
-      const students = users.filter(user => user.role === "student");
-      const teachers = users.filter(user => user.role === "teacher");
+      // Use the getSiteStatistics method instead of calculating manually
+      const stats = await storage.getSiteStatistics();
       
-      const subjects = await storage.getSubjects();
-      const sessions = await storage.getSessions();
-      
-      const stats = {
-        totalStudents: students.length || 10000,
-        totalTeachers: teachers.length || 1000,
-        totalSubjects: subjects.length || 50,
-        totalSessions: sessions.length || 100000
-      };
+      if (!stats) {
+        // Provide default statistics if none are found in the database
+        return res.status(200).json({
+          totalStudents: 10000,
+          totalTeachers: 1000,
+          totalSubjects: 50,
+          totalSessions: 100000
+        });
+      }
       
       return res.status(200).json(stats);
     } catch (error) {
@@ -823,16 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Site statistics endpoints
-  apiRouter.get("/statistics", async (req: Request, res: Response) => {
-    try {
-      const stats = await storage.getSiteStatistics();
-      return res.json(stats);
-    } catch (error) {
-      console.error("Error retrieving site statistics:", error);
-      return res.status(500).json({ message: "An error occurred while retrieving site statistics" });
-    }
-  });
+  // Site statistics endpoint is already defined at line 430
   
   // How it works steps endpoints
   apiRouter.get("/how-it-works", async (req: Request, res: Response) => {
