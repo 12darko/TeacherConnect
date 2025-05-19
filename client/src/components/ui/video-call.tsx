@@ -121,28 +121,61 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     };
   }, [isSessionActive, isTeacher]);
   
-  // Ses açma/kapatma - geliştirilmiş
+  // Ses açma/kapatma - geliştirilmiş ve düzeltilmiş
   const toggleAudio = () => {
     try {
-      // Eğer stream yoksa uyarı ver ve işleme devam etme
+      // Eğer stream yoksa mikrofon izni isteme
       if (!localStream) {
-        toast({
-          title: "Mikrofon Erişimi Yok",
-          description: "Mikrofon erişimi sağlanamadı. İzinleri kontrol edin.",
-          variant: "destructive"
-        });
+        // Kullanıcıdan sadece mikrofon izni isteme
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(audioStream => {
+            setLocalStream(audioStream);
+            setIsAudioEnabled(true);
+            setIsMicActive(true);
+            
+            toast({
+              title: "Mikrofon Açıldı",
+              description: "Mikrofon başarıyla etkinleştirildi.",
+            });
+          })
+          .catch(err => {
+            console.error("Mikrofon erişimi hatası:", err);
+            toast({
+              title: "Mikrofon Erişimi Reddedildi",
+              description: "Tarayıcı izinlerinden mikrofon erişimine izin verin.",
+              variant: "destructive"
+            });
+          });
         return;
       }
       
       const audioTracks = localStream.getAudioTracks();
       
-      // Ses track olmayabilir
+      // Ses track olmayabilir - track yoksa yeni mikrofon izni iste
       if (audioTracks.length === 0) {
-        toast({
-          title: "Mikrofon Bulunmadı",
-          description: "Aktif bir mikrofon bulunamadı.",
-          variant: "destructive"
-        });
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(audioStream => {
+            // Mevcut stream'e yeni ses track'i ekle
+            audioStream.getAudioTracks().forEach(track => {
+              localStream.addTrack(track);
+            });
+            
+            setIsAudioEnabled(true);
+            setIsMicActive(true);
+            
+            toast({
+              title: "Mikrofon Açıldı",
+              description: "Mikrofon başarıyla etkinleştirildi.",
+            });
+          })
+          .catch(err => {
+            console.error("Mikrofon erişimi hatası:", err);
+            toast({
+              title: "Mikrofon Bulunamadı",
+              description: "Sisteminizde çalışan bir mikrofon bulunamadı.",
+              variant: "destructive"
+            });
+          });
         return;
       }
       
@@ -153,6 +186,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
       
       // State güncelle
       setIsAudioEnabled(!isAudioEnabled);
+      setIsMicActive(!isAudioEnabled);
       
       toast({
         title: isAudioEnabled ? "Mikrofon Kapatıldı" : "Mikrofon Açıldı",
@@ -168,28 +202,72 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     }
   };
   
-  // Video açma/kapatma - geliştirilmiş sürüm
+  // Video açma/kapatma - geliştirilmiş ve düzeltilmiş sürüm
   const toggleVideo = () => {
     try {
-      // Eğer stream yoksa uyarı ver ve işleme devam etme
+      // Eğer stream yoksa kamera izni isteme
       if (!localStream) {
-        toast({
-          title: "Kamera Erişimi Yok",
-          description: "Kamera erişimi sağlanamadı. İzinleri kontrol edin.",
-          variant: "destructive"
-        });
+        // Kullanıcıdan sadece kamera izni isteme
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(videoStream => {
+            setLocalStream(videoStream);
+            setIsVideoEnabled(true);
+            setCameraActive(true);
+            
+            // Video stream'i lokalRef'e bağlanıyor
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = videoStream;
+            }
+            
+            toast({
+              title: "Kamera Açıldı",
+              description: "Kamera başarıyla etkinleştirildi.",
+            });
+          })
+          .catch(err => {
+            console.error("Kamera erişimi hatası:", err);
+            setCameraError("Tarayıcı izinlerinden kamera erişimine izin verin.")
+            toast({
+              title: "Kamera Erişimi Reddedildi",
+              description: "Tarayıcı izinlerinden kamera erişimine izin verin.",
+              variant: "destructive"
+            });
+          });
         return;
       }
       
       const videoTracks = localStream.getVideoTracks();
       
-      // Video track olmayabilir
+      // Video track olmayabilir - track yoksa yeni kamera izni iste
       if (videoTracks.length === 0) {
-        toast({
-          title: "Kamera Bulunmadı",
-          description: "Aktif bir kamera bulunamadı.",
-          variant: "destructive"
-        });
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(videoStream => {
+            // Mevcut stream'e yeni video track'i ekle
+            videoStream.getVideoTracks().forEach(track => {
+              localStream.addTrack(track);
+            });
+            
+            // Video stream'i lokalRef'e bağlanıyor
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = localStream;
+            }
+            
+            setIsVideoEnabled(true);
+            setCameraActive(true);
+            
+            toast({
+              title: "Kamera Açıldı",
+              description: "Kamera başarıyla etkinleştirildi.",
+            });
+          })
+          .catch(err => {
+            console.error("Kamera erişimi hatası:", err);
+            toast({
+              title: "Kamera Bulunamadı",
+              description: "Sisteminizde çalışan bir kamera bulunamadı.",
+              variant: "destructive"
+            });
+          });
         return;
       }
       
@@ -200,6 +278,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
       
       // State güncelle
       setIsVideoEnabled(!isVideoEnabled);
+      setCameraActive(!isVideoEnabled);
       
       toast({
         title: isVideoEnabled ? "Kamera Kapatıldı" : "Kamera Açıldı",
