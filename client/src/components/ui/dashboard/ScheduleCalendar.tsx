@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "wouter";
+import { Link } from "wouter";
 
 type SessionEvent = {
   id: number;
@@ -36,7 +36,6 @@ type CalendarDay = {
 export function ScheduleCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedEvents, setSelectedEvents] = useState<SessionEvent[]>([]);
-  const navigate = useNavigate();
   
   const { user } = useAuth();
   const userId = user?.id;

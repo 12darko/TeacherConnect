@@ -1059,7 +1059,16 @@ export default function TeacherDashboard() {
                 <Button 
                   variant="outline" 
                   className="w-full" 
-                  onClick={() => setActiveTab("schedule")}
+                  onClick={() => {
+                    setActiveTab("schedule");
+                    // Biraz bekledikten sonra sayfayı kaydır
+                    setTimeout(() => {
+                      const scheduleElement = document.getElementById('schedule-tab');
+                      if (scheduleElement) {
+                        scheduleElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 100);
+                  }}
                 >
                   Tüm Program
                 </Button>
@@ -1069,7 +1078,7 @@ export default function TeacherDashboard() {
         </TabsContent>
         
         {/* Ders Programı Sekmesi */}
-        <TabsContent value="schedule">
+        <TabsContent value="schedule" id="schedule-tab">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
