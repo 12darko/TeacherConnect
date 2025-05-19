@@ -121,19 +121,29 @@ export default function Auth() {
         description: "Welcome! Redirecting you to the dashboard.",
       });
       
-      // Redirect based on user role - Immediate navigation
-      const role = data.user?.role;
-      console.log("Redirecting user with role:", role);
-      
-      if (role === "student") {
-        navigate("/student-dashboard");
-      } else if (role === "teacher") {
-        navigate("/teacher-dashboard");
-      } else if (role === "admin") {
-        navigate("/admin-dashboard");
-      } else {
-        navigate("/"); // Redirect to home page if no role is found
-      }
+      // Kullanıcı verilerini global olarak güncelle - queryClient üzerinden import edilmeli
+      import("@/lib/queryClient").then(({ queryClient }) => {
+        // Kullanıcı verisini cache'e ekle
+        queryClient.setQueryData(["/api/auth/user"], data.user);
+        // Tüm sorguları geçersiz kıl ve yeniden yükle
+        queryClient.invalidateQueries();
+        
+        // Ardından yönlendirme yap
+        setTimeout(() => {
+          const role = data.user?.role;
+          console.log("Redirecting user with role:", role);
+          
+          if (role === "student") {
+            navigate("/student-dashboard");
+          } else if (role === "teacher") {
+            navigate("/teacher-dashboard");
+          } else if (role === "admin") {
+            navigate("/admin-dashboard");
+          } else {
+            navigate("/"); // Redirect to home page if no role is found
+          }
+        }, 100); // Kısa bir gecikme
+      });
     },
     onError: (error: any) => {
       toast({
