@@ -1167,7 +1167,137 @@ export default function TeacherDashboard() {
               </CardContent>
             </Card>
             
-            {/* Bu bölümde öğrenci listeleri ve diğer öğrenci yönetimi özellikleri eklenebilir */}
+            {/* Öğrencilerim */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Öğrencilerim</CardTitle>
+                <CardDescription>Ders aldığınız tüm öğrencilerin listesi</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSessions ? (
+                  <div className="text-center py-6">
+                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Öğrenciler yükleniyor...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="flex gap-2 mb-4">
+                      <Input 
+                        type="search" 
+                        placeholder="Öğrenci ara..." 
+                        className="max-w-sm" 
+                      />
+                    </div>
+                    
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Öğrenci</TableHead>
+                            <TableHead>Son Ders</TableHead>
+                            <TableHead>Durum</TableHead>
+                            <TableHead className="text-right">İşlemler</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Unique öğrencileri çıkar */}
+                          {Array.from(new Set(sessions.map((s: any) => s.studentId))).map((studentId) => {
+                            // Her öğrenci için bilgileri bul
+                            const studentSessions = sessions.filter((s: any) => s.studentId === studentId);
+                            const lastSession = [...studentSessions].sort((a: any, b: any) => 
+                              new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+                            )[0];
+                            
+                            // Çevrimiçi durumu belirle - öğrencinin son 30 dakika içinde bir dersi varsa çevrimiçi say
+                            const isRecentlyActive = lastSession && 
+                              (new Date().getTime() - new Date(lastSession.endTime).getTime()) < 30 * 60 * 1000;
+                            
+                            // Son dersin durumuna göre gerçek çevrimiçi durumu kontrol et
+                            const isOnline = isRecentlyActive && lastSession.status === "active";
+                            
+                            return (
+                              <TableRow key={studentId}>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <Avatar>
+                                      <AvatarImage src={`https://ui-avatars.com/api/?name=${lastSession.studentName}&background=random`} />
+                                      <AvatarFallback>{lastSession.studentName.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium">{lastSession.studentName}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {studentSessions.length} ders
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {lastSession ? (
+                                    <div>
+                                      <div className="font-medium">{lastSession.subjectName}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {format(new Date(lastSession.startTime), 'dd MMM yyyy, HH:mm', { locale: tr })}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <div className={`h-2.5 w-2.5 rounded-full mr-2 ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                    <span>{isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Menüyü aç</span>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                                      <DropdownMenuItem onClick={() => {
+                                        // Mesaj sayfasına yönlendir
+                                      }}>
+                                        <MessageCircle className="mr-2 h-4 w-4" />
+                                        <span>Mesaj Gönder</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => {
+                                        // Ders programlama formunu aç
+                                      }}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        <span>Ders Planla</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => {
+                                        // Öğrenci profilini görüntüle
+                                      }}>
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Profili Görüntüle</span>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          
+                          {Array.from(new Set(sessions.map((s: any) => s.studentId))).length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                                Henüz bir öğrenci bulunamadı
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
         
