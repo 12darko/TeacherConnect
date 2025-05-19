@@ -286,7 +286,7 @@ export default function Auth() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Soyad</FormLabel>
+                          <FormLabel>Last Name</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -335,7 +335,7 @@ export default function Auth() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Şifre Tekrar</FormLabel>
+                        <FormLabel>Confirm Password</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -352,7 +352,7 @@ export default function Auth() {
                     className="w-full" 
                     disabled={registerMutation.isPending}
                   >
-                    {registerMutation.isPending ? "Kayıt yapılıyor..." : "Kayıt Ol"}
+                    {registerMutation.isPending ? "Registering..." : "Register"}
                   </Button>
                 </form>
               </Form>
@@ -366,7 +366,7 @@ export default function Auth() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Veya şununla devam et
+                Or continue with
               </span>
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function Auth() {
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               </svg>
-              <span className="sr-only">Google ile {tab === "login" ? "Giriş Yap" : "Kayıt Ol"}</span>
+              <span className="sr-only">Sign {tab === "login" ? "in" : "up"} with Google</span>
             </Button>
             
             <Button 
@@ -396,7 +396,7 @@ export default function Auth() {
               className="rounded-full bg-white hover:bg-gray-50 border-gray-300 text-blue-600 h-12 w-12"
             >
               <Facebook className="h-6 w-6" />
-              <span className="sr-only">Facebook ile {tab === "login" ? "Giriş Yap" : "Kayıt Ol"}</span>
+              <span className="sr-only">Sign {tab === "login" ? "in" : "up"} with Facebook</span>
             </Button>
             
             <Button 
