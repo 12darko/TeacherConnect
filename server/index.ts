@@ -4,7 +4,6 @@ import { setupVite, serveStatic, log } from "./vite";
 import dotenv from "dotenv";
 import session from "express-session";
 import { pool } from "./db";
-import connectPg from "connect-pg-simple";
 
 // Load environment variables
 dotenv.config();
@@ -13,22 +12,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Session setup
-const PgSession = connectPg(session);
-app.use(session({
-  store: new PgSession({
-    pool,
-    tableName: 'sessions',
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET || 'educonnect-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  }
-}));
+// Use existing session from replitAuth.ts which already has MemoryStore
+import { getSession } from "./replitAuth";
+app.use(getSession());
 
 app.use((req, res, next) => {
   const start = Date.now();

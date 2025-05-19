@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 // Extend express-session
 declare module 'express-session' {
@@ -196,10 +198,15 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     // Şifre kontrolü
-    const isPasswordValid = await comparePassword(password, passwordHash);
-    console.log("Password valid:", isPasswordValid ? "Yes" : "No");
-    
-    if (!isPasswordValid) {
+    try {
+      const isPasswordValid = await comparePassword(password, passwordHash);
+      console.log("Password valid:", isPasswordValid ? "Yes" : "No");
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+    } catch (error) {
+      console.error("Password comparison error:", error);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
