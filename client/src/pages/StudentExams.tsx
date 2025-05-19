@@ -29,8 +29,23 @@ export default function StudentExams() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("pending");
 
+  // Define the exam assignment interface
+  interface ExamAssignment {
+    id: number;
+    examId: number;
+    examTitle: string;
+    subjectName: string;
+    teacherName: string;
+    questionCount: number;
+    timeLimit: number;
+    dueDate: string;
+    completed: boolean;
+    submittedAt?: string;
+    score?: number;
+  }
+
   // Fetch exam assignments for the student
-  const { data: examAssignments = [], isLoading: isLoadingAssignments } = useQuery({
+  const { data: examAssignments = [], isLoading: isLoadingAssignments } = useQuery<ExamAssignment[]>({
     queryKey: [`/api/exam-assignments?studentId=${user?.id}`],
     enabled: !!user?.id,
   });
@@ -60,8 +75,8 @@ export default function StudentExams() {
   }
 
   // Filter exams by status
-  const pendingExams = examAssignments.filter((exam: any) => !exam.completed);
-  const completedExams = examAssignments.filter((exam: any) => exam.completed);
+  const pendingExams = examAssignments.filter((exam) => !exam.completed);
+  const completedExams = examAssignments.filter((exam) => exam.completed);
 
   // Format date for display
   const formatDate = (dateString: string) => {

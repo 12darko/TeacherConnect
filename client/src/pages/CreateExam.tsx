@@ -44,7 +44,13 @@ export default function CreateExam() {
   const { toast } = useToast();
   
   // Fetch subjects
-  const { data: subjects = [] } = useQuery({
+  interface Subject {
+    id: number;
+    name: string;
+    icon?: string;
+  }
+  
+  const { data: subjects = [] } = useQuery<Subject[]>({
     queryKey: ['/api/subjects'],
   });
   
@@ -91,13 +97,22 @@ export default function CreateExam() {
   // Create exam mutation
   const createExam = useMutation({
     mutationFn: async (examData: any) => {
-      const response = await apiRequest("POST", "/api/exams", examData);
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/exams", examData);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to create exam");
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Error creating exam:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
-        title: "Exam created",
-        description: "Your exam has been successfully created.",
+        title: "Sınav oluşturuldu",
+        description: "Sınavınız başarıyla oluşturuldu.",
       });
       
       // If assign to students is enabled, assign the exam
@@ -108,14 +123,15 @@ export default function CreateExam() {
           dueDate: form.getValues().dueDate,
         });
       } else {
-        // Navigate back to teacher dashboard
-        setLocation("/teacher-dashboard?tab=exams");
+        // Navigate back to teacher exams
+        setLocation("/teacher-exams");
       }
     },
     onError: (error) => {
+      console.error("Error creating exam:", error);
       toast({
-        title: "Failed to create exam",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: "Sınav oluşturulamadı",
+        description: error instanceof Error ? error.message : "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
         variant: "destructive",
       });
     },
@@ -341,6 +357,7 @@ export default function CreateExam() {
                             {form.getValues().questions[index].options?.map((_, optionIndex) => (
                               <div key={optionIndex} className="flex items-center space-x-2">
                                 <RadioGroupItem
+                                  value={optionIndex.toString()}
                                   checked={parseInt(form.getValues().questions[index].correctAnswer as string) === optionIndex}
                                   onClick={() => form.setValue(`questions.${index}.correctAnswer`, optionIndex.toString())}
                                   id={`option-${index}-${optionIndex}`}

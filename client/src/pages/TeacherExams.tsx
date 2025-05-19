@@ -47,19 +47,44 @@ export default function TeacherExams() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
 
+  // Define interfaces for type safety
+  interface Exam {
+    id: number;
+    title: string;
+    subjectName: string;
+    createdAt: string;
+    assignedCount: number;
+    teacherId: string;
+    description?: string;
+    questionCount: number;
+  }
+
+  interface Subject {
+    id: number;
+    name: string;
+    icon?: string;
+  }
+
+  interface Student {
+    id: string;
+    name: string;
+    email: string;
+    profileImage?: string;
+  }
+
   // Fetch exams created by the teacher
-  const { data: exams = [], isLoading: isLoadingExams } = useQuery({
+  const { data: exams = [], isLoading: isLoadingExams } = useQuery<Exam[]>({
     queryKey: [`/api/exams?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
 
   // Fetch subjects for filtering
-  const { data: subjects = [] } = useQuery({
+  const { data: subjects = [] } = useQuery<Subject[]>({
     queryKey: ['/api/subjects'],
   });
 
   // Fetch students for assigning exams
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<Student[]>({
     queryKey: ['/api/teacher/students', user?.id],
     enabled: !!user?.id,
   });
@@ -168,7 +193,7 @@ export default function TeacherExams() {
   };
 
   // Filter exams based on active tab and search term
-  const filteredExams = exams.filter((exam: any) => {
+  const filteredExams = exams.filter((exam) => {
     const matchesSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           exam.subjectName.toLowerCase().includes(searchTerm.toLowerCase());
     
