@@ -19,6 +19,7 @@ import Pricing from "@/pages/Pricing";
 import AITutor from "@/pages/AITutor";
 import NotFound from "@/pages/not-found";
 import Auth from "@/pages/Auth";
+import SubjectsPage from "@/pages/SubjectsPage";
 
 // Navigation
 import Navbar from "@/components/ui/navbar";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth" component={Auth} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/subjects" component={SubjectsPage} />
       
       {/* Öğrenci sayfaları */}
       <Route path="/student-dashboard">
