@@ -22,6 +22,13 @@ export default function Home() {
   // Fetch featured subjects
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery<any[]>({
     queryKey: ['/api/subjects'],
+    queryFn: async () => {
+      const response = await fetch('/api/subjects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subjects');
+      }
+      return response.json();
+    }
   });
 
   // Fetch top teachers
@@ -30,8 +37,15 @@ export default function Home() {
   });
   
   // Fetch testimonials
-  const { data: testimonials = [] } = useQuery<any[]>({
+  const { data: testimonials = [], isLoading: isLoadingTestimonials } = useQuery<any[]>({
     queryKey: ['/api/testimonials?featured=true'],
+    queryFn: async () => {
+      const response = await fetch('/api/testimonials?featured=true');
+      if (!response.ok) {
+        throw new Error('Failed to fetch testimonials');
+      }
+      return response.json();
+    }
   });
   
   // Fetch features from database
