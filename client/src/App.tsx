@@ -32,6 +32,12 @@ import { ProtectedRoute } from "@/components/ui/auth/ProtectedRoute";
 import { initGA } from "@/lib/analytics";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
+// Lazy-loaded components
+const AboutPage = React.lazy(() => import('@/pages/About'));
+const PrivacyPage = React.lazy(() => import('@/pages/Privacy'));
+const TermsPage = React.lazy(() => import('@/pages/Terms'));
+const ContactPage = React.lazy(() => import('@/pages/Contact'));
+
 function Router() {
   // Sayfa değişimlerini izle
   useAnalytics();
@@ -43,10 +49,26 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/subjects" component={SubjectsPage} />
-      <Route path="/about" component={React.lazy(() => import('@/pages/About'))} />
-      <Route path="/privacy" component={React.lazy(() => import('@/pages/Privacy'))} />
-      <Route path="/terms" component={React.lazy(() => import('@/pages/Terms'))} />
-      <Route path="/contact" component={React.lazy(() => import('@/pages/Contact'))} />
+      <Route path="/about">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div></div>}>
+          <AboutPage />
+        </Suspense>
+      </Route>
+      <Route path="/privacy">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div></div>}>
+          <PrivacyPage />
+        </Suspense>
+      </Route>
+      <Route path="/terms">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div></div>}>
+          <TermsPage />
+        </Suspense>
+      </Route>
+      <Route path="/contact">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div></div>}>
+          <ContactPage />
+        </Suspense>
+      </Route>
       
       {/* Öğrenci sayfaları */}
       <Route path="/student-dashboard">
