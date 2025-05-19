@@ -91,8 +91,8 @@ export default function Auth() {
     },
     onError: (error: any) => {
       toast({
-        title: "Giriş başarısız",
-        description: error.message || "Giriş bilgilerinizi kontrol edin.",
+        title: "Login failed",
+        description: error.message || "Please check your login details.",
         variant: "destructive",
       });
     },
@@ -101,7 +101,7 @@ export default function Auth() {
   const registerMutation = useMutation({
     mutationFn: async (data: z.infer<typeof registerSchema>) => {
       try {
-        console.log("Kayıt isteği gönderiliyor:", data);
+        console.log("Sending registration request:", data);
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
@@ -113,29 +113,29 @@ export default function Auth() {
         
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || "Kayıt işlemi sırasında bir hata oluştu");
+          throw new Error(errorText || "An error occurred during registration");
         }
         
         const responseData = await response.json();
-        console.log("Kayıt yanıtı:", responseData);
+        console.log("Registration response:", responseData);
         return responseData;
       } catch (error) {
-        console.error("Kayıt hatası:", error);
+        console.error("Registration error:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
       toast({
-        title: "Kayıt başarılı",
-        description: "Hesabınız oluşturuldu. Şimdi giriş yapabilirsiniz.",
+        title: "Registration successful",
+        description: "Your account has been created. You can now log in.",
       });
       setTab("login");
     },
     onError: (error: any) => {
-      console.error("Mutation hatası:", error);
+      console.error("Mutation error:", error);
       toast({
-        title: "Kayıt başarısız",
-        description: error.message || "Kayıt bilgilerinizi kontrol edin.",
+        title: "Registration failed",
+        description: error.message || "Please check your registration details.",
         variant: "destructive",
       });
     },
