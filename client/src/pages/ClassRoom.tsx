@@ -992,12 +992,36 @@ export default function ClassRoom() {
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Öğretmen</h3>
-                      <p>{sessionData?.teacherName}</p>
+                      <p className="flex items-center">
+                        {sessionData?.teacherProfileImageUrl && (
+                          <img 
+                            src={sessionData.teacherProfileImageUrl} 
+                            alt="Öğretmen" 
+                            className="w-6 h-6 rounded-full mr-2 object-cover"
+                          />
+                        )}
+                        <span className="font-medium">{sessionData?.teacherName || "İsim bilgisi yok"}</span>
+                        {sessionData?.teacherEmail && (
+                          <span className="ml-2 text-xs text-gray-500">({sessionData.teacherEmail})</span>
+                        )}
+                      </p>
                     </div>
                     
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Öğrenci</h3>
-                      <p>{sessionData?.studentName}</p>
+                      <p className="flex items-center">
+                        {sessionData?.studentProfileImageUrl && (
+                          <img 
+                            src={sessionData.studentProfileImageUrl} 
+                            alt="Öğrenci" 
+                            className="w-6 h-6 rounded-full mr-2 object-cover"
+                          />
+                        )}
+                        <span className="font-medium">{sessionData?.studentName || "İsim bilgisi yok"}</span>
+                        {sessionData?.studentEmail && (
+                          <span className="ml-2 text-xs text-gray-500">({sessionData.studentEmail})</span>
+                        )}
+                      </p>
                     </div>
                     
                     <div>

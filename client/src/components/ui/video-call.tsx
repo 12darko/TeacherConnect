@@ -104,32 +104,96 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     };
   }, [isSessionActive, isTeacher]);
   
-  // Ses açma/kapatma
+  // Ses açma/kapatma - geliştirilmiş
   const toggleAudio = () => {
-    if (localStream) {
-      localStream.getAudioTracks().forEach(track => {
+    try {
+      // Eğer stream yoksa uyarı ver ve işleme devam etme
+      if (!localStream) {
+        toast({
+          title: "Mikrofon Erişimi Yok",
+          description: "Mikrofon erişimi sağlanamadı. İzinleri kontrol edin.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const audioTracks = localStream.getAudioTracks();
+      
+      // Ses track olmayabilir
+      if (audioTracks.length === 0) {
+        toast({
+          title: "Mikrofon Bulunmadı",
+          description: "Aktif bir mikrofon bulunamadı.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Ses durumunu değiştir
+      audioTracks.forEach(track => {
         track.enabled = !isAudioEnabled;
       });
+      
+      // State güncelle
       setIsAudioEnabled(!isAudioEnabled);
       
       toast({
         title: isAudioEnabled ? "Mikrofon Kapatıldı" : "Mikrofon Açıldı",
         description: isAudioEnabled ? "Sesiniz karşı tarafa iletilmiyor" : "Sesiniz karşı tarafa iletiliyor",
       });
+    } catch (error) {
+      console.error("Mikrofon açma/kapama hatası:", error);
+      toast({
+        title: "Mikrofon Hatası",
+        description: "Mikrofon açma/kapama işlemi başarısız oldu.",
+        variant: "destructive"
+      });
     }
   };
   
-  // Video açma/kapatma 
+  // Video açma/kapatma - geliştirilmiş sürüm
   const toggleVideo = () => {
-    if (localStream) {
-      localStream.getVideoTracks().forEach(track => {
+    try {
+      // Eğer stream yoksa uyarı ver ve işleme devam etme
+      if (!localStream) {
+        toast({
+          title: "Kamera Erişimi Yok",
+          description: "Kamera erişimi sağlanamadı. İzinleri kontrol edin.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const videoTracks = localStream.getVideoTracks();
+      
+      // Video track olmayabilir
+      if (videoTracks.length === 0) {
+        toast({
+          title: "Kamera Bulunmadı",
+          description: "Aktif bir kamera bulunamadı.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Video durumunu değiştir
+      videoTracks.forEach(track => {
         track.enabled = !isVideoEnabled;
       });
+      
+      // State güncelle
       setIsVideoEnabled(!isVideoEnabled);
       
       toast({
         title: isVideoEnabled ? "Kamera Kapatıldı" : "Kamera Açıldı",
         description: isVideoEnabled ? "Görüntünüz karşı tarafa iletilmiyor" : "Görüntünüz karşı tarafa iletiliyor",
+      });
+    } catch (error) {
+      console.error("Kamera açma/kapama hatası:", error);
+      toast({
+        title: "Kamera Hatası",
+        description: "Kamera açma/kapama işlemi başarısız oldu.",
+        variant: "destructive"
       });
     }
   };
@@ -301,33 +365,38 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
   
   // Dersi sonlandır
   const handleEndCall = async () => {
-    // Medya kaynaklarını durdur
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
-    
-    // Session durumunu güncelle
-    try {
-      await apiRequest("PATCH", `/api/sessions/${sessionId}`, { 
-        status: "completed" 
-      });
-      
-      toast({
-        title: "Ders Sonlandırıldı",
-        description: "Ders başarıyla tamamlandı",
-      });
-      
-      // Callback'i çağır
-      if (onEndCall) {
-        onEndCall();
+    if (window.confirm("Dersi sonlandırmak istediğinize emin misiniz?")) {
+      // Medya kaynaklarını durdur
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
       }
-    } catch (error) {
-      console.error("Ders sonlandırma hatası:", error);
-      toast({
-        title: "Ders Sonlandırma Hatası",
-        description: "Ders sonlandırılırken bir sorun oluştu",
-        variant: "destructive"
-      });
+      
+      // Session durumunu güncelle
+      try {
+        await apiRequest("PATCH", `/api/sessions/${sessionId}/status`, { 
+          status: "completed" 
+        });
+        
+        toast({
+          title: "Ders Sonlandırıldı",
+          description: "Ders başarıyla tamamlandı",
+        });
+        
+        // Dashboard sayfasına yönlendir
+        window.location.href = isTeacher ? "/teacher-dashboard" : "/student-dashboard";
+        
+        // Callback'i çağır
+        if (onEndCall) {
+          onEndCall();
+        }
+      } catch (error) {
+        console.error("Ders sonlandırma hatası:", error);
+        toast({
+          title: "Ders Sonlandırma Hatası",
+          description: "Ders sonlandırılırken bir sorun oluştu",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -350,7 +419,14 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
             <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
               <div className="flex items-center">
                 <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
-                {isTeacher ? sessionInfo?.studentName || "Öğrenci" : sessionInfo?.teacherName || "Öğretmen"}
+                {isTeacher 
+                  ? sessionInfo?.studentName 
+                    ? `${sessionInfo.studentName} (Öğrenci)` 
+                    : "Öğrenci" 
+                  : sessionInfo?.teacherName 
+                    ? `${sessionInfo.teacherName} (Öğretmen)` 
+                    : "Öğretmen"
+                }
               </div>
             </div>
             
