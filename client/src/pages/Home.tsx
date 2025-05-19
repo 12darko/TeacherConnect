@@ -345,7 +345,7 @@ export default function Home() {
                     <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
                       <Button 
                         size="lg" 
-                        className="bg-white text-primary hover:bg-white/90 border-white font-semibold shadow-lg shadow-primary-dark/20"
+                        className="bg-white text-primary hover:bg-white/90 border-white font-semibold shadow-lg shadow-primary-dark/20 whitespace-nowrap"
                       >
                         Panele Git
                       </Button>
@@ -354,7 +354,7 @@ export default function Home() {
                       <Button 
                         size="lg" 
                         variant="outline" 
-                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm"
+                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm whitespace-nowrap"
                       >
                         Öğretmen Bul
                       </Button>
@@ -366,7 +366,7 @@ export default function Home() {
                       <Button 
                         size="lg" 
                         variant="default"
-                        className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-primary-dark/30 px-8 py-6"
+                        className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-primary-dark/30 px-8 py-6 whitespace-nowrap"
                       >
                         Hemen Başla
                       </Button>
@@ -375,7 +375,7 @@ export default function Home() {
                       <Button 
                         size="lg" 
                         variant="outline" 
-                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm py-6"
+                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm py-6 whitespace-nowrap"
                       >
                         Öğretmenlere Göz At
                       </Button>
@@ -385,20 +385,20 @@ export default function Home() {
               </div>
               
               {/* Stats */}
-              <div className="flex flex-wrap gap-8 pt-6 text-white">
+              <div className="flex flex-wrap gap-4 sm:gap-8 pt-6 text-white">
                 {statistics && (
                   <>
                     <div className="flex flex-col">
-                      <span className="text-3xl font-bold">{statistics.totalTeachers}+</span>
-                      <span className="text-white/70">Uzman Öğretmen</span>
+                      <span className="text-2xl sm:text-3xl font-bold">{statistics.totalTeachers}+</span>
+                      <span className="text-white/70 text-sm sm:text-base">Uzman Öğretmen</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-3xl font-bold">{statistics.totalStudents}+</span>
-                      <span className="text-white/70">Mutlu Öğrenci</span>
+                      <span className="text-2xl sm:text-3xl font-bold">{statistics.totalStudents}+</span>
+                      <span className="text-white/70 text-sm sm:text-base">Mutlu Öğrenci</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-3xl font-bold">{statistics.totalSessions}+</span>
-                      <span className="text-white/70">Tamamlanan Ders</span>
+                      <span className="text-2xl sm:text-3xl font-bold">{statistics.totalSessions}+</span>
+                      <span className="text-white/70 text-sm sm:text-base">Tamamlanan Ders</span>
                     </div>
                   </>
                 )}
