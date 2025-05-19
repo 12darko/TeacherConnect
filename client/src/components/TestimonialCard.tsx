@@ -4,24 +4,33 @@ import { StarIcon } from "lucide-react";
 
 export type TestimonialCardProps = {
   id: number;
-  studentName: string; // Maps to name in database
+  studentName?: string; // Maps to name in database
   studentImage?: string; // Maps to avatarUrl in database
+  name?: string; // Direct database field
+  avatarUrl?: string; // Direct database field
   role?: string;
   rating: number;
   comment?: string;
-  date: Date;
+  date: Date | string;
 };
 
 export function TestimonialCard({
   studentName,
   studentImage,
+  name,
+  avatarUrl,
   role,
   rating,
   comment,
   date
 }: TestimonialCardProps) {
+  // Veritabanı isimlerine uygun şekilde değişkenleri ayarla
+  const displayName = name || studentName || "Anonymous Student";
+  const displayImage = avatarUrl || studentImage;
+  
   // Get initials for avatar fallback
   const getInitials = (name: string) => {
+    if (!name) return "AN"; // Anonymous
     const parts = name.split(' ');
     return parts.length > 1 
       ? `${parts[0][0]}${parts[1][0]}`
@@ -48,11 +57,11 @@ export function TestimonialCard({
     <Card className="h-full transition-all duration-300 hover:shadow-md">
       <CardHeader className="flex flex-row items-center gap-4 pb-2">
         <Avatar>
-          <AvatarImage src={studentImage} alt={studentName} />
-          <AvatarFallback>{getInitials(studentName)}</AvatarFallback>
+          <AvatarImage src={displayImage} alt={displayName} />
+          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <div className="font-medium leading-none mb-1">{studentName}</div>
+          <div className="font-medium leading-none mb-1">{displayName}</div>
           {role && <div className="text-xs text-muted-foreground mb-1">{role}</div>}
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (

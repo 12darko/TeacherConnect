@@ -334,18 +334,41 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {displayTestimonials.map((testimonial) => (
-              <TestimonialCard
-                key={testimonial.id}
-                id={testimonial.id}
-                comment={testimonial.comment}
-                rating={testimonial.rating}
-                studentName={testimonial.studentName || testimonial.name}
-                role={testimonial.role}
-                date={testimonial.date instanceof Date ? testimonial.date : new Date(testimonial.date)}
-                studentImage={testimonial.studentImage || testimonial.avatarUrl}
-              />
-            ))}
+            {isLoadingTestimonials ? (
+              // Loading state
+              [...Array(3)].map((_, i) => (
+                <Card key={i} className="h-48 animate-pulse bg-neutral-100"></Card>
+              ))
+            ) : displayTestimonials.length > 0 ? (
+              // Display testimonials
+              displayTestimonials.map((testimonial) => (
+                <TestimonialCard
+                  key={testimonial.id}
+                  id={testimonial.id}
+                  comment={testimonial.comment}
+                  rating={testimonial.rating}
+                  studentName={testimonial.studentName}
+                  name={testimonial.name}
+                  role={testimonial.role}
+                  date={testimonial.date}
+                  studentImage={testimonial.studentImage}
+                  avatarUrl={testimonial.avatar_url || testimonial.avatarUrl}
+                />
+              ))
+            ) : (
+              // Fallback if no testimonials
+              mockTestimonials.map((testimonial) => (
+                <TestimonialCard
+                  key={testimonial.id}
+                  id={testimonial.id}
+                  comment={testimonial.comment}
+                  rating={testimonial.rating}
+                  studentName={testimonial.studentName}
+                  date={testimonial.date}
+                  studentImage={testimonial.studentImage}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
