@@ -366,10 +366,7 @@ export class DatabaseStorage implements IStorage {
       // Oturumu güncelle
       const [updatedSession] = await db
         .update(sessions)
-        .set({ 
-          status,
-          updatedAt: new Date() // Güncelleme zamanını da değiştir
-        })
+        .set({ status })
         .where(eq(sessions.id, id))
         .returning();
       

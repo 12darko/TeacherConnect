@@ -108,6 +108,8 @@ export const sessions = pgTable("sessions", {
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull(), // "scheduled", "completed", "cancelled"
   sessionUrl: text("session_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Reviews left by students for teachers
