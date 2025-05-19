@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // İşlem tipi tanımı
 type Transaction = {
@@ -223,25 +225,61 @@ export default function TeacherDashboard() {
   
   // Öğretmenin ders oturumlarını getir
   const { data: sessions = [], isLoading: isLoadingSessions } = useQuery<any[]>({
-    queryKey: [`/api/sessions?teacherId=${user?.id}`],
+    queryKey: ['/api/sessions', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/sessions?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
   });
   
   // Bekleyen ders taleplerini getir
   const { data: pendingRequests = [], isLoading: isLoadingRequests } = useQuery<any[]>({
-    queryKey: [`/api/sessions?teacherId=${user?.id}&status=pending`],
+    queryKey: ['/api/sessions/pending', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/sessions?teacherId=${user?.id}&status=pending`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending requests');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
   });
   
   // Öğretmene gelen yorumları getir
   const { data: reviews = [], isLoading: isLoadingReviews } = useQuery<any[]>({
-    queryKey: [`/api/reviews?teacherId=${user?.id}`],
+    queryKey: ['/api/reviews', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/reviews?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
   });
   
   // Öğretmenin profilini getir
   const { data: profile = {}, isLoading: isLoadingProfile } = useQuery<any>({
-    queryKey: [`/api/teachers/profile?userId=${user?.id}`],
+    queryKey: ['/api/teachers/profile', user?.id],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/teachers/profile?userId=${user?.id}`);
+        if (response.status === 404) {
+          return { notFound: true };
+        }
+        if (!response.ok) {
+          throw new Error('Failed to fetch teacher profile');
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching teacher profile:", error);
+        return { error: true };
+      }
+    },
     enabled: !!user?.id,
   });
   
