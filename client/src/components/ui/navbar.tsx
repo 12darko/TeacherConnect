@@ -75,7 +75,7 @@ export default function Navbar() {
   return (
     <header 
       className={`w-full z-50 transition-all duration-300 ${
-        isHomePage 
+        useTransparentHeader 
           ? "bg-transparent py-4 absolute top-0 left-0 right-0" 
           : "bg-white shadow-md py-2 fixed top-0 left-0 right-0"
       }`}
@@ -84,7 +84,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className={`text-2xl font-bold ${!isScrolled && !isMenuOpen && location === "/" ? "text-white" : "text-primary"}`}>
+            <span className={`text-2xl font-bold ${useTransparentHeader ? "text-white" : "text-primary"}`}>
               EduConnect
             </span>
           </Link>
@@ -96,7 +96,7 @@ export default function Navbar() {
                 key={item.id} 
                 href={item.url} 
                 className={`px-4 py-2 rounded-md transition-colors ${
-                  !isScrolled && location === "/" 
+                  useTransparentHeader 
                     ? "text-white hover:bg-white/10" 
                     : "text-neutral-700 hover:bg-neutral-100"
                 } ${location === item.url ? "font-medium" : ""}`}
@@ -108,7 +108,7 @@ export default function Navbar() {
             {!menuItems && !isMenuLoading && (
               <>
                 <Link href="/find-teachers" className={`px-4 py-2 rounded-md transition-colors ${
-                    !isScrolled && location === "/" 
+                    useTransparentHeader 
                       ? "text-white hover:bg-white/10" 
                       : "text-neutral-700 hover:bg-neutral-100"
                   } ${location === "/find-teachers" ? "font-medium" : ""}`}>
@@ -116,7 +116,7 @@ export default function Navbar() {
                 </Link>
                 
                 <Link href="/#subjects" className={`px-4 py-2 rounded-md transition-colors ${
-                    !isScrolled && location === "/" 
+                    useTransparentHeader 
                       ? "text-white hover:bg-white/10" 
                       : "text-neutral-700 hover:bg-neutral-100"
                   }`}>
