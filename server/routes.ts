@@ -54,13 +54,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Custom authentication routes (local authentication)
+  apiRouter.post('/api/auth/register', registerUser);
+  apiRouter.post('/api/auth/login', loginUser);
+  apiRouter.post('/api/auth/logout', logoutUser);
+  
+  // Eski rotaları da destekleyelim (geriye dönük uyumluluk için)
   apiRouter.post('/auth/register', registerUser);
   apiRouter.post('/auth/login', loginUser);
   apiRouter.post('/auth/logout', logoutUser);
   
-  // We're using our local authentication system for this application
-  
   // User authentication route - get current user
+  apiRouter.get('/api/auth/user', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      res.json(req.user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Eski rotayı da destekleyelim (geriye dönük uyumluluk için)
   apiRouter.get('/auth/user', isAuthenticated, async (req: Request, res: Response) => {
     try {
       if (!req.user) {
@@ -75,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Route to update user role (admin only)
-  apiRouter.patch('/auth/role/:userId', isAuthenticated, hasRole('admin'), async (req: Request, res: Response) => {
+  apiRouter.patch('/api/auth/role/:userId', isAuthenticated, hasRole('admin'), async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const { role } = req.body;
