@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { 
   Menu,
   AlignJustify,
@@ -10,7 +11,8 @@ import {
   User,
   LogOut,
   BookOpen,
-  LayoutDashboard
+  LayoutDashboard,
+  RefreshCw
 } from "lucide-react";
 import { MenuItem } from "@shared/schema";
 
@@ -20,6 +22,22 @@ export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
   
+  // Kullanıcı durumunda değişiklik olduğunda konsola yazdır
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log("Navbar: Kullanıcı oturum açtı:", user);
+    } else if (!isLoading) {
+      console.log("Navbar: Kullanıcı oturum açmamış");
+    }
+  }, [user, isAuthenticated, isLoading]);
+  
+  // Her sayfaya gittiğimizde kullanıcı bilgisini yeniden yükle
+  useEffect(() => {
+    if (location !== "/auth") {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    }
+  }, [location]);
+
   // Fetch menu items from API
   const { data: menuItems, isLoading: isMenuLoading } = useQuery<MenuItem[]>({
     queryKey: ["/api/menu-items", "main"],
@@ -161,9 +179,9 @@ export default function Navbar() {
             ) : !isLoading ? (
               <Button
                 variant={(!isScrolled && location === "/") ? "outline" : "default"}
-                className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                className={(!isScrolled && location === "/") ? "border-white hover:bg-white/10" : ""}
                 onClick={() => navigate("/auth")}
-                style={(!isScrolled && location === "/") ? {color: "white", borderColor: "white"} : {}}
+                style={(!isScrolled && location === "/") ? {color: "white", borderColor: "white"} : {color: "black"}}
               >
                 Sign In
               </Button>
