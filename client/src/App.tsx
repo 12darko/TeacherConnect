@@ -9,6 +9,7 @@ import Home from "@/pages/Home";
 import StudentDashboard from "@/pages/StudentDashboard";
 import ImprovedStudentDashboard from "@/pages/ImprovedStudentDashboard";
 import TeacherDashboard from "@/pages/TeacherDashboard";
+import AdminDashboard from "@/pages/AdminDashboard";
 import FindTeachers from "@/pages/FindTeachers";
 import TeacherProfile from "@/pages/TeacherProfile";
 import CreateExam from "@/pages/CreateExam";
@@ -95,8 +96,7 @@ function Router() {
       {/* Admin sayfaları */}
       <Route path="/admin-dashboard">
         <ProtectedRoute allowedRoles={["admin"]}>
-          {/* Admin paneli eklenecek */}
-          <div>Admin panel geliştirilecek</div>
+          <AdminDashboard />
         </ProtectedRoute>
       </Route>
       

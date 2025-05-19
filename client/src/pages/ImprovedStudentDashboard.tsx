@@ -17,7 +17,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { BadgeCheck, Book, Calendar, Clock, GraduationCap, Monitor, Users } from "lucide-react";
+import { BadgeCheck, Book, Calendar, Clock, GraduationCap, Monitor, Users, Brain } from "lucide-react";
 
 // Yeni bileşenleri içe aktarıyoruz
 import { PerformanceChart } from "@/components/ui/dashboard/PerformanceChart";
