@@ -173,6 +173,26 @@ export const features = pgTable("features", {
   visible: boolean("visible").default(true),
 });
 
+// UI Content - How It Works Steps
+export const howItWorksSteps = pgTable("how_it_works_steps", {
+  id: serial("id").primaryKey(),
+  stepNumber: integer("step_number").notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon"),
+  visible: boolean("visible").default(true),
+});
+
+// UI Content - Statistics
+export const siteStatistics = pgTable("site_statistics", {
+  id: serial("id").primaryKey(),
+  totalStudents: integer("total_students").default(0),
+  totalTeachers: integer("total_teachers").default(0),
+  totalSubjects: integer("total_subjects").default(0),
+  totalSessions: integer("total_sessions").default(0),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
 // UI Content - Pricing Plans
 export const pricingPlans = pgTable("pricing_plans", {
   id: serial("id").primaryKey(),

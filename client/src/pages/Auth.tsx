@@ -75,19 +75,19 @@ export default function Auth() {
         description: "Welcome! Redirecting you to the dashboard.",
       });
       
-      // Redirect based on user role
-      setTimeout(() => {
-        const role = data.user?.role;
-        if (role === "student") {
-          navigate("/student-dashboard");
-        } else if (role === "teacher") {
-          navigate("/teacher-dashboard");
-        } else if (role === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/"); // Redirect to home page if no role is found
-        }
-      }, 1000);
+      // Redirect based on user role - Immediate navigation
+      const role = data.user?.role;
+      console.log("Redirecting user with role:", role);
+      
+      if (role === "student") {
+        navigate("/student-dashboard");
+      } else if (role === "teacher") {
+        navigate("/teacher-dashboard");
+      } else if (role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/"); // Redirect to home page if no role is found
+      }
     },
     onError: (error: any) => {
       toast({
