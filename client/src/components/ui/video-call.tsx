@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  MicIcon, 
-  MicOffIcon, 
-  VideoIcon, 
-  VideoOffIcon, 
-  PhoneOffIcon, 
+  Mic, 
+  MicOff, 
+  Video, 
+  VideoOff, 
+  PhoneOff, 
   MessageSquare, 
-  MonitorIcon, 
+  Monitor, 
   RefreshCw, 
   TriangleAlert,
   Lock
@@ -590,7 +590,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
         <div className="bg-white rounded-lg max-w-xl w-full overflow-hidden shadow-xl">
           <div className="bg-red-600 p-4 text-white">
             <h2 className="text-xl font-bold flex items-center">
-              <VideoOffIcon className="mr-2 h-6 w-6" />
+              <VideoOff className="mr-2 h-6 w-6" />
               Kamera ve Mikrofon İzni Gerekli
             </h2>
           </div>
@@ -598,7 +598,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
           <div className="p-6 space-y-6">
             <div className="flex items-start space-x-4">
               <div className="bg-amber-100 text-amber-800 p-3 rounded-full">
-                <AlertTriangleIcon className="h-6 w-6" />
+                <TriangleAlert className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="font-bold text-lg">Neden izin gerekli?</h3>
@@ -615,7 +615,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
                     <p className="font-medium">Adres çubuğundaki simgeyi kontrol edin</p>
                     <p className="text-sm text-gray-500">Tarayıcı adres çubuğunun solunda kamera simgesi veya kilit simgesi bulunmalıdır. Bu simgeye tıklayın.</p>
                     <div className="mt-1 bg-gray-100 p-2 rounded flex items-center text-sm">
-                      <LockIcon className="h-4 w-4 mr-2 text-gray-600" /> Adres çubuğundaki bu simgeye tıklayın
+                      <Lock className="h-4 w-4 mr-2 text-gray-600" /> Adres çubuğundaki bu simgeye tıklayın
                     </div>
                   </div>
                 </li>
@@ -655,7 +655,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               className="px-6"
               onClick={() => window.location.reload()}
             >
-              <RefreshCwIcon className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4 mr-2" />
               Sayfayı Yenile
             </Button>
           </div>
@@ -744,8 +744,8 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               size="sm"
             >
               {isAudioEnabled 
-                ? <MicIcon className="h-4 w-4 mr-2" /> 
-                : <MicOffIcon className="h-4 w-4 mr-2" />
+                ? <Mic className="h-4 w-4 mr-2" /> 
+                : <MicOff className="h-4 w-4 mr-2" />
               }
               {isAudioEnabled ? "Mikrofon: Açık" : "Mikrofon: Kapalı"}
             </Button>
@@ -757,8 +757,8 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               size="sm"
             >
               {isVideoEnabled 
-                ? <VideoIcon className="h-4 w-4 mr-2" /> 
-                : <VideoOffIcon className="h-4 w-4 mr-2" />
+                ? <Video className="h-4 w-4 mr-2" /> 
+                : <VideoOff className="h-4 w-4 mr-2" />
               }
               {isVideoEnabled ? "Kamera: Açık" : "Kamera: Kapalı"}
             </Button>
@@ -769,7 +769,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               className="flex items-center px-4 py-2"
               size="sm"
             >
-              <ScreenShareIcon className="h-4 w-4 mr-2" />
+              <Monitor className="h-4 w-4 mr-2" />
               Ekran Paylaş
             </Button>
             
@@ -785,7 +785,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
               className="flex items-center px-4 py-2 relative"
               size="sm"
             >
-              <MessagesSquareIcon className="h-4 w-4 mr-2" />
+              <MessageSquare className="h-4 w-4 mr-2" />
               Sohbet
               {hasUnreadMessages && !isChatOpen && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
