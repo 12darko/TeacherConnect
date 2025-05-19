@@ -124,7 +124,7 @@ export default function Navbar() {
                 </Link>
                 
                 <Link href="/#how-it-works" className={`px-4 py-2 rounded-md transition-colors ${
-                    !isScrolled && location === "/" 
+                    useTransparentHeader 
                       ? "text-white hover:bg-white/10" 
                       : "text-neutral-700 hover:bg-neutral-100"
                   }`}>
@@ -137,7 +137,7 @@ export default function Navbar() {
               <>
                 <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"} 
                   className={`px-4 py-2 rounded-md transition-colors ${
-                    !isScrolled && location === "/" 
+                    useTransparentHeader 
                       ? "text-white hover:bg-white/10" 
                       : "text-neutral-700 hover:bg-neutral-100"
                   } ${location.includes("dashboard") ? "font-medium" : ""}`}>
@@ -146,8 +146,8 @@ export default function Navbar() {
                 
                 <div className="relative ml-2 group">
                   <Button 
-                    variant={(!isScrolled && location === "/") ? "outline" : "default"}
-                    className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                    variant={useTransparentHeader ? "outline" : "default"}
+                    className={useTransparentHeader ? "border-white text-white hover:bg-white/10" : ""}
                     size="sm"
                   >
                     <User className="h-4 w-4 mr-2" />
@@ -185,10 +185,9 @@ export default function Navbar() {
               </>
             ) : !isLoading ? (
               <Button
-                variant={(!isScrolled && location === "/") ? "outline" : "default"}
-                className={(!isScrolled && location === "/") ? "border-white hover:bg-white/10" : ""}
+                variant={useTransparentHeader ? "outline" : "default"}
+                className={useTransparentHeader ? "border-white text-white hover:bg-white/10" : ""}
                 onClick={() => navigate("/auth")}
-                style={(!isScrolled && location === "/") ? {color: "white", borderColor: "white"} : {color: "black"}}
               >
                 Sign In
               </Button>
@@ -203,11 +202,11 @@ export default function Navbar() {
           >
             {isMenuOpen ? (
               <X className={`h-6 w-6 ${
-                !isScrolled && location === "/" ? "text-white" : "text-neutral-700"
+                useTransparentHeader ? "text-white" : "text-neutral-700"
               }`} />
             ) : (
               <AlignJustify className={`h-6 w-6 ${
-                !isScrolled && location === "/" ? "text-white" : "text-neutral-700"
+                useTransparentHeader ? "text-white" : "text-neutral-700"
               }`} />
             )}
           </button>
