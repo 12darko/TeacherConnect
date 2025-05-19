@@ -457,8 +457,8 @@ export default function Home() {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Popular Subjects</h2>
             <Link href="/subjects">
-              <Button variant="outline" className="group border-primary text-primary hover:bg-primary/10">
-                View All
+              <Button variant="success" className="group hover:bg-green-700">
+                View All Subjects
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
