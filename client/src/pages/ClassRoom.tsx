@@ -151,7 +151,7 @@ export default function ClassRoom() {
       
       // Canvas boyutlarını container'a göre ayarla
       canvas.width = container.clientWidth;
-      canvas.height = 288; // 72px (h-72 sınıfı) height değeri
+      canvas.height = 160; // 40px (h-40 sınıfı) height değeri
     }
   }, [selectedTool]);
   
@@ -377,7 +377,7 @@ export default function ClassRoom() {
                 </div>
                 <Button 
                   className="w-full justify-start bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium"
-                  onClick={() => handleToolSelect('Beyaz Tahta')}
+                  onClick={() => handleToolSelect('whiteboard')}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="M12 5v14"></path>
@@ -386,50 +386,54 @@ export default function ClassRoom() {
                   Yeni Tahta Oluştur
                 </Button>
                 
-                {selectedTool === 'Beyaz Tahta' && (
+                {selectedTool === 'whiteboard' && (
                   <div className="mt-4 border rounded-lg p-4 bg-white">
                     <div className="flex justify-between items-center mb-3">
                       <h4 className="text-sm font-medium">Beyaz Tahta Alanı</h4>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="h-7 px-2 text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                          onClick={() => setStrokeColor("#000000")}
+                          className="h-7 w-7 p-0"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
-                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
-                            <path d="M2 2l7.586 7.586"></path>
-                            <path d="M11 11l2.5 2.5"></path>
-                          </svg>
-                          Kalem
+                          <div className="w-4 h-4 bg-black rounded-full"></div>
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="h-7 px-2 text-xs bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                          onClick={() => setStrokeColor("#ff0000")}
+                          className="h-7 w-7 p-0"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <path d="M14 4h4v4"></path>
-                            <path d="M18 4l-6 6"></path>
-                            <path d="M4 20v-4"></path>
-                            <path d="M20 4v16H8"></path>
-                            <path d="M4 12h8"></path>
-                          </svg>
-                          Silgi
+                          <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setStrokeColor("#0000ff")}
+                          className="h-7 w-7 p-0"
+                        >
+                          <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={clearWhiteboard}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Temizle
                         </Button>
                       </div>
                     </div>
                     
-                    <div className="border rounded bg-gray-50 h-48 flex items-center justify-center">
-                      <div className="text-center text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-50">
-                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        <p className="text-xs">Çizim yapmak için tıklayın</p>
-                      </div>
-                    </div>
+                    <canvas 
+                      ref={canvasRef}
+                      className="h-40 w-full bg-gray-50 rounded border border-gray-200 cursor-crosshair"
+                      onMouseDown={startDrawing}
+                      onMouseUp={finishDrawing}
+                      onMouseOut={finishDrawing}
+                      onMouseMove={draw}
+                    />
                     
                     <div className="flex justify-end mt-3">
                       <Button size="sm" className="text-xs">Kaydet ve Paylaş</Button>
