@@ -171,52 +171,67 @@ export default function CreateExam() {
   const onSubmit = (data: ExamFormValues) => {
     if (!user) return;
     
-    // Ekstra doğrulama kontrolü ve her soruya ID ekleyerek düzeltme
-    const validatedQuestions = data.questions.map((q, index) => {
-      const correctAnswer = q.type === "multiple-choice" 
-        ? parseInt(q.correctAnswer as string) 
-        : q.correctAnswer.toString();
-      
-      // Boş alan kontrolü
+    // Form doğrulaması
+    const formErrors = [];
+    
+    // Başlık ve konu kontrolü
+    if (!data.title.trim()) formErrors.push("Başlık gereklidir");
+    if (!data.subjectId) formErrors.push("Konu seçilmelidir");
+    
+    // Sorular içerik kontrolü
+    for (let i = 0; i < data.questions.length; i++) {
+      const q = data.questions[i];
       if (!q.question.trim()) {
-        toast({
-          title: "Form hatası",
-          description: `Soru ${index + 1} için soru metni girilmemiş.`,
-          variant: "destructive"
-        });
-        throw new Error("Question text is required");
+        formErrors.push(`Soru ${i + 1} için soru metni gereklidir`);
       }
       
-      if (q.type === "multiple-choice" && (!q.options || q.options.some(opt => !opt.trim()))) {
-        toast({
-          title: "Form hatası",
-          description: `Soru ${index + 1} için tüm seçenekleri doldurun.`,
-          variant: "destructive"
-        });
-        throw new Error("All options must be filled for multiple choice");
+      if (q.type === "multiple-choice") {
+        if (!q.options || q.options.some(opt => !opt.trim())) {
+          formErrors.push(`Soru ${i + 1} için tüm seçenekler doldurulmalıdır`);
+        }
       }
-        
-      return {
-        id: index + 1, // Her soruya bir ID ekliyoruz - sunucu bunu bekliyor
+    }
+    
+    // Hata var mı kontrol et
+    if (formErrors.length > 0) {
+      toast({
+        title: "Form hatası",
+        description: formErrors[0],
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Basitleştirilmiş veri hazırlama
+    const simplifiedQuestions = data.questions.map((q, index) => {
+      // options alanını tüm soru tipleri için boş dizi olarak başlat
+      const questionData: any = {
         question: q.question.trim(),
         type: q.type,
-        options: q.type === "multiple-choice" ? q.options : undefined,
-        correctAnswer: correctAnswer,
         points: q.points,
+        options: [] // Varsayılan değer olarak boş dizi
       };
+      
+      // Multiple-choice tipi için options ve correctAnswer ekle
+      if (q.type === "multiple-choice") {
+        questionData.options = q.options?.filter(opt => opt.trim()) || [];
+        questionData.correctAnswer = parseInt(q.correctAnswer as string);
+      } else {
+        // Text tipi için string olarak correctAnswer
+        questionData.correctAnswer = q.correctAnswer.toString();
+      }
+      
+      return questionData;
     });
     
-    try {
-      createExam.mutate({
-        teacherId: user.id,
-        subjectId: parseInt(data.subjectId),
-        title: data.title,
-        description: data.description,
-        questions: validatedQuestions,
-      });
-    } catch (error) {
-      console.error("Error preparing exam data:", error);
-    }
+    // Sadece gerekli verileri içeren bir nesne gönder
+    createExam.mutate({
+      teacherId: user.id,
+      subjectId: parseInt(data.subjectId),
+      title: data.title,
+      description: data.description || "",
+      questions: simplifiedQuestions
+    });
   };
   
   // Add new question

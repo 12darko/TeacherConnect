@@ -625,6 +625,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/exams", isAuthenticated, hasRole("teacher"), async (req: Request, res: Response) => {
     try {
+      console.log("Exam creation requested by:", req.user?.id, "with role:", req.user?.role);
+      console.log("Exam data received:", JSON.stringify(req.body, null, 2));
+      
       // Oturum açmış öğretmenin ID'sini kullanıyoruz
       const examData = {
         ...req.body,
