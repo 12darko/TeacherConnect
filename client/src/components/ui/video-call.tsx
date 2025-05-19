@@ -29,6 +29,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
   const [isCameraActive, setCameraActive] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -471,8 +472,12 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
           
           setMessages(prev => [...prev, autoResponseObj]);
           
-          // Yeni mesaj bildirimi
+          // Sohbet açık değilse bildirim göster ve okunmamış mesaj işareti ekle
           if (!isChatOpen) {
+            // Bildirim ikonu ayarla
+            setHasUnreadMessages(true);
+            
+            // Toast bildirimi göster
             toast({
               title: "Yeni Mesaj",
               description: `${autoResponseName}: Mesajınızı aldım, teşekkürler!`,
@@ -639,13 +644,19 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
             
             <Button
               variant={isChatOpen ? "default" : "outline"}
-              onClick={() => setIsChatOpen(!isChatOpen)}
+              onClick={() => {
+                setIsChatOpen(!isChatOpen);
+                // Sohbet açıldığında bildirimi kaldır
+                if (!isChatOpen) {
+                  setHasUnreadMessages(false);
+                }
+              }}
               className="flex items-center px-4 py-2 relative"
               size="sm"
             >
               <MessagesSquareIcon className="h-4 w-4 mr-2" />
               Sohbet
-              {messages.length > 1 && !isChatOpen && (
+              {hasUnreadMessages && !isChatOpen && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
