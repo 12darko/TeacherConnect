@@ -665,6 +665,14 @@ export default function ClassRoom() {
                     isTeacher={user?.role === "teacher"} 
                     isSessionActive={!isSessionEnded} 
                     sessionId={sessionId}
+                    onEndCall={() => {
+                      // Ders tamamlandığında yeniden veri çekme
+                      sessionQuery.refetch();
+                      toast({
+                        title: "Ders tamamlandı",
+                        description: "Ders başarıyla sonlandırıldı ve kaydedildi.",
+                      });
+                    }}
                   />
                 </CardContent>
               </Card>

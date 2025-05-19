@@ -1004,7 +1004,11 @@ export default function TeacherDashboard() {
                               {format(new Date(session.endTime), 'HH:mm', { locale: tr })}
                             </p>
                           </div>
-                          {new Date() >= new Date(session.startTime) && new Date() <= new Date(session.endTime) ? (
+                          {session.status === "completed" ? (
+                            <Badge className="bg-gray-500 hover:bg-gray-500">
+                              Tamamlandı
+                            </Badge>
+                          ) : new Date() >= new Date(session.startTime) && new Date() <= new Date(session.endTime) ? (
                             <Button asChild>
                               <Link href={`/classroom/${session.id}`}>
                                 Derse Katıl
@@ -1012,9 +1016,7 @@ export default function TeacherDashboard() {
                             </Button>
                           ) : (
                             <Badge>
-                              {new Date() < new Date(session.startTime) 
-                                ? `${Math.floor((new Date(session.startTime).getTime() - new Date().getTime()) / (1000 * 60))} dk kaldı` 
-                                : "Tamamlandı"}
+                              {`${Math.floor((new Date(session.startTime).getTime() - new Date().getTime()) / (1000 * 60))} dk kaldı`}
                             </Badge>
                           )}
                         </div>
