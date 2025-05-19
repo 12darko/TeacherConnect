@@ -568,11 +568,12 @@ export default function TeacherDashboard() {
     refetchInterval: 10000 // Her 10 saniyede bir yenile
   });
   
-  // Bekleyen ders taleplerini getir
+  // Bekleyen ders taleplerini getir - sadece öğrencilerden gelen talepler
   const { data: pendingRequests = [], isLoading: isLoadingRequests } = useQuery<any[]>({
     queryKey: ['/api/sessions/pending', user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/sessions?teacherId=${user?.id}&status=pending`);
+      // Öğrencilerden gelen bekleyen talepleri al, öğretmenin oluşturduğu dersleri değil
+      const response = await fetch(`/api/sessions?teacherId=${user?.id}&status=pending&studentInitiated=true`);
       if (!response.ok) {
         throw new Error('Failed to fetch pending requests');
       }
@@ -913,40 +914,62 @@ export default function TeacherDashboard() {
             {/* Ders Talepleri */}
             <Card className="md:col-span-1">
               <CardHeader>
-                <CardTitle>Bekleyen Talepler</CardTitle>
-                <CardDescription>Öğrencilerden gelen ders talepleri</CardDescription>
+                <CardTitle>Ders Programı</CardTitle>
+                <CardDescription>Planlanmış dersleriniz</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingRequests ? (
+                {isLoadingSessions ? (
                   <div className="text-center py-6">
                     <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Talepler yükleniyor...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Dersler yükleniyor...</p>
                   </div>
-                ) : pendingRequests.length > 0 ? (
-                  <div className="border rounded-md">
-                    {pendingRequests.slice(0, 5).map((request: any) => (
-                      <SessionRequest
-                        key={request.id}
-                        id={request.id}
-                        studentName={request.studentName}
-                        studentAvatar={request.studentAvatar}
-                        subject={request.subjectName}
-                        date={new Date(request.startTime)}
-                        onAccept={(id) => {
-                          // Kabul işlevi burada uygulanacak
-                          console.log(`Accepted request ${id}`);
-                        }}
-                        onReject={(id) => {
-                          // Reddetme işlevi burada uygulanacak
-                          console.log(`Rejected request ${id}`);
-                        }}
-                      />
+                ) : sessions.filter(s => s.status === "scheduled").length > 0 ? (
+                  <div className="border rounded-lg shadow-sm overflow-hidden">
+                    {sessions
+                      .filter(s => s.status === "scheduled")
+                      .slice(0, 5)
+                      .map((session: any) => (
+                      <div key={session.id} className="p-4 border-b last:border-b-0 flex justify-between items-center bg-card hover:bg-accent/5 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-primary/10 p-2 rounded-full">
+                            <GraduationCap className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{session.studentName}</h4>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <BookOpen className="mr-1 h-3.5 w-3.5" />
+                              <span>{session.subjectName}</span>
+                            </div>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Clock className="mr-1 h-3 w-3" />
+                              <span>{new Date(session.startTime).toLocaleString('tr-TR', {
+                                day: 'numeric',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => {
+                            if (session.id) {
+                              window.location.href = `/classroom/${session.id}`;
+                            }
+                          }}
+                        >
+                          Derse Git
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 bg-muted/50 rounded-md">
+                  <div className="text-center py-6 bg-muted/20 rounded-lg">
                     <BookOpen className="h-10 w-10 mx-auto text-muted-foreground" />
-                    <p className="mt-2 font-medium">Bekleyen talep yok</p>
+                    <p className="mt-2 font-medium">Planlanmış ders yok</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Şu anda öğrencilerden bekleyen ders talebi bulunmuyor.
                     </p>
