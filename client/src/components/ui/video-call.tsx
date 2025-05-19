@@ -25,6 +25,10 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
   const [newMessage, setNewMessage] = useState("");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [sessionInfo, setSessionInfo] = useState<any>(null);
+  const [isMicActive, setIsMicActive] = useState(false);
+  const [isCameraActive, setCameraActive] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -431,7 +435,10 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
             
             <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
               <div className="flex items-center">
-                <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                {/* Oturum aktifse ve tamamlanmamışsa çevrimiçi göster */}
+                {sessionInfo?.status === "scheduled" && (
+                  <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                )}
                 {isTeacher 
                   ? sessionInfo?.studentName 
                     ? `${sessionInfo.studentName} (Öğrenci)` 
@@ -440,6 +447,7 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
                     ? `${sessionInfo.teacherName} (Öğretmen)` 
                     : "Öğretmen"
                 }
+                {sessionInfo?.status === "completed" && " (Ders tamamlandı)"}
               </div>
             </div>
             
