@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, PhoneOffIcon, MessagesSquareIcon, ScreenShareIcon } from "lucide-react";
+import { 
+  MicIcon, 
+  MicOffIcon, 
+  VideoIcon, 
+  VideoOffIcon, 
+  PhoneOffIcon, 
+  MessageSquare, 
+  MonitorIcon, 
+  RefreshCw, 
+  TriangleAlert,
+  Lock
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -572,8 +583,92 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     }
   };
   
+  // Kamera izinlerini açıkça gösterecek bir yardımcı kılavuz
+  const PermissionGuideModal = () => {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/75 flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-lg max-w-xl w-full overflow-hidden shadow-xl">
+          <div className="bg-red-600 p-4 text-white">
+            <h2 className="text-xl font-bold flex items-center">
+              <VideoOffIcon className="mr-2 h-6 w-6" />
+              Kamera ve Mikrofon İzni Gerekli
+            </h2>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="bg-amber-100 text-amber-800 p-3 rounded-full">
+                <AlertTriangleIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Neden izin gerekli?</h3>
+                <p className="text-gray-600">Video dersleri için kamera ve mikrofon erişimine izin vermeniz gerekmektedir. Bu izinler olmadan görüntülü ders yapamazsınız.</p>
+              </div>
+            </div>
+            
+            <div className="border-t border-b py-4">
+              <h3 className="font-bold mb-2">İzinleri nasıl verebilirim?</h3>
+              <ol className="space-y-4">
+                <li className="flex items-start">
+                  <div className="bg-blue-100 text-blue-800 rounded-full h-6 w-6 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">1</div>
+                  <div>
+                    <p className="font-medium">Adres çubuğundaki simgeyi kontrol edin</p>
+                    <p className="text-sm text-gray-500">Tarayıcı adres çubuğunun solunda kamera simgesi veya kilit simgesi bulunmalıdır. Bu simgeye tıklayın.</p>
+                    <div className="mt-1 bg-gray-100 p-2 rounded flex items-center text-sm">
+                      <LockIcon className="h-4 w-4 mr-2 text-gray-600" /> Adres çubuğundaki bu simgeye tıklayın
+                    </div>
+                  </div>
+                </li>
+                
+                <li className="flex items-start">
+                  <div className="bg-blue-100 text-blue-800 rounded-full h-6 w-6 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">2</div>
+                  <div>
+                    <p className="font-medium">İzinleri "İzin Ver" olarak ayarlayın</p>
+                    <p className="text-sm text-gray-500">Açılan menüde "Kamera" ve "Mikrofon" izinlerini "İzin Ver" olarak değiştirin.</p>
+                    <div className="flex flex-col gap-2 mt-2">
+                      <div className="flex items-center text-sm">
+                        <span className="w-24">Kamera: </span>
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">İZİN VER</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <span className="w-24">Mikrofon: </span>
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">İZİN VER</span>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                
+                <li className="flex items-start">
+                  <div className="bg-blue-100 text-blue-800 rounded-full h-6 w-6 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">3</div>
+                  <div>
+                    <p className="font-medium">Sayfayı yenileyin</p>
+                    <p className="text-sm text-gray-500">İzinleri verdikten sonra sayfayı yenilemek için aşağıdaki butona tıklayın.</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-4 flex justify-end">
+            <Button 
+              variant="default"
+              className="px-6"
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCwIcon className="h-4 w-4 mr-2" />
+              Sayfayı Yenile
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Kamera izin hataları için detaylı yardım modalı */}
+      {(micError || cameraError) && <PermissionGuideModal />}
+      
       {/* Video görüşme ana kısmı - Optimize edilmiş */}
       <div className="flex-grow flex flex-col sm:grid sm:grid-cols-12 gap-3 p-3 h-full">
         {/* Ana video alanı - Daha net bir görüntü için */}
