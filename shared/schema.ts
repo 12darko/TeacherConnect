@@ -123,12 +123,13 @@ export const studentStats = pgTable("student_stats", {
 // UI Content - Testimonials
 export const testimonials = pgTable("testimonials", {
   id: serial("id").primaryKey(),
-  studentName: varchar("student_name").notNull(),
-  studentImage: varchar("student_image"),
+  name: varchar("name").notNull(),
+  avatar_url: varchar("avatar_url"),
   comment: text("comment").notNull(),
   rating: integer("rating").notNull(), // 1-5 stars
   date: timestamp("date").defaultNow(),
   visible: boolean("visible").default(true),
+  role: varchar("role"),
 });
 
 // UI Content - App Settings

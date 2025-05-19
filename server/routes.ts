@@ -786,6 +786,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Menu items routes - Navbar ve footer için menü öğeleri
+  apiRouter.get("/menu-items", async (req: Request, res: Response) => {
+    try {
+      const { location } = req.query;
+      const locationStr = location ? String(location) : undefined;
+      const menuItems = await storage.getMenuItems(locationStr);
+      return res.status(200).json(menuItems);
+    } catch (error) {
+      console.error("Error retrieving menu items:", error);
+      return res.status(500).json({ message: "An error occurred while retrieving menu items" });
+    }
+  });
 
   return httpServer;
 }
