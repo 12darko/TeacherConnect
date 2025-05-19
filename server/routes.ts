@@ -194,6 +194,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for getting teacher profile by user ID
+  apiRouter.get("/teachers/profile", async (req: Request, res: Response) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      // Check if user exists and is a teacher
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.role !== "teacher") {
+        return res.status(403).json({ message: "User is not a teacher" });
+      }
+      
+      // Get teacher profile
+      const profile = await storage.getTeacherProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      
+      // Get subject details
+      const subjectIds = profile.subjectIds as number[];
+      const subjects = await Promise.all(
+        subjectIds.map(id => storage.getSubject(id))
+      );
+      
+      // Get total reviews and sessions
+      const reviews = await storage.getReviewsByTeacher(userId);
+      const sessions = await storage.getSessionsByTeacher(userId);
+      const completedSessions = sessions.filter(s => s.status === "completed");
+      
+      // Return combined data
+      return res.status(200).json({
+        ...profile,
+        user,
+        subjects: subjects.filter(Boolean), // Filter out any undefined subjects
+        totalReviews: reviews.length,
+        totalSessions: sessions.length,
+        completedSessions: completedSessions.length,
+      });
+    } catch (error) {
+      console.error("Error fetching teacher profile:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   apiRouter.get("/teachers/:id", async (req: Request, res: Response) => {
     try {
       const id = req.params.id;

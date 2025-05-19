@@ -681,6 +681,7 @@ export default function TeacherDashboard() {
           <p className="text-muted-foreground">Hoş geldiniz, {user?.firstName || user?.email}</p>
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
+          <CreateSessionForm />
           <Link href="/create-exam">
             <Button variant="outline">
               <PlusCircle className="mr-2 h-4 w-4" />
