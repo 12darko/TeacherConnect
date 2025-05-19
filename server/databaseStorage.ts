@@ -49,6 +49,46 @@ import { db } from "./db";
 import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  // App settings operations
+  async getAppSettings(): Promise<AppSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(appSettings)
+      .limit(1);
+    return settings;
+  }
+  
+  async updateAppSettings(settingsData: Partial<InsertAppSettings>): Promise<AppSettings> {
+    // Check if settings exist
+    const existingSettings = await this.getAppSettings();
+    
+    if (existingSettings) {
+      // Update existing settings
+      const [updated] = await db
+        .update(appSettings)
+        .set(settingsData)
+        .where(eq(appSettings.id, existingSettings.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new settings
+      const [newSettings] = await db
+        .insert(appSettings)
+        .values(settingsData)
+        .returning();
+      return newSettings;
+    }
+  }
+  
+  // Pricing plans operations
+  async getPricingPlans(): Promise<PricingPlan[]> {
+    const plans = await db
+      .select()
+      .from(pricingPlans)
+      .where(eq(pricingPlans.active, true))
+      .orderBy(pricingPlans.order);
+    return plans;
+  }
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

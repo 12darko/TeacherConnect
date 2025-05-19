@@ -7,6 +7,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { SubjectCard } from "@/components/SubjectCard";
 import { TestimonialCard } from "@/components/TestimonialCard";
 import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
+import { 
   BookOpen, 
   GraduationCap, 
   Video, 
@@ -92,6 +100,175 @@ export default function Home() {
   }));
   
   const displayTestimonials = mappedTestimonials.length > 0 ? mappedTestimonials : mockTestimonials;
+  
+  // Fetch pricing plans
+  const { data: pricingPlans = [], isLoading: isLoadingPricing } = useQuery<any[]>({
+    queryKey: ['/api/pricing-plans'],
+    queryFn: async () => {
+      const response = await fetch('/api/pricing-plans');
+      if (!response.ok) {
+        throw new Error('Failed to fetch pricing plans');
+      }
+      return response.json();
+    }
+  });
+  
+  // Fetch FAQ items
+  const { data: faqItems = [], isLoading: isLoadingFaq } = useQuery<any[]>({
+    queryKey: ['/api/faq-items'],
+    queryFn: async () => {
+      const response = await fetch('/api/faq-items');
+      if (!response.ok) {
+        throw new Error('Failed to fetch FAQ items');
+      }
+      return response.json();
+    }
+  });
+  
+  // PricingPlans component
+  const PricingPlans = () => {
+    if (isLoadingPricing) {
+      return (
+        <>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-96 animate-pulse bg-neutral-100 rounded-lg"></div>
+          ))}
+        </>
+      );
+    }
+    
+    // Fallback if no plans from API
+    const mockPlans = [
+      {
+        id: 1,
+        name: "Temel Plan",
+        price: 199.99,
+        currency: "TRY",
+        description: "Öğrenme yolculuğunuza başlamak için ideal",
+        features: ["Haftalık 2 saat özel ders", "Sınırsız mesajlaşma", "Temel ders materyalleri"],
+        recommended: false
+      },
+      {
+        id: 2,
+        name: "Standart Plan",
+        price: 349.99,
+        currency: "TRY",
+        description: "En popüler seçenek",
+        features: ["Haftalık 5 saat özel ders", "Sınırsız mesajlaşma", "Tüm ders materyalleri", "Özelleştirilmiş sınav ve ödevler", "7/24 soru desteği"],
+        recommended: true
+      },
+      {
+        id: 3,
+        name: "Premium Plan",
+        price: 599.99,
+        currency: "TRY",
+        description: "Tam kapsamlı öğrenme deneyimi",
+        features: ["Haftalık 10 saat özel ders", "Sınırsız mesajlaşma", "Tüm ders materyalleri", "Özelleştirilmiş sınav ve ödevler", "7/24 soru desteği", "Öncelikli öğretmen seçimi", "Gelişmiş analitik raporlar"],
+        recommended: false
+      }
+    ];
+    
+    const displayPlans = pricingPlans.length > 0 ? pricingPlans : mockPlans;
+    
+    return (
+      <>
+        {displayPlans.map((plan) => (
+          <Card 
+            key={plan.id} 
+            className={`relative overflow-hidden ${plan.recommended ? 'border-2 border-primary shadow-lg' : 'border border-neutral-200'}`}
+          >
+            {plan.recommended && (
+              <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-sm font-medium">
+                Önerilen
+              </div>
+            )}
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+              <p className="text-neutral-600 mb-4">{plan.description}</p>
+              <div className="mb-4">
+                <span className="text-3xl font-bold">{plan.price.toLocaleString('tr-TR')}</span>
+                <span className="text-neutral-500"> {plan.currency}/ay</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-start">
+                    <Check className="h-5 w-5 text-primary flex-shrink-0 mr-2" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto">
+                <Button 
+                  className={`w-full ${plan.recommended ? 'bg-primary hover:bg-primary/90' : 'bg-neutral-100 text-primary hover:bg-neutral-200'}`}
+                >
+                  Şimdi Başla
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </>
+    );
+  };
+  
+  // FaqItems component
+  const FaqItems = () => {
+    if (isLoadingFaq) {
+      return (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse bg-neutral-100 rounded"></div>
+          ))}
+        </div>
+      );
+    }
+    
+    // Fallback if no FAQs from API
+    const mockFaqs = [
+      {
+        id: 1,
+        question: "Nasıl öğretmen bulabilirim?",
+        answer: "Ana sayfadaki konu kategorilerine göz atabilir veya doğrudan arama çubuğunu kullanarak belirli bir konu veya isimle öğretmen arayabilirsiniz."
+      },
+      {
+        id: 2,
+        question: "Ödeme nasıl yapılır?",
+        answer: "Platformumuzda ödemeler tamamen güvenli bir şekilde kredi kartı veya banka kartı ile yapılabilir. Tüm ödemeler SSL korumalıdır."
+      },
+      {
+        id: 3,
+        question: "Ders iptali konusunda politikanız nedir?",
+        answer: "Dersler başlama saatinden en az 24 saat önce ücretsiz olarak iptal edilebilir. 24 saatten daha kısa sürede yapılan iptallerde ders ücretinin %50si iade edilir."
+      },
+      {
+        id: 4,
+        question: "Platformda öğretmen olarak nasıl çalışabilirim?",
+        answer: "Öğretmen olarak kaydolmak için kayıt sırasında 'Öğretmen olarak kayıt ol' seçeneğini seçmelisiniz. Daha sonra eğitim geçmişiniz ve deneyiminiz hakkında bilgi girmeniz gerekecektir."
+      },
+      {
+        id: 5,
+        question: "Teknik sorunlar yaşarsam ne yapmalıyım?",
+        answer: "Video görüşmesi sırasında teknik sorunlar yaşarsanız, önce internet bağlantınızı kontrol edin. Sorun devam ederse, sayfayı yenilemeyi deneyin. Hala çözülmediyse yardım bölümündeki canlı desteğimizle iletişime geçebilirsiniz."
+      }
+    ];
+    
+    const displayFaqs = faqItems.length > 0 ? faqItems : mockFaqs;
+    
+    return (
+      <Accordion type="single" collapsible className="w-full">
+        {displayFaqs.map((faq) => (
+          <AccordionItem key={faq.id} value={`item-${faq.id}`}>
+            <AccordionTrigger className="text-left font-medium">
+              {faq.question}
+            </AccordionTrigger>
+            <AccordionContent>
+              {faq.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    );
+  };
   
   return (
     <div>
@@ -445,6 +622,40 @@ export default function Home() {
               </div>
               <p className="text-neutral-600">Completed Lessons</p>
             </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Pricing Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Uygun Fiyatlarla Kaliteli Eğitim</h2>
+            <p className="text-lg text-neutral-600 max-w-3xl mx-auto">
+              İhtiyaçlarınıza en uygun planı seçin ve hemen eğitim yolculuğunuza başlayın.
+            </p>
+          </div>
+          
+          {/* Pricing Plans */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+            <PricingPlans />
+          </div>
+        </div>
+      </section>
+      
+      {/* FAQ Section */}
+      <section className="py-16 bg-neutral-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Sık Sorulan Sorular</h2>
+            <p className="text-lg text-neutral-600 max-w-3xl mx-auto">
+              EduConnect hakkında merak ettiğiniz konularda size yardımcı olabiliriz.
+            </p>
+          </div>
+          
+          {/* FAQ Items */}
+          <div className="mt-8 max-w-4xl mx-auto">
+            <FaqItems />
           </div>
         </div>
       </section>
