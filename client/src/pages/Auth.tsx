@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,11 +14,29 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { loginSchema, registerSchema } from "@shared/schema";
 import { Facebook, Apple, UserCircle, Lock, Mail, School, User, UserCog } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Auth() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [role, setRole] = useState<"student" | "teacher">("student");
   const [, navigate] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
+  // Oturum açıksa ilgili sayfaya yönlendir
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log("Kullanıcı zaten oturum açmış, yönlendiriliyor...", user);
+      if (user.role === "student") {
+        navigate("/student-dashboard");
+      } else if (user.role === "teacher") {
+        navigate("/teacher-dashboard");
+      } else if (user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
   const { toast } = useToast();
 
   // Use zod validation for forms
