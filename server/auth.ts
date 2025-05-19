@@ -113,17 +113,17 @@ export const registerUser = async (req: Request, res: Response) => {
     // Generate user ID
     const id = generateUserId();
 
-    // Veritabanı sütun adları snake_case formatında
+    // JavaScript'te camelCase kullanıyoruz (drizzle dönüşüm yapacak)
     const userData = {
       id,
       email,
-      password_hash: passwordHash,
-      first_name: firstName,
-      last_name: lastName,
+      passwordHash, // password_hash olarak değil, passwordHash olarak gönder
+      firstName,    // first_name olarak değil, firstName olarak gönder
+      lastName,     // last_name olarak değil, lastName olarak gönder
       role,
-      auth_provider: "local",
-      created_at: new Date(),
-      updated_at: new Date()
+      authProvider: "local", // auth_provider olarak değil, authProvider olarak gönder
+      createdAt: new Date(), // created_at olarak değil, createdAt olarak gönder
+      updatedAt: new Date()  // updated_at olarak değil, updatedAt olarak gönder
     };
 
     console.log("Creating user with data:", { ...userData, password_hash: '**hidden**' });
