@@ -813,8 +813,14 @@ export default function TeacherDashboard() {
                     <h4 className="font-medium text-sm">Toplam Kazanç</h4>
                     <DollarSign className="h-4 w-4 text-green-500" />
                   </div>
-                  <p className="text-2xl font-bold text-green-700">12.850₺</p>
-                  <p className="text-xs text-green-600 mt-1">+14% geçen aya göre</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {teacherProfile?.totalEarnings ? `${teacherProfile.totalEarnings.toLocaleString()}₺` : (
+                      sessions.length > 0 ? `${(sessions.length * 250).toLocaleString()}₺` : "0₺"
+                    )}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {sessions.filter(s => new Date(s.startTime) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length} ders bu ay
+                  </p>
                 </div>
                 
                 <div className="p-4 bg-blue-50 rounded-md">
@@ -822,8 +828,14 @@ export default function TeacherDashboard() {
                     <h4 className="font-medium text-sm">Çekilebilir</h4>
                     <CreditCard className="h-4 w-4 text-blue-500" />
                   </div>
-                  <p className="text-2xl font-bold text-blue-700">7.600₺</p>
-                  <p className="text-xs text-blue-600 mt-1">3 bekleyen ödeme</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {teacherProfile?.withdrawableAmount ? `${teacherProfile.withdrawableAmount.toLocaleString()}₺` : (
+                      sessions.length > 0 ? `${Math.floor(sessions.length * 250 * 0.9).toLocaleString()}₺` : "0₺"
+                    )}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    {sessions.filter(s => s.status === "completed").length} tamamlanan ders
+                  </p>
                 </div>
                 
                 <div className="p-4 bg-red-50 rounded-md">
@@ -831,8 +843,12 @@ export default function TeacherDashboard() {
                     <h4 className="font-medium text-sm">Platform Komisyonu</h4>
                     <DollarSign className="h-4 w-4 text-red-500" />
                   </div>
-                  <p className="text-2xl font-bold text-red-700">1.285₺</p>
-                  <p className="text-xs text-red-600 mt-1">%10 komisyon</p>
+                  <p className="text-2xl font-bold text-red-700">
+                    {teacherProfile?.platformFee ? `${teacherProfile.platformFee.toLocaleString()}₺` : (
+                      sessions.length > 0 ? `${Math.floor(sessions.length * 250 * 0.1).toLocaleString()}₺` : "0₺"
+                    )}
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">%10 platform komisyonu</p>
                 </div>
               </div>
             </CardContent>

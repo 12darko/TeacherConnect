@@ -193,19 +193,21 @@ export default function ImprovedStudentDashboard() {
             
             {/* İlerleme Kartları */}
             <ProgressCard 
-              title="Haftalık Ödev Tamamlama" 
-              value={stats?.weeklyCompletedAssignments || 4} 
+              title="Haftalık Ders Katılımı" 
+              value={upcomingSessions.filter(s => new Date(s.startTime) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length} 
               target={5} 
               icon="target"
-              description="Haftalık ödev tamamlama hedefine kalan"
+              description="Bu haftaki planlanmış dersleriniz"
             />
             
             <ProgressCard 
               title="Aylık İlerleme" 
-              value={stats?.monthlyProgress || 65} 
+              value={upcomingSessions.length > 0 ? 
+                Math.min(100, Math.round((upcomingSessions.filter(s => s.status === "completed").length / Math.max(1, upcomingSessions.length)) * 100)) 
+                : 0} 
               target={100} 
               icon="trophy"
-              description="Aylık hedeflerinize göre ilerleme durumunuz"
+              description="Tamamlanan derslerin yüzdesi"
             />
           </div>
           
@@ -215,13 +217,13 @@ export default function ImprovedStudentDashboard() {
               <CardHeader className="pb-2">
                 <CardDescription>Toplam Dersler</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingStats ? "..." : stats?.totalSessions || 0}
+                  {isLoadingSessions ? "..." : upcomingSessions.length}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground flex items-center">
                   <Users className="mr-1 h-4 w-4" />
-                  Tamamlanan dersler
+                  {upcomingSessions.filter(s => s.status === "completed").length} tamamlandı
                 </div>
               </CardContent>
             </Card>
@@ -230,7 +232,12 @@ export default function ImprovedStudentDashboard() {
               <CardHeader className="pb-2">
                 <CardDescription>Öğrenme Saati</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingStats ? "..." : stats?.totalHours || 0}
+                  {isLoadingSessions ? "..." : upcomingSessions.reduce((total, session) => {
+                    const start = new Date(session.startTime);
+                    const end = new Date(session.endTime);
+                    const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                    return total + durationHours;
+                  }, 0).toFixed(1)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -245,28 +252,32 @@ export default function ImprovedStudentDashboard() {
               <CardHeader className="pb-2">
                 <CardDescription>Tamamlanan Sınavlar</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingStats ? "..." : stats?.examsCompleted || 0}
+                  {isLoadingAssignments ? "..." : examAssignments.length > 0 ? examAssignments.filter(exam => exam.completed).length : 0}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground flex items-center">
                   <Book className="mr-1 h-4 w-4" />
-                  Ort. skor: {isLoadingStats ? "..." : `${stats?.averageScore || 0}%`}
+                  {examAssignments.length > 0 ? 
+                    `Ort. skor: ${examAssignments.reduce((sum, exam) => sum + (exam.score || 0), 0) / Math.max(1, examAssignments.filter(exam => exam.completed).length)}%` : 
+                    "Henüz sınav yok"}
                 </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Öğrenme Serisi</CardDescription>
+                <CardDescription>Aktivite</CardDescription>
                 <CardTitle className="text-3xl">
-                  {isLoadingStats ? "..." : stats?.learningStreak || 0} gün
+                  {upcomingSessions.length > 0 ? "Aktif" : "Yeni"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground flex items-center">
                   <BadgeCheck className="mr-1 h-4 w-4" />
-                  Son aktif: {isLoadingStats ? "..." : stats?.lastActivity ? new Date(stats.lastActivity).toLocaleDateString('tr-TR') : "Hiç"}
+                  Son ders: {upcomingSessions.length > 0 ? 
+                    new Date(Math.max(...upcomingSessions.map(s => new Date(s.startTime).getTime()))).toLocaleDateString('tr-TR') : 
+                    "Henüz ders yok"}
                 </div>
               </CardContent>
             </Card>
