@@ -335,13 +335,18 @@ export default function Home() {
                     <Link href="/auth">
                       <Button 
                         size="lg" 
-                        className="bg-white text-primary hover:bg-white/90 border-white font-medium"
+                        variant="default"
+                        className="bg-white text-primary hover:bg-white/90 font-semibold"
                       >
                         Get Started
                       </Button>
                     </Link>
                     <Link href="/find-teachers">
-                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 font-medium">
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="text-white border-white hover:bg-white/10 font-semibold"
+                      >
                         Browse Teachers
                       </Button>
                     </Link>
