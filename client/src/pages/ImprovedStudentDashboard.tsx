@@ -42,8 +42,21 @@ export default function ImprovedStudentDashboard() {
   
   // Fetch upcoming sessions
   const { data: upcomingSessions = [], isLoading: isLoadingSessions } = useQuery({
-    queryKey: [`/api/sessions?studentId=${user?.id}&status=pending`],
+    queryKey: [`/api/sessions`, user?.id],
+    queryFn: async () => {
+      console.log("Fetching student sessions for ID:", user?.id);
+      const response = await fetch(`/api/sessions?studentId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+      const data = await response.json();
+      console.log("Student sessions loaded:", data);
+      return data;
+    },
     enabled: !!user?.id,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 10000 // Her 10 saniyede bir yenile
   });
   
   // Fetch exam assignments
