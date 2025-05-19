@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { loginSchema, registerSchema, insertTeacherProfileSchema, insertSessionSchema, insertReviewSchema, insertExamSchema, insertExamAssignmentSchema } from "@shared/schema";
 import { z } from "zod";
 import { WebSocketServer } from "ws";
+import { setupSocketIO } from "./socket";
 import { 
   registerUser, 
   loginUser, 
@@ -35,36 +36,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
   
-  // Setup WebSocket server for video calls
-  const videoWss = new WebSocketServer({ 
-    server: httpServer,
-    path: '/ws/video-call'
-  });
-  
-  videoWss.on("connection", (ws) => {
-    console.log("Video WebSocket connection established");
-    ws.on("message", (message) => {
-      // Broadcast message to all clients except sender
-      videoWss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === 1) {
-          client.send(message);
-        }
-      });
-    });
-  });
+  // Initialize Socket.IO for video calls
+  setupSocketIO(httpServer);
   
   // Custom authentication routes (local authentication)
-  apiRouter.post('/api/auth/register', registerUser);
-  apiRouter.post('/api/auth/login', loginUser);
-  apiRouter.post('/api/auth/logout', logoutUser);
-  
-  // Eski rotaları da destekleyelim (geriye dönük uyumluluk için)
   apiRouter.post('/auth/register', registerUser);
   apiRouter.post('/auth/login', loginUser);
   apiRouter.post('/auth/logout', logoutUser);
   
   // User authentication route - get current user
-  apiRouter.get('/api/auth/user', isAuthenticated, async (req: Request, res: Response) => {
+  apiRouter.get('/auth/user', isAuthenticated, async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });

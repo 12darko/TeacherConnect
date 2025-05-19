@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, PhoneOffIcon, MessagesSquareIcon, ScreenShareIcon } from "lucide-react";
+import { io, Socket } from "socket.io-client";
+import Peer from "simple-peer";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoCallProps {
   sessionId: string;
@@ -10,6 +14,8 @@ interface VideoCallProps {
 }
 
 export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: VideoCallProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -18,137 +24,450 @@ export function VideoCall({ sessionId, teacherName, studentName, onEndCall }: Vi
     { sender: teacherName, text: "Welcome to the class! How are you today?", time: "Just now" },
   ]);
   const [newMessage, setNewMessage] = useState("");
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [callConnected, setCallConnected] = useState(false);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const peerRef = useRef<Peer.Instance | null>(null);
+  const otherUserId = useRef<string | null>(null);
   
+  // Connect to Socket.IO server
   useEffect(() => {
-    // Mock video streams for demo
-    const setupMockStream = async () => {
-      try {
-        // Try to get user media if available in the environment
-        // In many environments this will fail with permission errors or not available
-        // which is fine for our mock implementation
-        navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
-          .then(stream => {
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = stream;
-            }
-          })
-          .catch(err => {
-            console.log("Video permission error or not available:", err);
-          });
-          
-        // Set up mock remote video with a color background
-        if (remoteVideoRef.current) {
-          const canvas = document.createElement('canvas');
-          canvas.width = 640;
-          canvas.height = 480;
-          const ctx = canvas.getContext('2d');
-          
-          if (ctx) {
-            // Create a gradient for the remote "video"
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#3b82f6');
-            gradient.addColorStop(1, '#1e40af');
-            
-            const animate = () => {
-              if (!remoteVideoRef.current) return;
-              
-              ctx.fillStyle = gradient;
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              
-              // Add the remote user indicator
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-              ctx.beginPath();
-              ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
-              ctx.fill();
-              
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-              ctx.font = 'bold 24px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.fillText("Remote User", canvas.width / 2, canvas.height / 2 + 10);
-              
-              // Convert to video stream
-              remoteVideoRef.current.srcObject = canvas.captureStream();
-              
-              requestAnimationFrame(animate);
-            };
-            
-            animate();
-          }
-        }
-      } catch (error) {
-        console.error("Error setting up mock stream:", error);
+    // Create Socket.IO connection
+    const socket = io("/", {
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5
+    });
+    
+    socketRef.current = socket;
+    
+    // Handle connection
+    socket.on("connect", () => {
+      console.log("Connected to server with socket ID:", socket.id);
+      
+      // Join the room with the session ID
+      socket.emit("join-room", sessionId, user?.id);
+      
+      toast({
+        title: "Connected to class",
+        description: "You are now connected to the virtual classroom",
+      });
+    });
+    
+    // Handle disconnect
+    socket.on("disconnect", () => {
+      console.log("Disconnected from server");
+      setCallConnected(false);
+      
+      toast({
+        title: "Disconnected",
+        description: "Lost connection to the classroom",
+        variant: "destructive",
+      });
+    });
+    
+    // When another user connects to the room
+    socket.on("user-connected", (userId) => {
+      console.log("User connected to the room:", userId);
+      otherUserId.current = userId;
+      
+      // Initiate call if we have local media
+      if (stream) {
+        callUser(userId);
       }
-    };
+    });
     
-    setupMockStream();
+    // When receiving a call
+    socket.on("signal", (userId, signal) => {
+      console.log("Received signal from user:", userId);
+      
+      if (signal.type === "offer") {
+        // This is an offer, so create peer and answer
+        answerCall(userId, signal);
+      } else if (signal.type === "answer") {
+        // This is an answer to our offer
+        if (peerRef.current) {
+          peerRef.current.signal(signal);
+        }
+      } else {
+        // This is a ICE candidate
+        if (peerRef.current) {
+          peerRef.current.signal(signal);
+        }
+      }
+    });
     
-    // Cleanup
+    // When a user disconnects
+    socket.on("user-disconnected", (userId) => {
+      console.log("User disconnected:", userId);
+      
+      // Close the peer connection
+      if (peerRef.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+      
+      setCallConnected(false);
+      
+      toast({
+        title: "User Disconnected",
+        description: "The other participant has left the classroom",
+      });
+    });
+    
+    // Handle chat messages
+    socket.on("receive-message", (message) => {
+      const now = new Date();
+      const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, "0");
+      
+      setMessages(prev => [
+        ...prev,
+        { 
+          sender: message.userId === user?.id ? "You" : (message.role === "teacher" ? teacherName : studentName),
+          text: message.text,
+          time
+        },
+      ]);
+    });
+    
+    // Cleanup function
     return () => {
-      // Stop local video stream if it exists
-      if (localVideoRef.current && localVideoRef.current.srcObject) {
-        const stream = localVideoRef.current.srcObject as MediaStream;
+      // Destroy peer connection
+      if (peerRef.current) {
+        peerRef.current.destroy();
+      }
+      
+      // Close socket connection
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      
+      // Stop media tracks
+      if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [sessionId, user?.id, teacherName, studentName, toast]);
   
+  // Get user media (camera/microphone)
+  useEffect(() => {
+    const getMedia = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: true 
+        });
+        
+        console.log("Got local media stream");
+        
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = mediaStream;
+        }
+        
+        setStream(mediaStream);
+        
+        // If the other user is already in the room, call them
+        if (otherUserId.current) {
+          callUser(otherUserId.current);
+        }
+      } catch (err) {
+        console.error("Error accessing media devices:", err);
+        
+        toast({
+          title: "Camera/Microphone Access Error",
+          description: "Unable to access your camera or microphone. Please check permissions.",
+          variant: "destructive",
+        });
+        
+        // Create fallback canvas for local video
+        createFallbackVideo(localVideoRef, "You");
+      }
+    };
+    
+    getMedia();
+    
+    // Cleanup function
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [toast]);
+  
+  // Function to create a call to another user
+  const callUser = (userId: string) => {
+    console.log("Calling user:", userId);
+    
+    if (!stream) {
+      console.error("Local stream not available");
+      return;
+    }
+    
+    // Create a new peer as initiator
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
+    
+    // Handle the signal event
+    peer.on("signal", (data) => {
+      console.log("Generated signal to send to peer");
+      
+      // Send the signal to the server
+      if (socketRef.current) {
+        socketRef.current.emit("signal", sessionId, user?.id, data);
+      }
+    });
+    
+    // Handle the stream event
+    peer.on("stream", (remoteStream) => {
+      console.log("Received remote stream");
+      
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+      
+      setCallConnected(true);
+    });
+    
+    // Handle peer errors
+    peer.on("error", (err) => {
+      console.error("Peer connection error:", err);
+      
+      toast({
+        title: "Connection Error",
+        description: "There was a problem connecting to the other participant",
+        variant: "destructive",
+      });
+    });
+    
+    peerRef.current = peer;
+  };
+  
+  // Function to answer a call
+  const answerCall = (userId: string, signal: any) => {
+    console.log("Answering call from user:", userId);
+    
+    if (!stream) {
+      console.error("Local stream not available");
+      return;
+    }
+    
+    // Create a new peer (not as initiator)
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream,
+    });
+    
+    // Handle the signal event
+    peer.on("signal", (data) => {
+      console.log("Generated answer signal");
+      
+      // Send the signal back to the caller
+      if (socketRef.current) {
+        socketRef.current.emit("signal", sessionId, user?.id, data);
+      }
+    });
+    
+    // Handle the stream event
+    peer.on("stream", (remoteStream) => {
+      console.log("Received remote stream");
+      
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+      
+      setCallConnected(true);
+    });
+    
+    // Handle peer errors
+    peer.on("error", (err) => {
+      console.error("Peer connection error:", err);
+      
+      toast({
+        title: "Connection Error",
+        description: "There was a problem connecting to the other participant",
+        variant: "destructive",
+      });
+    });
+    
+    // Signal the peer with the offer we received
+    peer.signal(signal);
+    
+    peerRef.current = peer;
+  };
+  
+  // Create a fallback video from canvas
+  const createFallbackVideo = (videoRef: React.RefObject<HTMLVideoElement>, label: string) => {
+    if (!videoRef.current) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Create a gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#3b82f6');
+      gradient.addColorStop(1, '#1e40af');
+      
+      const animate = () => {
+        if (!videoRef.current) return;
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add user indicator
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, canvas.width / 2, canvas.height / 2 + 10);
+        
+        // Convert to video stream
+        videoRef.current.srcObject = canvas.captureStream();
+        
+        requestAnimationFrame(animate);
+      };
+      
+      animate();
+    }
+  };
+  
+  // Toggle audio
   const toggleAudio = () => {
+    if (!stream) return;
+    
+    const audioTracks = stream.getAudioTracks();
+    
+    audioTracks.forEach(track => {
+      track.enabled = !isAudioEnabled;
+    });
+    
     setIsAudioEnabled(!isAudioEnabled);
-    
-    // In a real implementation, you would toggle the audio track
-    if (localVideoRef.current && localVideoRef.current.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getAudioTracks().forEach(track => {
-        track.enabled = !isAudioEnabled;
-      });
-    }
   };
   
+  // Toggle video
   const toggleVideo = () => {
-    setIsVideoEnabled(!isVideoEnabled);
+    if (!stream) return;
     
-    // In a real implementation, you would toggle the video track
-    if (localVideoRef.current && localVideoRef.current.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getVideoTracks().forEach(track => {
-        track.enabled = !isVideoEnabled;
-      });
+    const videoTracks = stream.getVideoTracks();
+    
+    videoTracks.forEach(track => {
+      track.enabled = !isVideoEnabled;
+    });
+    
+    setIsVideoEnabled(!isVideoEnabled);
+  };
+  
+  // Toggle screen sharing
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      // Stop screen sharing and go back to camera
+      if (stream) {
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      try {
+        // Get camera again
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: true 
+        });
+        
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = mediaStream;
+        }
+        
+        setStream(mediaStream);
+        
+        // Notify peer that screen sharing has ended
+        if (peerRef.current && peerRef.current._channel) {
+          try {
+            peerRef.current._channel.send(JSON.stringify({ type: 'screen-share-ended' }));
+          } catch (err) {
+            console.error("Error notifying peer about screen share end:", err);
+          }
+        }
+        
+        setIsScreenSharing(false);
+      } catch (err) {
+        console.error("Error switching back to camera:", err);
+      }
+    } else {
+      // Start screen sharing
+      try {
+        const displayMedia = await navigator.mediaDevices.getDisplayMedia({ 
+          video: true 
+        });
+        
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = displayMedia;
+        }
+        
+        // Keep audio from original stream
+        if (stream) {
+          stream.getAudioTracks().forEach(track => {
+            displayMedia.addTrack(track);
+          });
+        }
+        
+        // Notify peer about screen sharing
+        if (peerRef.current && peerRef.current._channel) {
+          try {
+            peerRef.current._channel.send(JSON.stringify({ type: 'screen-share-started' }));
+          } catch (err) {
+            console.error("Error notifying peer about screen share:", err);
+          }
+        }
+        
+        // Stop screen sharing when the user ends it from the browser UI
+        displayMedia.getVideoTracks()[0].onended = () => {
+          toggleScreenShare();
+        };
+        
+        setStream(displayMedia);
+        setIsScreenSharing(true);
+      } catch (err) {
+        console.error("Error sharing screen:", err);
+      }
     }
   };
   
-  const toggleScreenShare = () => {
-    setIsScreenSharing(!isScreenSharing);
-    // In a real implementation, you would handle screen sharing logic here
-  };
-  
+  // Send chat message
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !socketRef.current) return;
     
     const now = new Date();
     const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, "0");
     
-    setMessages([
-      ...messages,
+    // Add message to local state
+    setMessages(prev => [
+      ...prev,
       { sender: "You", text: newMessage, time },
     ]);
     
-    setNewMessage("");
+    // Send message to server
+    socketRef.current.emit("send-message", sessionId, {
+      userId: user?.id,
+      role: user?.role,
+      text: newMessage,
+      timestamp: new Date().toISOString()
+    });
     
-    // Mock response
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: Math.random() > 0.5 ? teacherName : studentName, 
-          text: "Thanks for your message!", 
-          time: "Just now" 
-        },
-      ]);
-    }, 2000);
+    setNewMessage("");
   };
   
   return (
