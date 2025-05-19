@@ -305,28 +305,58 @@ export default function Home() {
   
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/90 to-primary text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Find the Perfect Teacher for Your Learning Journey
-              </h1>
-              <p className="text-xl mb-8 text-white/90">
-                Connect with expert teachers for personalized online lessons, assignments, and exams tailored to your learning goals.
-              </p>
-              <div className="flex flex-wrap gap-4">
+      {/* Hero Section - Improved Design */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-primary to-primary-dark pt-20 pb-24 md:py-28">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:30px_30px]"></div>
+        <div className="absolute top-0 w-full h-40 bg-gradient-to-b from-primary to-transparent"></div>
+        <div className="absolute bottom-0 w-full h-40 bg-gradient-to-t from-primary to-transparent"></div>
+        
+        {/* Floating Elements */}
+        <div className="absolute left-0 top-1/4 w-64 h-64 bg-primary-light/20 rounded-full blur-3xl"></div>
+        <div className="absolute right-0 bottom-1/4 w-80 h-80 bg-primary-light/20 rounded-full blur-3xl"></div>
+        
+        <div className="container relative mx-auto px-4 z-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+            <div className="md:col-span-7 space-y-8">
+              <div className="space-y-4">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-1">
+                  <span className="flex h-2 w-2 rounded-full bg-green-400 mr-2"></span>
+                  Eğitim deneyimini dönüştür
+                </div>
+                
+                <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold leading-tight">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+                    Öğrenme Yolculuğun İçin
+                  </span> <br/>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+                    Mükemmel Öğretmeni Bul
+                  </span>
+                </h1>
+                
+                <p className="text-xl text-white/90 leading-relaxed max-w-xl">
+                  Öğrenme hedeflerine uygun özel dersler, ödevler ve sınavlar için uzman öğretmenlerle bağlantı kur.
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap gap-4 pt-2">
                 {isAuthenticated ? (
                   <>
                     <Link href={user?.role === "teacher" ? "/teacher-dashboard" : "/student-dashboard"}>
-                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 border-white font-medium">
-                        Go to Dashboard
+                      <Button 
+                        size="lg" 
+                        className="bg-white text-primary hover:bg-white/90 border-white font-semibold shadow-lg shadow-primary-dark/20"
+                      >
+                        Panele Git
                       </Button>
                     </Link>
                     <Link href="/find-teachers">
-                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 font-medium">
-                        Find Teachers
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm"
+                      >
+                        Öğretmen Bul
                       </Button>
                     </Link>
                   </>
@@ -336,42 +366,79 @@ export default function Home() {
                       <Button 
                         size="lg" 
                         variant="default"
-                        className="bg-white text-primary hover:bg-white/90 font-semibold"
+                        className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-primary-dark/30 px-8 py-6"
                       >
-                        Get Started
+                        Hemen Başla
                       </Button>
                     </Link>
                     <Link href="/find-teachers">
                       <Button 
                         size="lg" 
                         variant="outline" 
-                        className="text-white border-white hover:bg-white/10 font-semibold"
+                        className="text-white border-white hover:bg-white/10 font-semibold backdrop-blur-sm py-6"
                       >
-                        Browse Teachers
+                        Öğretmenlere Göz At
                       </Button>
                     </Link>
                   </>
                 )}
               </div>
+              
+              {/* Stats */}
+              <div className="flex flex-wrap gap-8 pt-6 text-white">
+                {statistics && (
+                  <>
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-bold">{statistics.totalTeachers}+</span>
+                      <span className="text-white/70">Uzman Öğretmen</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-bold">{statistics.totalStudents}+</span>
+                      <span className="text-white/70">Mutlu Öğrenci</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-bold">{statistics.totalSessions}+</span>
+                      <span className="text-white/70">Tamamlanan Ders</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="hidden md:block">
+            
+            <div className="hidden md:block md:col-span-5 relative">
+              <div className="absolute inset-0 -left-10 -top-10 bg-white/10 rounded-xl blur-3xl transform rotate-6"></div>
               <img 
                 src="https://images.unsplash.com/photo-1610484826967-09c5720778c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
                 alt="Online learning" 
-                className="rounded-lg shadow-xl"
+                className="relative rounded-xl shadow-2xl z-10 transform transition-all duration-500 hover:scale-105"
               />
+              <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full border-8 border-primary-light bg-white/90 backdrop-blur flex items-center justify-center text-primary">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">4.9</div>
+                  <div className="text-xs">Kullanıcı Puanı</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Features Section */}
-      <section className="py-16 bg-neutral-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why Choose Our Platform?</h2>
-            <p className="text-neutral-600 max-w-2xl mx-auto">
-              We provide an all-in-one learning solution with powerful features to enhance your educational experience.
+      {/* Features Section - Improved Design */}
+      <section className="py-24 bg-neutral-50 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute -bottom-36 -left-36 w-72 h-72 bg-primary/5 rounded-full"></div>
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl mx-auto text-center mb-16">
+            <Badge className="mb-4 px-4 py-2 bg-primary/10 text-primary border-none font-medium">
+              NEDEN BİZ?
+            </Badge>
+            <h2 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
+              Platformumuzun Avantajları
+            </h2>
+            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
+              Eğitim deneyiminizi zenginleştirmek için tasarlanmış güçlü özellikleriyle eksiksiz bir öğrenme çözümü sunuyoruz.
             </p>
           </div>
           
