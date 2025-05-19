@@ -13,6 +13,7 @@ import {
   features,
   pricingPlans,
   faqItems,
+  menuItems,
   type User,
   type Subject,
   type TeacherProfile,
@@ -27,6 +28,7 @@ import {
   type Feature,
   type PricingPlan,
   type FaqItem,
+  type MenuItem,
   type InsertUser,
   type InsertSubject,
   type InsertTeacherProfile,
@@ -40,7 +42,8 @@ import {
   type InsertHomepageSection,
   type InsertFeature,
   type InsertPricingPlan,
-  type InsertFaqItem
+  type InsertFaqItem,
+  type InsertMenuItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
@@ -573,6 +576,46 @@ export class DatabaseStorage implements IStorage {
       .update(faqItems)
       .set(itemData)
       .where(eq(faqItems.id, id))
+      .returning();
+    return item;
+  }
+  
+  // UI Content - Menu Items
+  async getMenuItems(location?: string): Promise<MenuItem[]> {
+    let query = db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.visible, true));
+      
+    if (location) {
+      query = query.where(eq(menuItems.menuLocation, location));
+    }
+    
+    const menuList = await query.orderBy(menuItems.order_position);
+    return menuList;
+  }
+  
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.id, id));
+    return item;
+  }
+  
+  async createMenuItem(itemData: InsertMenuItem): Promise<MenuItem> {
+    const [item] = await db
+      .insert(menuItems)
+      .values(itemData)
+      .returning();
+    return item;
+  }
+  
+  async updateMenuItem(id: number, itemData: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    const [item] = await db
+      .update(menuItems)
+      .set(itemData)
+      .where(eq(menuItems.id, id))
       .returning();
     return item;
   }

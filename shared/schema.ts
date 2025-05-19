@@ -113,19 +113,18 @@ export const examAssignments = pgTable("exam_assignments", {
 // Student statistics
 export const studentStats = pgTable("student_stats", {
   id: serial("id").primaryKey(),
-  studentId: varchar("student_id").notNull().references(() => users.id).unique(),
+  studentId: varchar("student_id").notNull().references(() => users.id),
   totalSessionsAttended: integer("total_sessions_attended").default(0),
   totalExamsCompleted: integer("total_exams_completed").default(0),
   averageExamScore: doublePrecision("average_exam_score").default(0),
-  lastActivity: timestamp("last_activity"),
+  lastActivity: timestamp("last_activity").defaultNow(),
 });
 
-// UI Content - Testimonial
+// UI Content - Testimonials
 export const testimonials = pgTable("testimonials", {
   id: serial("id").primaryKey(),
-  name: varchar("name").notNull(),
-  avatarUrl: varchar("avatar_url"),
-  role: varchar("role").notNull(),
+  studentName: varchar("student_name").notNull(),
+  studentImage: varchar("student_image"),
   comment: text("comment").notNull(),
   rating: integer("rating").notNull(), // 1-5 stars
   date: timestamp("date").defaultNow(),
@@ -187,13 +186,24 @@ export const pricingPlans = pgTable("pricing_plans", {
   order: integer("order").default(0),
 });
 
-// FAQ Items
+// UI Content - FAQ Items
 export const faqItems = pgTable("faq_items", {
   id: serial("id").primaryKey(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
   category: varchar("category").default("general"),
   order: integer("order").default(0),
+  visible: boolean("visible").default(true),
+});
+
+// UI Content - Menu Items
+export const menuItems = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 100 }).notNull(),
+  url: varchar("url", { length: 255 }).notNull(),
+  parentId: integer("parent_id"),
+  menuLocation: varchar("menu_location", { length: 50 }).notNull().default("main"),
+  order_position: integer("order_position").notNull().default(0),
   visible: boolean("visible").default(true),
 });
 
@@ -214,6 +224,7 @@ export const insertHomepageSectionSchema = createInsertSchema(homepageSections).
 export const insertFeatureSchema = createInsertSchema(features).omit({ id: true });
 export const insertPricingPlanSchema = createInsertSchema(pricingPlans).omit({ id: true });
 export const insertFaqItemSchema = createInsertSchema(faqItems).omit({ id: true });
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({ id: true });
 
 // Types for insertion
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -232,6 +243,7 @@ export type InsertHomepageSection = z.infer<typeof insertHomepageSectionSchema>;
 export type InsertFeature = z.infer<typeof insertFeatureSchema>;
 export type InsertPricingPlan = z.infer<typeof insertPricingPlanSchema>;
 export type InsertFaqItem = z.infer<typeof insertFaqItemSchema>;
+export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 
 // Types for selection
 export type User = typeof users.$inferSelect;
@@ -250,6 +262,7 @@ export type HomepageSection = typeof homepageSections.$inferSelect;
 export type Feature = typeof features.$inferSelect;
 export type PricingPlan = typeof pricingPlans.$inferSelect;
 export type FaqItem = typeof faqItems.$inferSelect;
+export type MenuItem = typeof menuItems.$inferSelect;
 
 // Extended schemas for validation
 export const loginSchema = z.object({
