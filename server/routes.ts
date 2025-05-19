@@ -345,17 +345,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session routes
   apiRouter.get("/sessions", async (req: Request, res: Response) => {
     try {
-      const teacherId = req.query.teacherId ? parseInt(req.query.teacherId as string) : undefined;
-      const studentId = req.query.studentId ? parseInt(req.query.studentId as string) : undefined;
+      const teacherId = req.query.teacherId ? String(req.query.teacherId) : undefined;
+      const studentId = req.query.studentId ? String(req.query.studentId) : undefined;
+      
+      console.log("Sessions API called with teacherId:", teacherId, "studentId:", studentId);
       
       let sessions;
-      if (teacherId && !isNaN(teacherId)) {
+      if (teacherId) {
+        console.log("Getting sessions for teacher ID:", teacherId);
         sessions = await storage.getSessionsByTeacher(teacherId);
-      } else if (studentId && !isNaN(studentId)) {
+      } else if (studentId) {
+        console.log("Getting sessions for student ID:", studentId);
         sessions = await storage.getSessionsByStudent(studentId);
       } else {
+        console.log("Getting all sessions");
         sessions = await storage.getSessions();
       }
+      
+      console.log("Found sessions:", sessions);
       
       // Expand sessions with user and subject details
       const expandedSessions = await Promise.all(
