@@ -628,68 +628,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Exam creation requested by:", req.user?.id, "with role:", req.user?.role);
       console.log("Exam data received:", JSON.stringify(req.body, null, 2));
       
-      // Oturum açmış öğretmenin ID'sini kullanıyoruz
-      const examData = {
-        ...req.body,
-        teacherId: req.user?.id
-      };
+      // Daha basit ve doğrudan bir yaklaşım uygulayalım
+      // Verileri manuel olarak doğrulayalım ve hazırlayalım
+      const { title, description, subjectId, questions } = req.body;
       
-      // Request validasyonu
-      const validatedData = insertExamSchema.parse(examData);
+      // Eksik temel alanları kontrol et
+      if (!title || !subjectId || !questions || !Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ 
+          message: "Missing required fields. Title, subjectId and at least one question are required." 
+        });
+      }
       
-      // Check if subject exists
-      const subject = await storage.getSubject(validatedData.subjectId);
+      // Konu kontrolü
+      const subject = await storage.getSubject(parseInt(subjectId));
       if (!subject) {
         return res.status(404).json({ message: "Subject not found" });
       }
       
-      // Validating the questions array
-      if (!validatedData.questions || !Array.isArray(validatedData.questions) || validatedData.questions.length === 0) {
-        return res.status(400).json({ message: "At least one question is required" });
-      }
-
-      // Gelen verileri debug olarak yazdır
-      console.log("Questions data structure:", JSON.stringify(validatedData.questions, null, 2));
-
-      // Daha esnek doğrulama yapısı
-      for (let i = 0; i < validatedData.questions.length; i++) {
-        const q = validatedData.questions[i];
-        console.log(`Question ${i} fields:`, Object.keys(q));
+      // Soru formatını doğru şekilde hazırlayalım
+      const formattedQuestions = questions.map((q, index) => {
+        // Her soruya ID ekleyelim
+        const formattedQuestion: any = {
+          id: index + 1,
+          question: q.question,
+          type: q.type,
+          points: q.points
+        };
         
-        // Zorunlu alanların varlığını kontrol et
-        const missingFields = [];
-        if (!q.question) missingFields.push('question');
-        if (q.correctAnswer === undefined || q.correctAnswer === null) missingFields.push('correctAnswer');
-        if (!q.type) missingFields.push('type');
-        if (q.points === undefined || q.points === null) missingFields.push('points');
-        
-        if (missingFields.length > 0) {
-          return res.status(400).json({ 
-            message: `Question at index ${i} is missing required fields (${missingFields.join(', ')})` 
-          });
-        }
-        
-        // Çoktan seçmeli sorular için seçeneklerin kontrolü
+        // Çoktan seçmeli sorular için options ekle
         if (q.type === 'multiple-choice') {
-          if (!q.options || !Array.isArray(q.options)) {
-            return res.status(400).json({ 
-              message: `Multiple-choice question at index ${i} requires options array` 
-            });
+          if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
+            throw new Error(`Multiple-choice question ${index + 1} must have at least 2 options`);
           }
           
-          // Boş seçenekleri filtrele
-          q.options = q.options.filter(opt => opt && opt.trim());
-          
-          if (q.options.length < 2) {
-            return res.status(400).json({ 
-              message: `Multiple-choice question at index ${i} requires at least 2 options` 
-            });
-          }
+          formattedQuestion.options = q.options.filter(opt => opt && opt.trim());
+          formattedQuestion.correctAnswer = parseInt(q.correctAnswer);
+        } else {
+          formattedQuestion.correctAnswer = q.correctAnswer?.toString() || "";
         }
-      }
+        
+        return formattedQuestion;
+      });
       
-      // Create exam
-      const exam = await storage.createExam(validatedData);
+      // Hazırlanmış veriyi yazdır
+      console.log("Formatted questions:", JSON.stringify(formattedQuestions, null, 2));
+      
+      // Manuel oluşturulmuş veri objesi
+      const examData = {
+        teacherId: req.user?.id,
+        subjectId: parseInt(subjectId),
+        title,
+        description: description || "",
+        questions: formattedQuestions
+      };
+      
+      // Create exam with correctly formatted data
+      const exam = await storage.createExam(examData);
       
       return res.status(201).json(exam);
     } catch (error) {
