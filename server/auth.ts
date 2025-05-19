@@ -97,6 +97,7 @@ export const generateUserId = (): string => {
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { email, password, firstName, lastName, role } = req.body;
+    console.log("Register attempt for email:", email);
 
     // Check if user already exists
     const existingUser = await storage.getUserByEmail(email);
@@ -110,18 +111,23 @@ export const registerUser = async (req: Request, res: Response) => {
     // Generate user ID
     const id = generateUserId();
 
-    // Create user
-    const user = await storage.upsertUser({
+    // Veritabanı sütun adları snake_case formatında
+    const userData = {
       id,
       email,
-      passwordHash,
-      firstName,
-      lastName,
+      password_hash: passwordHash,
+      first_name: firstName,
+      last_name: lastName,
       role,
-      authProvider: "local",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+      auth_provider: "local",
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    console.log("Creating user with data:", { ...userData, password_hash: '**hidden**' });
+
+    // Create user
+    const user = await storage.upsertUser(userData);
 
     // Create initial student stats if student
     if (role === "student") {
@@ -144,8 +150,18 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 
     // Return user without sensitive data
-    const { passwordHash: _, ...userData } = user;
-    res.status(201).json({ user: userData });
+    const userDataToReturn = {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name || firstName,
+      lastName: user.last_name || lastName,
+      role: user.role,
+      bio: user.bio,
+      profileImageUrl: user.profile_image_url
+    };
+
+    console.log("Registration successful for user:", email);
+    res.status(201).json({ user: userDataToReturn });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({ message: "Failed to register user" });
@@ -158,20 +174,30 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log("Login attempt for email:", email);
 
     // Find user
     const user = await storage.getUserByEmail(email);
-    if (!user || !user.passwordHash || user.authProvider !== "local") {
+    console.log("User found:", user ? "Yes" : "No");
+
+    // Sütun adı kontrolü 
+    const passwordField = user?.password_hash ? 'password_hash' : 'passwordHash';
+    const authProviderField = user?.auth_provider ? 'auth_provider' : 'authProvider';
+
+    if (!user || !user[passwordField] || user[authProviderField] !== "local") {
+      console.log("Invalid credentials: user not found or not using local auth");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check password
-    const isPasswordValid = await comparePassword(password, user.passwordHash);
+    // Şifre kontrolü
+    const isPasswordValid = await comparePassword(password, user[passwordField]);
+    console.log("Password valid:", isPasswordValid ? "Yes" : "No");
+    
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Set session safely
+    // Session'ı güvenli bir şekilde ayarla
     if (req.session) {
       req.session.userId = user.id;
       await new Promise<void>((resolve) => {
@@ -186,9 +212,19 @@ export const loginUser = async (req: Request, res: Response) => {
       console.error("Session object is undefined during login");
     }
 
-    // Return user without sensitive data
-    const { passwordHash: _, ...userData } = user;
-    res.json({ user: userData });
+    // Hassas verileri çıkararak kullanıcıyı döndür
+    const userDataToReturn = {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name || user.firstName,
+      lastName: user.last_name || user.lastName, 
+      role: user.role,
+      profileImageUrl: user.profile_image_url || user.profileImageUrl,
+      bio: user.bio
+    };
+    
+    console.log("Login successful for user:", userDataToReturn.email);
+    res.json({ user: userDataToReturn });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Failed to log in" });
