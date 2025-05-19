@@ -40,7 +40,8 @@ export function getSession() {
     pool: pool,
     createTableIfMissing: true,
     ttl: sessionTtl,
-    tableName: "auth_sessions",
+    tableName: "session_store",
+    jsonField: 'sess'
   });
   return session({
     secret: process.env.SESSION_SECRET || 'edu-connect-secret-key',
