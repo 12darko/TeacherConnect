@@ -68,10 +68,16 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
       return;
     }
     
-    // Basit kamera erişimi
+    // Geliştirilmiş kamera erişimi
     const setupCamera = async () => {
       try {
-        // Basit kamera erişimi
+        // Önce kullanıcıdan izin kontrolü
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Tarayıcınız kamera ve mikrofon erişimini desteklemiyor");
+        }
+        
+        console.log("Kamera erişimi başarılı");
+        
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true
@@ -82,11 +88,18 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
         }
         
         setLocalStream(stream);
+        setIsMicActive(true);
+        setCameraActive(true);
         
         // Karşı taraf için placeholder göster
         showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
       } catch (err) {
         console.error("Kamera erişimi hatası:", err);
+        
+        // Eğer kullanıcı izin vermezse burada bilgilendirme göster
+        setMicError("Mikrofon erişimi sağlanamadı. İzinleri kontrol edin.");
+        setCameraError("Kamera erişimi sağlanamadı. İzinleri kontrol edin.");
+        
         showPlaceholder(localVideoRef, "Siz (Kamera erişilemedi)");
         showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
       }

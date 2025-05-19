@@ -635,8 +635,12 @@ export default function ClassRoom() {
             variant="destructive" 
             onClick={handleEndSession}
             disabled={endSessionMutation.isPending}
+            className="ml-auto flex items-center"
           >
-            Dersi Sonlandır
+            {showEndConfirm ? "Emin misiniz? Tıklayın" : "Dersi Sonlandır"}
+            {endSessionMutation.isPending && (
+              <div className="ml-2 animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+            )}
           </Button>
         )}
       </div>
