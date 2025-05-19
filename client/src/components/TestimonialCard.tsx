@@ -54,34 +54,50 @@ export function TestimonialCard({
   }
   
   return (
-    <Card className="h-full transition-all duration-300 hover:shadow-md">
-      <CardHeader className="flex flex-row items-center gap-4 pb-2">
-        <Avatar>
-          <AvatarImage src={displayImage} alt={displayName} />
-          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-        </Avatar>
+    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 flex flex-col h-full relative overflow-hidden transition-all duration-300 hover:shadow-md">
+      {/* Decorative element */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-x-10 -translate-y-10 -z-10"></div>
+      
+      <div className="flex items-start space-x-4 mb-4">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-100 flex items-center justify-center">
+            {displayImage ? (
+              <img src={displayImage} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-primary font-medium">{getInitials(displayName)}</span>
+            )}
+          </div>
+          <div className="absolute -right-1 -bottom-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center">
+            <StarIcon size={12} className="fill-white" />
+          </div>
+        </div>
+        
         <div className="flex flex-col">
-          <div className="font-medium leading-none mb-1">{displayName}</div>
-          {role && <div className="text-xs text-muted-foreground mb-1">{role}</div>}
-          <div className="flex items-center">
+          <div className="font-bold text-lg">{displayName}</div>
+          {role && <div className="text-sm text-neutral-500">{role}</div>}
+          <div className="flex items-center mt-1">
             {[...Array(5)].map((_, i) => (
               <StarIcon
                 key={i}
                 className={i < rating 
                   ? "fill-yellow-400 text-yellow-400" 
                   : "fill-gray-200 text-gray-200"}
-                size={14}
+                size={16}
               />
             ))}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground pb-4">
-        {comment || "Great teacher! I learned a lot."}
-      </CardContent>
-      <CardFooter className="text-xs text-muted-foreground border-t pt-3">
+      </div>
+      
+      <div className="flex-1">
+        <p className="text-neutral-700 leading-relaxed italic">
+          "{comment || "Harika bir öğretmen! Çok şey öğrendim."}"
+        </p>
+      </div>
+      
+      <div className="text-xs text-neutral-500 mt-4 pt-3 border-t border-neutral-100">
         {formattedDate}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

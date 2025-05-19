@@ -599,52 +599,61 @@ export default function Home() {
               ))
             ) : (
               <>
-                <div className="text-center">
-                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
-                  <h3 className="text-xl font-bold mb-2">Find Your Teacher</h3>
-                  <p className="text-neutral-600">
-                    Browse through our selection of verified teachers based on subject, price, and ratings to find your perfect match.
+                <div className="text-center relative px-4 py-6 hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-white rounded-2xl shadow-sm border border-neutral-100 -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-md">
+                    1
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Öğretmenini Bul</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Konu, fiyat ve değerlendirmelere göre doğrulanmış öğretmenlerimiz arasından size uygun olanı seçin.
                   </p>
                 </div>
                 
-                <div className="text-center">
-                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
-                  <h3 className="text-xl font-bold mb-2">Book a Session</h3>
-                  <p className="text-neutral-600">
-                    Schedule a session at a time that works for you. Our flexible booking system makes it easy to find convenient slots.
+                <div className="text-center relative px-4 py-6 hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-white rounded-2xl shadow-sm border border-neutral-100 -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-md">
+                    2
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Ders Planla</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Size uygun bir zamanda ders planlayın. Esnek rezervasyon sistemimiz, uygun zaman dilimlerini bulmanızı kolaylaştırır.
                   </p>
                 </div>
                 
-                <div className="text-center">
-                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
-                  <h3 className="text-xl font-bold mb-2">Start Learning</h3>
-                  <p className="text-neutral-600">
-                    Connect for your live video session and access personalized learning materials, assignments, and exams.
+                <div className="text-center relative px-4 py-6 hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-white rounded-2xl shadow-sm border border-neutral-100 -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-md">
+                    3
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Öğrenmeye Başla</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Canlı video dersinize bağlanın ve kişiselleştirilmiş öğrenme materyallerine, ödevlere ve sınavlara erişin.
                   </p>
                 </div>
               </>
             )}
           </div>
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             {isAuthenticated ? (
               <Link href={user?.role === "student" ? "/student-dashboard" : 
                            user?.role === "teacher" ? "/teacher-dashboard" :
                            user?.role === "admin" ? "/admin-dashboard" : "/"}>
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-6 shadow-lg shadow-primary/20 font-medium"
                 >
-                  Go to Dashboard
+                  Panele Git
                 </Button>
               </Link>
             ) : (
               <Link href="/auth">
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-6 shadow-lg shadow-primary/20 font-medium"
                 >
-                  Get Started Now
+                  Hemen Başla
                 </Button>
               </Link>
             )}
@@ -652,21 +661,44 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Testimonials Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">What Our Students Say</h2>
-            <p className="text-neutral-600 max-w-2xl mx-auto">
-              Don't just take our word for it. Hear from students who have transformed their learning experience with our platform.
+      {/* Testimonials Section - Improved Design */}
+      <section className="py-24 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent -z-10"></div>
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-primary/5 rounded-full"></div>
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/5 rounded-full"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 px-4 py-2 bg-primary/10 text-primary border-none font-medium">
+              ÖĞRENCİ YORUMLARI
+            </Badge>
+            <h2 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
+              Öğrencilerimiz Ne Diyor?
+            </h2>
+            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
+              Sadece bizim sözümüze güvenmeyin. Platformumuzla öğrenme deneyimlerini dönüştüren öğrencilerimizin yorumlarını dinleyin.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {isLoadingTestimonials ? (
-              // Loading state
+              // Enhanced loading state
               [...Array(3)].map((_, i) => (
-                <Card key={i} className="h-48 animate-pulse bg-neutral-100"></Card>
+                <div key={i} className="bg-white rounded-2xl p-8 shadow-sm border border-neutral-100 h-64 animate-pulse">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-neutral-200"></div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-neutral-200 rounded w-1/3"></div>
+                      <div className="h-3 bg-neutral-200 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-3 bg-neutral-200 rounded w-full"></div>
+                    <div className="h-3 bg-neutral-200 rounded w-full"></div>
+                    <div className="h-3 bg-neutral-200 rounded w-3/4"></div>
+                  </div>
+                </div>
               ))
             ) : displayTestimonials.length > 0 ? (
               // Display testimonials
