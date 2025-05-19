@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { MenuItem } from "@shared/schema";
+import { MenuItem, AppSettings } from "@shared/schema";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -17,14 +17,43 @@ export default function Footer() {
     }
   });
   
+  // Fetch subjects for footer
+  const { data: subjects, isLoading: isSubjectsLoading } = useQuery<any[]>({
+    queryKey: ["/api/subjects"],
+  });
+  
+  // Fetch app settings for footer content
+  const { data: appSettings, isLoading: isAppSettingsLoading } = useQuery<AppSettings>({
+    queryKey: ["/api/app-settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/app-settings");
+      if (!response.ok) {
+        throw new Error("Failed to fetch app settings");
+      }
+      return response.json();
+    }
+  });
+
+  // Support links menu items
+  const { data: supportLinks } = useQuery<MenuItem[]>({
+    queryKey: ["/api/menu-items", "support"],
+    queryFn: async () => {
+      const response = await fetch("/api/menu-items?location=support");
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    }
+  });
+  
   return (
     <footer className="bg-neutral-900 text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">EduConnect</h3>
+            <h3 className="text-xl font-bold mb-4">{appSettings?.siteName || "EduConnect"}</h3>
             <p className="text-neutral-400 mb-4">
-              Connecting students with expert teachers for personalized online learning experiences.
+              {appSettings?.footerText || "Connecting students with expert teachers for personalized online learning experiences."}
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-white hover:text-primary">
@@ -51,7 +80,12 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              {footerItems ? (
+              {isFooterLoading ? (
+                // Loading state
+                [...Array(5)].map((_, i) => (
+                  <li key={i} className="h-4 w-24 bg-neutral-800 animate-pulse rounded"></li>
+                ))
+              ) : footerItems?.length > 0 ? (
                 // Veritabanından gelen menü öğeleri
                 footerItems.map((item) => (
                   <li key={item.id}>
@@ -90,48 +124,92 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Subjects</h3>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Mathematics</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Science</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Computer Science</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Languages</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Humanities</a>
-              </li>
+              {isSubjectsLoading ? (
+                // Loading state
+                [...Array(5)].map((_, i) => (
+                  <li key={i} className="h-4 w-24 bg-neutral-800 animate-pulse rounded"></li>
+                ))
+              ) : subjects?.length > 0 ? (
+                // Veritabanından gelen dersler
+                subjects.slice(0, 5).map((subject) => (
+                  <li key={subject.id}>
+                    <Link 
+                      href={`/subjects/${subject.id}`} 
+                      className="text-neutral-400 hover:text-white transition-colors"
+                    >
+                      {subject.name}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                // Yedek statik dersler
+                <>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Mathematics</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Science</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Computer Science</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Languages</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Humanities</a>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Support</h3>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Contact Us</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Help Center</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Privacy Policy</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Terms of Service</a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-400 hover:text-white transition-colors">Become a Teacher</a>
-              </li>
+              {supportLinks?.length > 0 ? (
+                // Veritabanından gelen destek linkleri
+                supportLinks.map((item) => (
+                  <li key={item.id}>
+                    <Link href={item.url} className="text-neutral-400 hover:text-white transition-colors">
+                      {item.title}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                // Yedek statik destek linkleri
+                <>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Contact Us</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Help Center</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Privacy Policy</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Terms of Service</a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-neutral-400 hover:text-white transition-colors">Become a Teacher</a>
+                  </li>
+                </>
+              )}
+              {appSettings?.contactEmail && (
+                <li className="mt-4">
+                  <div className="text-neutral-300">Contact:</div>
+                  <a href={`mailto:${appSettings.contactEmail}`} className="text-neutral-400 hover:text-white transition-colors">
+                    {appSettings.contactEmail}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>
         
         <div className="border-t border-neutral-800 mt-8 pt-6 text-neutral-400 text-sm text-center">
-          <p>&copy; {currentYear} EduConnect. All rights reserved.</p>
+          <p>&copy; {currentYear} {appSettings?.siteName || "EduConnect"}. All rights reserved.</p>
         </div>
       </div>
     </footer>

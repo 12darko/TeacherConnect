@@ -6,9 +6,33 @@ import { queryClient } from "@/lib/queryClient";
  * Hook to check authentication status and get current user
  */
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery<User>({
+  const { 
+    data: user, 
+    isLoading, 
+    error,
+    isError
+  } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/auth/user");
+        
+        // 401 veya diğer hatalarda null döndürüyoruz
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log("User not authenticated");
+            return null;
+          }
+          throw new Error("Failed to fetch user data");
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Auth error:", error);
+        return null;
+      }
+    }
   });
 
   const loginMutation = useMutation({
@@ -30,6 +54,8 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/user"], data.user);
+      // Login sonrası tüm verileri yeniden yüklüyoruz
+      queryClient.invalidateQueries();
     },
   });
 
@@ -52,6 +78,8 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/user"], data.user);
+      // Kayıt sonrası tüm verileri yeniden yüklüyoruz
+      queryClient.invalidateQueries();
     },
   });
 
@@ -73,18 +101,23 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      // Çıkış sonrası tüm verileri yeniden yüklüyoruz
+      queryClient.invalidateQueries();
     },
   });
+
+  // isAuthenticated değerini daha güvenli bir şekilde hesaplıyoruz
+  const isAuthenticated = !isLoading && !isError && user !== null && user !== undefined;
 
   return {
     user,
     isLoading,
     error,
-    isAuthenticated: !!user,
+    isAuthenticated,
     // Kullanıcının rolüne göre yetkilendirme
-    isStudent: user?.role === "student",
-    isTeacher: user?.role === "teacher",
-    isAdmin: user?.role === "admin",
+    isStudent: isAuthenticated && user?.role === "student",
+    isTeacher: isAuthenticated && user?.role === "teacher",
+    isAdmin: isAuthenticated && user?.role === "admin",
     // Auth mutations
     loginMutation,
     registerMutation,
