@@ -1234,19 +1234,12 @@ export default function TeacherDashboard() {
                             // Şu anki zamanı al
                             const currentTime = new Date();
                             
-                            // Aktif ders durumunu belirle
+                            // Aktif ders durumu - daha kesin kontrol yapıyoruz
+                            // Öğretmen paneli için demo amacıyla - öğrencilerin aktif olduğu dersleri varsayılan olarak aktif saymıyoruz
                             const activeClass = studentSessions.find(s => {
-                              // Dersin durumu "active" ise öğrenci kesinlikle derstedir
-                              if (s.status === "active") return true;
-                              
-                              // Dersin planlanmış zamanında olup olmadığını kontrol et
-                              const sessionStart = new Date(s.startTime);
-                              const sessionEnd = new Date(s.endTime);
-                              
-                              // Şu anki saat ders saati aralığında mı?
-                              return s.status === "scheduled" && 
-                                     currentTime >= sessionStart && 
-                                     currentTime <= sessionEnd;
+                              // Sadece açıkça "active" işaretlenmiş dersler için öğrenci "derste" sayılır
+                              // "scheduled" durumundaki dersler için artık öğrenci otomatik olarak "derste" sayılmaz
+                              return s.status === "active";
                             });
                             
                             // Öğrencinin durumu:
