@@ -817,7 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/exam-assignments/:id/submit", async (req: Request, res: Response) => {
+  apiRouter.post("/exam-assignments/:id/submit", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -835,6 +835,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Assignment not found" });
       }
       
+      // Verify the student has access to this assignment
+      if (req.user?.id !== assignment.studentId) {
+        return res.status(403).json({ message: "You can only submit your own assignments" });
+      }
+      
       const exam = await storage.getExam(assignment.examId);
       if (!exam) {
         return res.status(404).json({ message: "Exam not found" });
@@ -845,14 +850,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Exam already submitted" });
       }
       
+      // Ensure all questions are answered
+      const examQuestions = exam.questions || [];
+      const questionIds = examQuestions.map(q => q.id);
+      const answeredIds = answers.map(a => a.questionId);
+      
+      const missingAnswers = questionIds.filter(id => !answeredIds.includes(id));
+      if (missingAnswers.length > 0) {
+        return res.status(400).json({ 
+          message: `Not all questions are answered. Missing: ${missingAnswers.join(', ')}`,
+          missingQuestions: missingAnswers
+        });
+      }
+      
       // Calculate score
       let score = 0;
-      const examQuestions = exam.questions || [];
+      const gradedAnswers = [];
       
       answers.forEach(answer => {
         const question = examQuestions.find(q => q.id === answer.questionId);
-        if (question && answer.answer === question.correctAnswer) {
-          score += question.points;
+        if (question) {
+          const isCorrect = answer.answer === question.correctAnswer;
+          gradedAnswers.push({
+            ...answer,
+            isCorrect,
+            points: isCorrect ? question.points : 0,
+            correctAnswer: question.correctAnswer
+          });
+          
+          if (isCorrect) {
+            score += question.points;
+          }
         }
       });
       
@@ -861,7 +889,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const percentageScore = Math.round((score / totalPoints) * 100);
       
       // Submit answers
-      const updatedAssignment = await storage.submitExamAnswers(id, answers, percentageScore);
+      const updatedAssignment = await storage.submitExamAnswers(id, gradedAnswers, score);
+      
+      // Update student stats if they exist
+      try {
+        await storage.updateStudentExamStats(assignment.studentId, score);
+      } catch (error) {
+        console.log("Could not update student stats, may not exist yet:", error);
+      }
       
       return res.status(200).json(updatedAssignment);
     } catch (error) {
