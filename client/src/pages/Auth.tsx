@@ -156,14 +156,14 @@ export default function Auth() {
   // Different login options
   
   const handleGoogleAuth = () => {
-    // Google OAuth API isteği gönderilecek
-    // Backend tarafında endpoint hazır olduğunda gerçek API'a bağlanacak
-    alert("Google ile giriş şu anda hazırlanıyor.");
+    // Google OAuth API request will be sent
+    // Will connect to the real API when the endpoint is ready on the backend
+    alert("Google login is currently being prepared.");
   };
   
   const handleFacebookAuth = () => {
-    // Facebook OAuth API isteği gönderilecek
-    alert("Facebook ile giriş şu anda hazırlanıyor.");
+    // Facebook OAuth API request will be sent
+    alert("Facebook login is currently being prepared.");
   };
   
   const handleAppleAuth = () => {
