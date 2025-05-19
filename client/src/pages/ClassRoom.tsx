@@ -214,12 +214,12 @@ export default function ClassRoom() {
               <span className="text-sm font-medium text-green-600">Aktif Ders</span>
             </div>
             <h1 className="text-3xl font-bold mb-1">
-              {session.subjectName} <span className="text-primary">Dersi</span>
+              {safeSession(session).subjectName} <span className="text-primary">Dersi</span>
             </h1>
             <p className="text-neutral-600">
-              {user?.id === session.teacherId 
-                ? `${session.studentName} ile eğitim oturumu`
-                : `${session.teacherName} ile eğitim oturumu`
+              {user?.id === safeSession(session).teacherId 
+                ? `${safeSession(session).studentName} ile eğitim oturumu`
+                : `${safeSession(session).teacherName} ile eğitim oturumu`
               }
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function ClassRoom() {
               Çıkış
             </Button>
             
-            {user?.id === session.teacherId && (
+            {user?.id === safeSession(session).teacherId && (
               <Button 
                 variant="destructive" 
                 onClick={handleEndSession}
@@ -260,15 +260,15 @@ export default function ClassRoom() {
                       Canlı Video Bağlantısı
                     </h2>
                     <p className="text-neutral-500 text-sm">
-                      {format(new Date(session.startTime), "d MMMM yyyy, HH:mm")} - 
-                      {format(new Date(session.endTime), " HH:mm")}
+                      {format(new Date(safeSession(session).startTime), "d MMMM yyyy, HH:mm")} - 
+                      {format(new Date(safeSession(session).endTime), " HH:mm")}
                     </p>
                   </div>
                   
                   <div className="bg-primary/5 text-primary text-sm px-3 py-1 rounded-full font-medium">
-                    {session.status === "scheduled" ? "Planlı" : 
-                     session.status === "active" ? "Devam Ediyor" : 
-                     session.status === "completed" ? "Tamamlandı" : "İptal Edildi"}
+                    {safeSession(session).status === "scheduled" ? "Planlı" : 
+                     safeSession(session).status === "active" ? "Devam Ediyor" : 
+                     safeSession(session).status === "completed" ? "Tamamlandı" : "İptal Edildi"}
                   </div>
                 </div>
               </div>
@@ -276,9 +276,9 @@ export default function ClassRoom() {
               <div className="h-[400px]">
                 <VideoCall 
                   sessionId={sessionId.toString()} 
-                  teacherName={session.teacherName} 
-                  studentName={session.studentName}
-                  onEndCall={user?.id === session.teacherId ? handleEndSession : undefined}
+                  teacherName={safeSession(session).teacherName} 
+                  studentName={safeSession(session).studentName}
+                  onEndCall={user?.id === safeSession(session).teacherId ? handleEndSession : undefined}
                 />
               </div>
             </div>
