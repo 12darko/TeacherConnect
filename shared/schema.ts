@@ -110,6 +110,13 @@ export const sessions = pgTable("sessions", {
   sessionUrl: text("session_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  
+  // Ders doğrulama alanları
+  actualDuration: integer("actual_duration"), // Dersin gerçek süresi (dakika)
+  studentConfirmed: boolean("student_confirmed").default(false), // Öğrenci dersin gerçekleştiğini onayladı mı?
+  activityCount: integer("activity_count").default(0), // Ders sırasındaki aktivite sayısı (mesaj, dosya, vb.)
+  isVerified: boolean("is_verified").default(false), // Ders ödemesi için onaylandı mı?
+  verificationNotes: text("verification_notes"), // Doğrulama ile ilgili notlar
 });
 
 // Reviews left by students for teachers
