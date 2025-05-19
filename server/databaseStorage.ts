@@ -14,6 +14,8 @@ import {
   pricingPlans,
   faqItems,
   menuItems,
+  howItWorksSteps,
+  siteStatistics,
   type User,
   type Subject,
   type TeacherProfile,

@@ -57,7 +57,7 @@ export default function Home() {
   });
   
   // Fetch site statistics
-  const { data: siteStats = {}, isLoading: isLoadingStats } = useQuery<any>({
+  const { data: statistics = {}, isLoading: isLoadingStatistics } = useQuery<any>({
     queryKey: ['/api/statistics'],
     queryFn: async () => {
       const response = await fetch('/api/statistics');
@@ -68,8 +68,8 @@ export default function Home() {
     }
   });
   
-  // Fetch how it works steps
-  const { data: howItWorksSteps = [], isLoading: isLoadingHowItWorks } = useQuery<any[]>({
+  // Fetch how it works features (different from the how-it-works steps)
+  const { data: howItWorksFeatures = [], isLoading: isLoadingHowItWorksFeatures } = useQuery<any[]>({
     queryKey: ['/api/features?type=how-it-works'],
     queryFn: async () => {
       const response = await fetch('/api/features?type=how-it-works');
@@ -148,6 +148,9 @@ export default function Home() {
       return response.json();
     }
   });
+  
+  // Removing duplicate statistics and how-it-works declarations
+  // The declarations on lines 60 and 71 already handle these queries
   
   // PricingPlans component
   const PricingPlans = () => {
