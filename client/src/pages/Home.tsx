@@ -734,30 +734,79 @@ export default function Home() {
         </div>
       </section>
       
-      {/* CTA Section */}
-      <section className="py-16 bg-primary text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Learning Experience?</h2>
-          <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-            Join thousands of students who are achieving their academic goals with personalized online learning.
+      {/* CTA Section - Improved Design */}
+      <section className="py-24 bg-gradient-to-br from-primary via-primary to-primary-dark text-white relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 bg-grid-white/[0.03] bg-[length:20px_20px]"></div>
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-white/5 blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <Badge className="mb-6 px-4 py-2 bg-white/10 text-white border-none font-medium backdrop-blur-sm inline-flex">
+            <span className="animate-pulse inline-block h-2 w-2 mr-2 rounded-full bg-green-400"></span>
+            ŞİMDİ BAŞLA
+          </Badge>
+          
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+            Öğrenme Deneyimini <br className="hidden md:block"/> 
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
+              Dönüştürmeye Hazır mısın?
+            </span>
+          </h2>
+          
+          <p className="text-xl mb-10 text-white/90 max-w-2xl mx-auto leading-relaxed">
+            Kişiselleştirilmiş online eğitimle akademik hedeflerine ulaşan binlerce öğrenciye katıl.
           </p>
-          <div className="flex flex-wrap gap-4 justify-center">
+          
+          <div className="flex flex-wrap gap-6 justify-center">
             {isAuthenticated ? (
               <Link href="/find-teachers">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-medium">
-                  Find Teachers
+                <Button 
+                  size="lg" 
+                  className="bg-white text-primary hover:bg-white/90 font-semibold px-8 py-6 shadow-xl shadow-primary-dark/30 rounded-full transition-all duration-300 hover:scale-105"
+                >
+                  Öğretmen Bul
                 </Button>
               </Link>
             ) : (
-              <Link href="/auth">
-                <Button 
-                  size="lg" 
-                  className="bg-white text-primary hover:bg-white/90 font-medium"
-                >
-                  Sign Up Now
-                </Button>
-              </Link>
+              <>
+                <Link href="/auth">
+                  <Button 
+                    size="lg" 
+                    className="bg-white text-primary hover:bg-white/90 font-semibold px-10 py-7 shadow-xl shadow-primary-dark/30 rounded-full transition-all duration-300 hover:scale-105"
+                  >
+                    Şimdi Kaydol
+                  </Button>
+                </Link>
+                <Link href="/how-it-works">
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="text-white border-white hover:bg-white/10 font-semibold rounded-full px-8 py-6 transition-all duration-300"
+                  >
+                    Nasıl Çalışır
+                  </Button>
+                </Link>
+              </>
             )}
+          </div>
+          
+          {/* Stats Counter */}
+          <div className="flex flex-wrap justify-center gap-8 sm:gap-16 mt-16 text-center text-white">
+            <div className="flex flex-col">
+              <span className="text-4xl font-bold">{statistics?.totalStudents || "1250"}+</span>
+              <span className="text-white/70 mt-1">Aktif Öğrenci</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-4xl font-bold">{statistics?.totalTeachers || "50"}+</span>
+              <span className="text-white/70 mt-1">Uzman Öğretmen</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-4xl font-bold">{statistics?.totalSessions || "5000"}+</span>
+              <span className="text-white/70 mt-1">Tamamlanan Ders</span>
+            </div>
           </div>
         </div>
       </section>
