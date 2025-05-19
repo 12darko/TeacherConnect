@@ -444,79 +444,78 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {isLoadingFeatures ? (
-              // Loading state for features
+              // Loading state for features - improved
               [...Array(3)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="pt-6">
-                    <div className="bg-gray-200 animate-pulse h-12 w-12 rounded-full mb-4"></div>
-                    <div className="bg-gray-200 animate-pulse h-6 w-3/4 rounded mb-3"></div>
-                    <div className="bg-gray-200 animate-pulse h-4 w-full rounded mb-2"></div>
-                    <div className="bg-gray-200 animate-pulse h-4 w-5/6 rounded mb-2"></div>
+                <div key={i} className="bg-white rounded-2xl p-8 shadow-sm">
+                  <div className="bg-gray-200 animate-pulse h-16 w-16 rounded-2xl mb-6"></div>
+                  <div className="bg-gray-200 animate-pulse h-8 w-3/4 rounded-lg mb-4"></div>
+                  <div className="space-y-3">
+                    <div className="bg-gray-200 animate-pulse h-4 w-full rounded"></div>
+                    <div className="bg-gray-200 animate-pulse h-4 w-5/6 rounded"></div>
                     <div className="bg-gray-200 animate-pulse h-4 w-4/6 rounded"></div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))
             ) : features.length > 0 ? (
-              // Display features from database
-              features.map((feature) => (
-                <Card key={feature.id}>
-                  <CardContent className="pt-6">
-                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      {/* Dynamic icon based on feature icon name */}
-                      {feature.icon === 'video' && <Video className="h-6 w-6" />}
-                      {feature.icon === 'book' && <BookOpen className="h-6 w-6" />}
-                      {feature.icon === 'users' && <Users className="h-6 w-6" />}
-                      {feature.icon === 'clock' && <Clock className="h-6 w-6" />}
-                      {feature.icon === 'check' && <CheckCircle className="h-6 w-6" />}
-                      {!['video', 'book', 'users', 'clock', 'check'].includes(feature.icon) && 
-                        <GraduationCap className="h-6 w-6" />
-                      }
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                    <p className="text-neutral-600">
-                      {feature.description}
-                    </p>
-                  </CardContent>
-                </Card>
+              // Display features from database - enhanced cards
+              features.map((feature: any, index: number) => (
+                <div 
+                  key={feature.id} 
+                  className={`bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 border border-neutral-100 relative ${index === 1 ? 'lg:transform lg:-translate-y-4' : ''}`}
+                >
+                  <div className="absolute -right-3 -top-3 w-24 h-24 bg-primary/5 rounded-full -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl w-16 h-16 flex items-center justify-center text-white mb-6">
+                    {/* Dynamic icon based on feature icon name */}
+                    {feature.icon === 'video' && <Video className="h-7 w-7" />}
+                    {feature.icon === 'book' && <BookOpen className="h-7 w-7" />}
+                    {feature.icon === 'users' && <Users className="h-7 w-7" />}
+                    {feature.icon === 'clock' && <Clock className="h-7 w-7" />}
+                    {feature.icon === 'check' && <CheckCircle className="h-7 w-7" />}
+                    {!['video', 'book', 'users', 'clock', 'check'].includes(feature.icon) && 
+                      <GraduationCap className="h-7 w-7" />
+                    }
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               ))
             ) : (
               // Fallback if no features are in database
               <>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <Video className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Live Video Sessions</h3>
-                    <p className="text-neutral-600">
-                      Connect with teachers in real-time through high-quality video conferencing with built-in tools for an interactive learning experience.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 border border-neutral-100 relative group">
+                  <div className="absolute -right-3 -top-3 w-24 h-24 bg-primary/5 rounded-full -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl w-16 h-16 flex items-center justify-center text-white mb-6 group-hover:scale-105 transition-transform">
+                    <Video className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Canlı Video Dersler</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Öğretmenlerle gerçek zamanlı olarak, etkileşimli öğrenme deneyimi için tasarlanmış araçlarla yüksek kaliteli video konferanslar aracılığıyla bağlantı kurun.
+                  </p>
+                </div>
                 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <BookOpen className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Custom Assessments</h3>
-                    <p className="text-neutral-600">
-                      Teachers create personalized exams and assignments to track your progress and identify areas for improvement.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white rounded-2xl p-8 shadow-md border border-neutral-100 relative group lg:transform lg:-translate-y-4">
+                  <div className="absolute -left-3 -bottom-3 w-24 h-24 bg-primary/5 rounded-full -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl w-16 h-16 flex items-center justify-center text-white mb-6 group-hover:scale-105 transition-transform">
+                    <BookOpen className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Özel Değerlendirmeler</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Öğretmenler, ilerlemenizi takip etmek ve gelişim alanlarınızı belirlemek için kişiselleştirilmiş sınavlar ve ödevler oluşturur.
+                  </p>
+                </div>
                 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <Users className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Verified Teachers</h3>
-                    <p className="text-neutral-600">
-                      All teachers on our platform are verified professionals with expertise in their subjects, providing quality education.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 border border-neutral-100 relative group">
+                  <div className="absolute -right-3 -top-3 w-24 h-24 bg-primary/5 rounded-full -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl w-16 h-16 flex items-center justify-center text-white mb-6 group-hover:scale-105 transition-transform">
+                    <Users className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Doğrulanmış Öğretmenler</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Platformumuzdaki tüm öğretmenler, konularında uzmanlığa sahip, kaliteli eğitim sağlayan doğrulanmış profesyonellerdir.
+                  </p>
+                </div>
               </>
             )}
           </div>
