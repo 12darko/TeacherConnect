@@ -797,7 +797,8 @@ export default function TeacherDashboard() {
                 <CardDescription>Değerlendirme</CardDescription>
                 <CardTitle className="text-3xl">
                   {isLoadingProfile ? "..." : 
-                    profile?.averageRating ? profile.averageRating.toFixed(1) : "N/A"}
+                    teacherProfile?.rating ? teacherProfile.rating.toFixed(1) : 
+                    reviews.length > 0 ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) : "N/A"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1129,7 +1130,7 @@ export default function TeacherDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="p-4 bg-muted/30 rounded-md">
                     <h3 className="text-sm font-medium mb-2">Saatlik Ortalama</h3>
-                    <p className="text-2xl font-bold">{profile?.hourlyRate || 250}₺</p>
+                    <p className="text-2xl font-bold">{teacherProfile?.hourlyRate || 250}₺</p>
                     <p className="text-xs text-muted-foreground mt-1">Standart ücretiniz</p>
                   </div>
                   
