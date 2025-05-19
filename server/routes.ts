@@ -436,6 +436,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Subject not found" });
       }
       
+      // Bitiş zamanı (endTime) varsayılan olarak 60 dakika sonrası, 
+      // ama eğer gönderilmişse o değeri kullan
+      const startDateTime = new Date(startTime);
+      let endDateTime;
+      
+      if (req.body.endTime) {
+        endDateTime = new Date(req.body.endTime);
+      } else {
+        // Varsayılan olarak 60 dakika süre ekle
+        endDateTime = new Date(startDateTime.getTime() + 60 * 60000);
+      }
+      
       // Create session
       const session = await storage.createSession({
         teacherId: req.user.id,
@@ -443,10 +455,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subjectId: parseInt(subjectId),
         title,
         description: description || null,
-        startTime: new Date(startTime),
+        startTime: startDateTime,
+        endTime: endDateTime,
         status: "scheduled",
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       
       return res.status(201).json(session);

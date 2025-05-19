@@ -23,6 +23,7 @@ const createSessionSchema = z.object({
   title: z.string().min(3, "Başlık en az 3 karakter olmalıdır"),
   description: z.string().optional(),
   startTime: z.date(),
+  duration: z.number().min(15, "Ders süresi en az 15 dakika olmalıdır").max(180, "Ders süresi en fazla 180 dakika olabilir"),
 });
 
 type CreateSessionFormValues = z.infer<typeof createSessionSchema>;
@@ -51,16 +52,22 @@ export default function CreateSessionForm() {
     defaultValues: {
       title: '',
       description: '',
+      duration: 60, // Varsayılan olarak 60 dakika
     },
   });
 
   const createSessionMutation = useMutation({
     mutationFn: async (values: CreateSessionFormValues) => {
+      // Bitiş zamanını hesapla (başlangıç zamanı + süre)
+      const startTime = new Date(values.startTime);
+      const endTime = new Date(startTime.getTime() + values.duration * 60000); // dakikadan milisaniyeye çevirme
+      
       // Format the data for the API
       const sessionData = {
         ...values,
         subjectId: parseInt(values.subjectId),
-        startTime: values.startTime.toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
       };
       
       const res = await apiRequest('POST', '/api/sessions', sessionData);
@@ -242,6 +249,34 @@ export default function CreateSessionForm() {
                       </div>
                     </PopoverContent>
                   </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ders Süresi (dakika)</FormLabel>
+                  <FormControl>
+                    <Select 
+                      value={field.value.toString()} 
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Süre seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 dakika</SelectItem>
+                        <SelectItem value="45">45 dakika</SelectItem>
+                        <SelectItem value="60">60 dakika (1 saat)</SelectItem>
+                        <SelectItem value="90">90 dakika (1.5 saat)</SelectItem>
+                        <SelectItem value="120">120 dakika (2 saat)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
