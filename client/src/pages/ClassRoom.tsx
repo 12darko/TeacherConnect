@@ -192,6 +192,7 @@ export default function ClassRoom() {
   // Check if user is authorized to join this session
   const isAuthorized = () => {
     if (!user || !session) return false;
+    console.log("Auth check:", { userId: user.id, teacherId: session.teacherId, studentId: session.studentId });
     return user.id === session.teacherId || user.id === session.studentId;
   };
   
