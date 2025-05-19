@@ -167,8 +167,8 @@ export default function Auth() {
   };
   
   const handleAppleAuth = () => {
-    // Apple OAuth API isteği gönderilecek
-    alert("Apple ile giriş şu anda hazırlanıyor.");
+    // Apple OAuth API request will be sent
+    alert("Apple login is currently being prepared.");
   };
 
   return (
@@ -217,7 +217,7 @@ export default function Auth() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Şifre</FormLabel>
+                        <FormLabel>Password</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -318,7 +318,7 @@ export default function Auth() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Şifre</FormLabel>
+                        <FormLabel>Password</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
