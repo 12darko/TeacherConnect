@@ -159,15 +159,13 @@ export default function Navbar() {
                 </div>
               </>
             ) : !isLoading ? (
-              <Link href="/auth">
-                <Button
-                  variant={(!isScrolled && location === "/") ? "outline" : "default"}
-                  className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
-                  asChild
-                >
-                  <a>Sign In</a>
-                </Button>
-              </Link>
+              <Button
+                variant={(!isScrolled && location === "/") ? "outline" : "default"}
+                className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                onClick={() => navigate("/auth")}
+              >
+                Sign In
+              </Button>
             ) : null}
           </nav>
           
