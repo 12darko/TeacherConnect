@@ -111,7 +111,7 @@ export default function Header() {
                       <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white mr-2">
                         {userInitials}
                       </div>
-                      <span className="hidden md:block text-sm font-medium text-neutral-dark">
+                      <span className="hidden md:block text-sm font-medium text-neutral-dark truncate max-w-[100px]">
                         {user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.email}
                       </span>
                       <ChevronDownIcon className="h-4 w-4 ml-1 text-neutral-medium" />
@@ -174,26 +174,29 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="pt-2 pb-3 space-y-1">
+        <div className="md:hidden fixed inset-x-0 top-16 bg-white z-50 shadow-lg">
+          <div className="pt-2 pb-3 space-y-1 px-4">
             <Link href="/" className={`
               ${isActive('/') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
-              block pl-3 pr-4 py-2 text-base font-medium
+              block px-4 py-2 text-base font-medium rounded-md
             `}>
+              <HomeIcon className="h-4 w-4 inline-block mr-2" />
               Home
             </Link>
             <Link href="/find-teachers" className={`
               ${isActive('/find-teachers') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
-              block pl-3 pr-4 py-2 text-base font-medium
+              block px-4 py-2 text-base font-medium rounded-md
             `}>
+              <SearchIcon className="h-4 w-4 inline-block mr-2" />
               Find Teachers
             </Link>
             
             {isAuthenticated && user?.role === 'student' && (
               <Link href="/student-dashboard" className={`
                 ${isActive('/student-dashboard') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
-                block pl-3 pr-4 py-2 text-base font-medium
+                block px-4 py-2 text-base font-medium rounded-md
               `}>
+                <CalendarIcon className="h-4 w-4 inline-block mr-2" />
                 My Classes
               </Link>
             )}
@@ -201,8 +204,9 @@ export default function Header() {
             {isAuthenticated && user?.role === 'teacher' && (
               <Link href="/teacher-dashboard" className={`
                 ${isActive('/teacher-dashboard') ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
-                block pl-3 pr-4 py-2 text-base font-medium
+                block px-4 py-2 text-base font-medium rounded-md
               `}>
+                <CalendarIcon className="h-4 w-4 inline-block mr-2" />
                 My Classes
               </Link>
             )}
@@ -210,8 +214,9 @@ export default function Header() {
             {isAuthenticated && user && (
               <Link href={user.role === 'student' ? '/student-dashboard?tab=assignments' : '/teacher-dashboard?tab=exams'} className={`
                 ${(isActive('/student-dashboard?tab=assignments') || isActive('/teacher-dashboard?tab=exams')) ? 'bg-primary text-white' : 'text-neutral-dark hover:bg-neutral-lightest'}
-                block pl-3 pr-4 py-2 text-base font-medium
+                block px-4 py-2 text-base font-medium rounded-md
               `}>
+                <NotebookIcon className="h-4 w-4 inline-block mr-2" />
                 Assignments
               </Link>
             )}
@@ -219,9 +224,10 @@ export default function Header() {
             {!isAuthenticated && (
               <Button
                 onClick={handleSignIn}
-                className="w-full text-left justify-start text-neutral-dark hover:bg-neutral-lightest block pl-3 pr-4 py-2 text-base font-medium"
+                className="w-full text-left justify-start text-neutral-dark hover:bg-neutral-lightest block px-4 py-2 text-base font-medium rounded-md"
                 variant="ghost"
               >
+                <UserIcon className="h-4 w-4 inline-block mr-2" />
                 Sign in
               </Button>
             )}
