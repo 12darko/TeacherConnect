@@ -229,7 +229,14 @@ export default function CreateSessionForm() {
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => {
+                          // Allow today's date and future dates, but not past dates
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const compareDate = new Date(date);
+                          compareDate.setHours(0, 0, 0, 0);
+                          return compareDate < today;
+                        }}
                         locale={tr}
                       />
                       <div className="p-3 border-t border-border">
