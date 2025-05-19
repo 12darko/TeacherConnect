@@ -650,6 +650,17 @@ export default function ClassRoom() {
         </div>
       ) : (
         <>
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+              <h1 className="text-2xl font-bold">{sessionData?.subjectName || "Ders"}</h1>
+              <div className="text-sm text-muted-foreground">
+                {sessionData?.startTime && format(new Date(sessionData.startTime), "PPP")} | 
+                {sessionData?.startTime && format(new Date(sessionData.startTime), "HH:mm")} - 
+                {sessionData?.endTime && format(new Date(sessionData.endTime), "HH:mm")}
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card className="mb-6">
