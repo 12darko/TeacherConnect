@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { VideoCall } from "@/components/ui/video-call";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftIcon, Trash2, Clock, Download, PlusCircle, Save, RefreshCw, Upload, X } from "lucide-react";
+import { Trash2, Clock, Download, PlusCircle, Save, RefreshCw, Upload, X } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -599,6 +599,8 @@ export default function ClassRoom() {
 
   // Dersi sonlandırma
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
+  const [, navigate] = useLocation();
   
   const handleEndSession = () => {
     if (showEndConfirm) {
@@ -615,6 +617,32 @@ export default function ClassRoom() {
       setIsSessionEnded(true);
     }
   }, [sessionData]);
+  
+  // Ders bittiğinde geri sayım başlat ve dashboarda yönlendir
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (isSessionEnded) {
+      setRedirectCountdown(10); // 10 saniye geri sayım
+      timer = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            // Kullanıcının rolüne göre dashboarda yönlendir
+            if (user?.role === "teacher") {
+              navigate("/teacher-dashboard");
+            } else {
+              navigate("/student-dashboard");
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => clearInterval(timer);
+  }, [isSessionEnded, navigate, user]);
 
   return (
     <div className="container mx-auto py-6 mt-16">
@@ -626,11 +654,13 @@ export default function ClassRoom() {
         <>
           <div className="w-full mx-auto mb-6">
             <div className="flex items-center justify-between">
+              {/* Geri butonu kaldırıldı */}
               <div className="flex items-center">
-                <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  Geri
-                </Button>
+                {isSessionEnded && redirectCountdown > 0 && (
+                  <div className="text-muted-foreground">
+                    {redirectCountdown} saniye içinde yönlendirileceksiniz...
+                  </div>
+                )}
               </div>
               
               {!isSessionEnded && (
