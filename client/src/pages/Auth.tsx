@@ -176,21 +176,21 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            {tab === "login" ? "EduConnect'e Giriş Yap" : "EduConnect'e Kaydol"}
+            {tab === "login" ? "Sign in to EduConnect" : "Register for EduConnect"}
           </CardTitle>
           <CardDescription className="text-center">
             {tab === "login" 
-              ? "Hesabınıza giriş yaparak öğrenmeye devam edin" 
+              ? "Continue your learning journey by signing into your account" 
               : role === "student" 
-                ? "Öğrenci hesabı oluşturarak derslere başlayın" 
-                : "Öğretmen hesabı oluşturarak ders vermeye başlayın"}
+                ? "Create a student account to start taking lessons" 
+                : "Create a teacher account to start giving lessons"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={(value) => setTab(value as "login" | "register")}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Giriş</TabsTrigger>
-              <TabsTrigger value="register">Kayıt</TabsTrigger>
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">

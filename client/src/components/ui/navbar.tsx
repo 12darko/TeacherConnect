@@ -139,13 +139,14 @@ export default function Navbar() {
                 </div>
               </>
             ) : !isLoading ? (
-              <Button
-                onClick={() => window.location.href = "/api/login"}
-                variant={(!isScrolled && location === "/") ? "outline" : "default"}
-                className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
-              >
-                Sign In
-              </Button>
+              <Link href="/auth">
+                <Button
+                  variant={(!isScrolled && location === "/") ? "outline" : "default"}
+                  className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
+                >
+                  Sign In
+                </Button>
+              </Link>
             ) : null}
           </nav>
           
@@ -222,12 +223,13 @@ export default function Navbar() {
                 </>
               ) : !isLoading ? (
                 <div className="pt-2">
-                  <Button
-                    onClick={() => window.location.href = "/api/login"}
-                    className="w-full"
-                  >
-                    Sign In
-                  </Button>
+                  <Link href="/auth">
+                    <Button
+                      className="w-full"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
                 </div>
               ) : null}
             </div>
