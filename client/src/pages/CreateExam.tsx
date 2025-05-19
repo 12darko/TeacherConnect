@@ -54,8 +54,16 @@ export default function CreateExam() {
     queryKey: ['/api/subjects'],
   });
   
+  // Define student interface
+  interface Student {
+    id: string;
+    name: string;
+    email: string;
+    profileImageUrl?: string;
+  }
+  
   // Fetch students if teacher
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<Student[]>({
     queryKey: ['/api/teacher/students', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -86,7 +94,7 @@ export default function CreateExam() {
       selectedStudents: [],
       dueDate: "",
     },
-  });
+  } as { defaultValues: ExamFormValues });
   
   // Setup fields array for questions
   const { fields, append, remove } = useFieldArray({
@@ -356,12 +364,14 @@ export default function CreateExam() {
                           <div className="space-y-2 mt-1">
                             {form.getValues().questions[index].options?.map((_, optionIndex) => (
                               <div key={optionIndex} className="flex items-center space-x-2">
-                                <RadioGroupItem
-                                  value={optionIndex.toString()}
-                                  checked={parseInt(form.getValues().questions[index].correctAnswer as string) === optionIndex}
+                                <div 
+                                  className="flex items-center justify-center h-4 w-4 rounded-full border border-primary cursor-pointer"
                                   onClick={() => form.setValue(`questions.${index}.correctAnswer`, optionIndex.toString())}
-                                  id={`option-${index}-${optionIndex}`}
-                                />
+                                >
+                                  {parseInt(form.getValues().questions[index].correctAnswer as string) === optionIndex && (
+                                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                                  )}
+                                </div>
                                 <Input
                                   placeholder={`Option ${optionIndex + 1}`}
                                   {...form.register(`questions.${index}.options.${optionIndex}`)}
