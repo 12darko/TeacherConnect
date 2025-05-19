@@ -1,24 +1,26 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Helmet } from "react-helmet";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import { 
+  Card, 
+  CardContent
+} from "@/components/ui/card";
 
 export default function About() {
-  // Fetch about us data
-  const { data: aboutData, isLoading: isLoadingAbout } = useQuery({
+  // Fetch about page data
+  const { data: aboutData, isLoading: isAboutLoading } = useQuery({
     queryKey: ['/api/about'],
     queryFn: async () => {
       const response = await fetch('/api/about');
       if (!response.ok) {
-        throw new Error('Failed to fetch about us data');
+        throw new Error('Failed to fetch about page data');
       }
       return response.json();
     }
   });
 
-  // Fetch team members data
-  const { data: teamMembers = [], isLoading: isLoadingTeam } = useQuery({
+  // Fetch team members
+  const { data: teamMembers, isLoading: isTeamLoading } = useQuery({
     queryKey: ['/api/team-members'],
     queryFn: async () => {
       const response = await fetch('/api/team-members');
@@ -29,85 +31,87 @@ export default function About() {
     }
   });
 
-  const isLoading = isLoadingAbout || isLoadingTeam;
+  const isLoading = isAboutLoading || isTeamLoading;
 
   return (
     <>
       <Helmet>
         <title>Hakkımızda | EduConnect</title>
-        <meta name="description" content="EduConnect hakkında bilgi edinin. Misyonumuz, vizyonumuz ve değerlerimizi keşfedin." />
+        <meta name="description" content="EduConnect hakkında bilgi edinmek için sayfamızı ziyaret edin. Misyonumuz, vizyonumuz ve değerlerimizi keşfedin." />
       </Helmet>
       
       <div className="container max-w-5xl mx-auto py-16 px-4">
         {isLoading ? (
           <div className="space-y-6">
             <div className="h-12 w-1/3 bg-neutral-200 animate-pulse rounded"></div>
-            <div className="h-64 bg-neutral-200 animate-pulse rounded"></div>
-            <div className="h-12 w-1/3 bg-neutral-200 animate-pulse rounded"></div>
-            <div className="h-64 bg-neutral-200 animate-pulse rounded"></div>
+            <div className="h-48 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            <div className="h-8 w-1/4 bg-neutral-200 animate-pulse rounded"></div>
+            <div className="h-24 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            <div className="h-8 w-1/4 bg-neutral-200 animate-pulse rounded"></div>
+            <div className="h-24 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            <div className="h-8 w-1/4 bg-neutral-200 animate-pulse rounded"></div>
+            <div className="h-48 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-64 bg-neutral-200 animate-pulse rounded"></div>
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="space-y-16">
-            {/* Main About Section */}
-            <section>
-              <h1 className="text-4xl font-bold mb-6 text-center">
-                {aboutData?.title || "Hakkımızda"}
-              </h1>
-              <div className="prose prose-lg max-w-none">
-                <p className="text-xl text-center text-neutral-700 mb-12">
-                  {aboutData?.content}
-                </p>
+          <div>
+            <h1 className="text-4xl font-bold mb-8 text-center">
+              {aboutData?.title || "Hakkımızda"}
+            </h1>
+            
+            <div className="prose max-w-none mb-12">
+              <p className="text-lg mb-8">{aboutData?.content}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div className="bg-primary/5 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Misyonumuz</h3>
+                  <p>{aboutData?.mission}</p>
+                </div>
+                
+                <div className="bg-primary/5 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Vizyonumuz</h3>
+                  <p>{aboutData?.vision}</p>
+                </div>
+                
+                <div className="bg-primary/5 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Değerlerimiz</h3>
+                  <p>{aboutData?.values}</p>
+                </div>
               </div>
-            </section>
-
-            {/* Mission, Vision, Values Section */}
-            <section className="grid md:grid-cols-3 gap-8">
-              <Card className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="pt-6">
-                  <h3 className="text-2xl font-bold mb-4 text-primary">Misyonumuz</h3>
-                  <p className="text-neutral-700">{aboutData?.mission}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="pt-6">
-                  <h3 className="text-2xl font-bold mb-4 text-primary">Vizyonumuz</h3>
-                  <p className="text-neutral-700">{aboutData?.vision}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="pt-6">
-                  <h3 className="text-2xl font-bold mb-4 text-primary">Değerlerimiz</h3>
-                  <p className="text-neutral-700">{aboutData?.values}</p>
-                </CardContent>
-              </Card>
-            </section>
-
-            <Separator />
-
-            {/* Team Section */}
-            <section>
-              <h2 className="text-3xl font-bold mb-10 text-center">
-                {aboutData?.team_section_title || "Takımımız"}
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex flex-col items-center text-center">
-                    <Avatar className="h-32 w-32 mb-4">
-                      <AvatarImage src={member.image_url} alt={member.name} />
-                      <AvatarFallback className="bg-primary text-white text-2xl">
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-bold">{member.name}</h3>
-                    <p className="text-primary font-medium mb-2">{member.position}</p>
-                    <p className="text-neutral-600 text-sm">{member.bio}</p>
+            </div>
+            
+            <h2 className="text-3xl font-bold mb-8 text-center">
+              {aboutData?.teamSectionTitle || "Ekibimiz"}
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {teamMembers?.map((member) => (
+                <Card key={member.id} className="overflow-hidden bg-white hover:shadow-md transition-shadow">
+                  <div className="h-48 overflow-hidden bg-primary/5">
+                    {member.imageUrl ? (
+                      <img 
+                        src={member.imageUrl} 
+                        alt={member.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                        <span className="text-4xl text-primary/50">{member.name.split(' ').map(n => n[0]).join('')}</span>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </section>
+                  <CardContent className="pt-6">
+                    <h3 className="text-xl font-semibold mb-1">{member.name}</h3>
+                    <p className="text-primary mb-3">{member.position}</p>
+                    {member.bio && <p className="text-neutral-600 text-sm">{member.bio}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

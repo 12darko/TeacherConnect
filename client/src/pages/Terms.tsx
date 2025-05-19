@@ -19,19 +19,17 @@ export default function Terms() {
     <>
       <Helmet>
         <title>Kullanım Koşulları | EduConnect</title>
-        <meta name="description" content="EduConnect kullanım koşulları. Platformumuzu kullanırken uymanız gereken kurallar ve şartlar hakkında bilgi edinin." />
+        <meta name="description" content="EduConnect kullanım koşulları. Platformumuzu kullanmadan önce lütfen kullanım koşullarımızı okuyun." />
       </Helmet>
       
       <div className="container max-w-4xl mx-auto py-16 px-4">
         {isLoading ? (
           <div className="space-y-6">
             <div className="h-12 w-1/3 bg-neutral-200 animate-pulse rounded"></div>
-            <div className="h-6 w-full bg-neutral-200 animate-pulse rounded mb-2"></div>
-            <div className="h-6 w-full bg-neutral-200 animate-pulse rounded mb-2"></div>
-            <div className="h-6 w-3/4 bg-neutral-200 animate-pulse rounded mb-6"></div>
-            <div className="h-6 w-1/4 bg-neutral-200 animate-pulse rounded mb-2"></div>
-            <div className="h-6 w-full bg-neutral-200 animate-pulse rounded mb-2"></div>
-            <div className="h-6 w-5/6 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            <div className="h-6 w-2/3 bg-neutral-200 animate-pulse rounded mb-6"></div>
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="h-16 bg-neutral-200 animate-pulse rounded mb-4"></div>
+            ))}
           </div>
         ) : (
           <div>
@@ -43,6 +41,10 @@ export default function Terms() {
               <ReactMarkdown>
                 {termsData?.content || ""}
               </ReactMarkdown>
+              
+              <div className="mt-12 text-sm text-neutral-600">
+                <p>Son güncelleme: {new Date(termsData?.updatedAt || new Date()).toLocaleDateString('tr-TR')}</p>
+              </div>
             </div>
           </div>
         )}
