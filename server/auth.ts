@@ -260,8 +260,16 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     }
 
     // Return user without sensitive data
-    const { passwordHash: _, ...userData } = req.user;
-    res.json(userData);
+    const userDataToReturn = {
+      id: req.user.id,
+      email: req.user.email,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      role: req.user.role,
+      profileImageUrl: req.user.profileImageUrl,
+      bio: req.user.bio
+    };
+    res.json(userDataToReturn);
   } catch (error) {
     console.error("Get current user error:", error);
     res.status(500).json({ message: "Failed to get current user" });
