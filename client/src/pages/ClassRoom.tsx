@@ -162,14 +162,15 @@ export default function ClassRoom() {
         
         {/* Ana içerik alanı */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Video alanı */}
-          <div className="lg:col-span-8">
+          {/* Video alanı ve interaktif özellikler */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Video alanı */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-100">
               <div className="p-6 border-b border-neutral-100">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-semibold mb-1 flex items-center">
-                      <span className="inline-block h-2 w-2 bg-red-500 rounded-full mr-2"></span>
+                      <span className="inline-block h-2 w-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
                       Canlı Video Bağlantısı
                     </h2>
                     <p className="text-neutral-500 text-sm">
@@ -186,13 +187,63 @@ export default function ClassRoom() {
                 </div>
               </div>
               
-              <div className="h-[600px]">
+              <div className="h-[400px]">
                 <VideoCall 
                   sessionId={sessionId.toString()} 
                   teacherName={session.teacherName} 
                   studentName={session.studentName}
                   onEndCall={user?.id === session.teacherId ? handleEndSession : undefined}
                 />
+              </div>
+            </div>
+            
+            {/* İnteraktif öğrenme araçları */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Beyaz Tahta */}
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-indigo-100 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
+                      <path d="M2 3h20"></path>
+                      <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
+                      <path d="m7 21 5-5 5 5"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Beyaz Tahta</h3>
+                    <p className="text-xs text-neutral-500">Ortak çizim ve açıklama</p>
+                  </div>
+                </div>
+                <Button className="w-full justify-start bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                  </svg>
+                  Yeni Tahta Oluştur
+                </Button>
+              </div>
+              
+              {/* Dosya Paylaşımı */}
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-emerald-100 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Dosya Paylaşımı</h3>
+                    <p className="text-xs text-neutral-500">Dosya ve belge paylaşımı</p>
+                  </div>
+                </div>
+                <Button className="w-full justify-start bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" x2="12" y1="3" y2="15"></line>
+                  </svg>
+                  Dosya Yükle
+                </Button>
               </div>
             </div>
           </div>
