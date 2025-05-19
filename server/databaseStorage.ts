@@ -49,12 +49,144 @@ import {
   type InsertFeature,
   type InsertPricingPlan,
   type InsertFaqItem,
-  type InsertMenuItem
+  type InsertMenuItem,
+  type SessionNote,
+  type SessionFile,
+  type WhiteboardSnapshot,
+  type SessionRecording,
+  type InsertSessionNote,
+  type InsertSessionFile,
+  type InsertWhiteboardSnapshot,
+  type InsertSessionRecording
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  // Session recordings operations
+  async getSessionRecordings(sessionId: number): Promise<SessionRecording[]> {
+    const recordings = await db.select().from(sessionRecordings).where(eq(sessionRecordings.sessionId, sessionId));
+    return recordings;
+  }
+
+  async createSessionRecording(recording: InsertSessionRecording): Promise<SessionRecording> {
+    const [newRecording] = await db
+      .insert(sessionRecordings)
+      .values(recording)
+      .returning();
+    return newRecording;
+  }
+
+  async deleteSessionRecording(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(sessionRecordings).where(eq(sessionRecordings.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting session recording:", error);
+      return false;
+    }
+  }
+
+  // Session notes operations
+  async getSessionNotes(sessionId: number): Promise<SessionNote[]> {
+    const notes = await db.select().from(sessionNotes).where(eq(sessionNotes.sessionId, sessionId));
+    return notes;
+  }
+
+  async getSessionNotesByUser(sessionId: number, userId: string): Promise<SessionNote[]> {
+    const notes = await db.select().from(sessionNotes).where(
+      and(
+        eq(sessionNotes.sessionId, sessionId),
+        eq(sessionNotes.userId, userId)
+      )
+    );
+    return notes;
+  }
+
+  async createSessionNote(note: InsertSessionNote): Promise<SessionNote> {
+    const [newNote] = await db
+      .insert(sessionNotes)
+      .values({ ...note, createdAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return newNote;
+  }
+
+  async updateSessionNote(id: number, content: string): Promise<SessionNote | undefined> {
+    const [updatedNote] = await db
+      .update(sessionNotes)
+      .set({ content, updatedAt: new Date() })
+      .where(eq(sessionNotes.id, id))
+      .returning();
+    return updatedNote;
+  }
+
+  async deleteSessionNote(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(sessionNotes).where(eq(sessionNotes.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting session note:", error);
+      return false;
+    }
+  }
+
+  // Whiteboard snapshots operations
+  async getWhiteboardSnapshots(sessionId: number): Promise<WhiteboardSnapshot[]> {
+    const snapshots = await db.select().from(whiteboardSnapshots).where(eq(whiteboardSnapshots.sessionId, sessionId));
+    return snapshots;
+  }
+
+  async createWhiteboardSnapshot(snapshot: InsertWhiteboardSnapshot): Promise<WhiteboardSnapshot> {
+    const [newSnapshot] = await db
+      .insert(whiteboardSnapshots)
+      .values({ ...snapshot, createdAt: new Date() })
+      .returning();
+    return newSnapshot;
+  }
+
+  async deleteWhiteboardSnapshot(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(whiteboardSnapshots).where(eq(whiteboardSnapshots.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting whiteboard snapshot:", error);
+      return false;
+    }
+  }
+
+  // Session files operations
+  async getSessionFiles(sessionId: number): Promise<SessionFile[]> {
+    const files = await db.select().from(sessionFiles).where(eq(sessionFiles.sessionId, sessionId));
+    return files;
+  }
+
+  async getSessionFilesByUser(sessionId: number, userId: string): Promise<SessionFile[]> {
+    const files = await db.select().from(sessionFiles).where(
+      and(
+        eq(sessionFiles.sessionId, sessionId),
+        eq(sessionFiles.uploadedBy, userId)
+      )
+    );
+    return files;
+  }
+
+  async createSessionFile(file: InsertSessionFile): Promise<SessionFile> {
+    const [newFile] = await db
+      .insert(sessionFiles)
+      .values({ ...file, uploadedAt: new Date() })
+      .returning();
+    return newFile;
+  }
+
+  async deleteSessionFile(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(sessionFiles).where(eq(sessionFiles.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting session file:", error);
+      return false;
+    }
+  }
   // App settings operations
   async getAppSettings(): Promise<AppSettings | undefined> {
     const [settings] = await db
@@ -887,6 +1019,29 @@ export interface IStorage {
   getSessionsByStudent(studentId: string): Promise<Session[]>;
   createSession(session: InsertSession): Promise<Session>;
   updateSessionStatus(id: number, status: string): Promise<Session | undefined>;
+  
+  // Session recordings operations
+  getSessionRecordings(sessionId: number): Promise<SessionRecording[]>;
+  createSessionRecording(recording: InsertSessionRecording): Promise<SessionRecording>;
+  deleteSessionRecording(id: number): Promise<boolean>;
+  
+  // Session notes operations
+  getSessionNotes(sessionId: number): Promise<SessionNote[]>;
+  getSessionNotesByUser(sessionId: number, userId: string): Promise<SessionNote[]>;
+  createSessionNote(note: InsertSessionNote): Promise<SessionNote>;
+  updateSessionNote(id: number, content: string): Promise<SessionNote | undefined>;
+  deleteSessionNote(id: number): Promise<boolean>;
+  
+  // Whiteboard snapshots operations
+  getWhiteboardSnapshots(sessionId: number): Promise<WhiteboardSnapshot[]>;
+  createWhiteboardSnapshot(snapshot: InsertWhiteboardSnapshot): Promise<WhiteboardSnapshot>;
+  deleteWhiteboardSnapshot(id: number): Promise<boolean>;
+  
+  // Session files operations
+  getSessionFiles(sessionId: number): Promise<SessionFile[]>;
+  getSessionFilesByUser(sessionId: number, userId: string): Promise<SessionFile[]>;
+  createSessionFile(file: InsertSessionFile): Promise<SessionFile>;
+  deleteSessionFile(id: number): Promise<boolean>;
   
   // Review operations
   getReviews(): Promise<Review[]>;
