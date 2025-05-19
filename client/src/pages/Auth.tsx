@@ -47,21 +47,49 @@ export default function Auth() {
     mutationFn: async (data: z.infer<typeof loginSchema>) => {
       try {
         console.log("Sending login request:", data);
-        const response = await fetch("/api/auth/login", {
+        
+        // İstek gövdesi doğru formatta olduğundan emin oluyoruz
+        const requestBody = {
+          email: data.email.trim(), // Boşlukları temizliyoruz
+          password: data.password
+        };
+        
+        const response = await fetch("/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(requestBody),
           credentials: "include"
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "An error occurred during login");
+        // JSON yanıtını analiz etmeye çalışıyoruz
+        let errorMessage = "An error occurred during login";
+        let responseData;
+        
+        try {
+          const responseText = await response.text();
+          if (responseText) {
+            try {
+              responseData = JSON.parse(responseText);
+              if (responseData.message) {
+                errorMessage = responseData.message;
+              }
+            } catch (parseError) {
+              // JSON ayrıştırma hatası - metin yanıtını olduğu gibi kullanacağız
+              errorMessage = responseText;
+            }
+          }
+        } catch (readError) {
+          console.error("Failed to read response:", readError);
         }
         
-        const responseData = await response.json();
+        // Yanıt başarılı değilse hata atıyoruz
+        if (!response.ok) {
+          console.error("Login error - status:", response.status, "message:", errorMessage);
+          throw new Error(errorMessage);
+        }
+        
         console.log("Login response:", responseData);
         return responseData;
       } catch (error) {
@@ -92,7 +120,7 @@ export default function Auth() {
     onError: (error: any) => {
       toast({
         title: "Login failed",
-        description: error.message || "Please check your login details.",
+        description: error.message || "Invalid email or password. Please check your login details.",
         variant: "destructive",
       });
     },
@@ -102,7 +130,7 @@ export default function Auth() {
     mutationFn: async (data: z.infer<typeof registerSchema>) => {
       try {
         console.log("Sending registration request:", data);
-        const response = await fetch("/api/auth/register", {
+        const response = await fetch("/auth/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
