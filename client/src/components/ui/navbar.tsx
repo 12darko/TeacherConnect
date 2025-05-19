@@ -163,6 +163,7 @@ export default function Navbar() {
                 variant={(!isScrolled && location === "/") ? "outline" : "default"}
                 className={(!isScrolled && location === "/") ? "border-white text-white hover:bg-white/10" : ""}
                 onClick={() => navigate("/auth")}
+                style={(!isScrolled && location === "/") ? {color: "white", borderColor: "white"} : {}}
               >
                 Sign In
               </Button>
