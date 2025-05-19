@@ -188,12 +188,22 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     
-    // Kontrol et: passwordHash veya password_hash
+    // Veri yapısını kontrol et - veritabanında snake_case, kodda camelCase
+    // @ts-ignore - Tip kesin olarak bilinemiyor, runtime kontrol yapıyoruz
     const passwordHash = user.passwordHash || user.password_hash;
+    // @ts-ignore
     const authProvider = user.authProvider || user.auth_provider;
     
-    if (!passwordHash || authProvider !== "local") {
-      console.log("Invalid credentials: user not found or not using local auth");
+    console.log("DEBUG - passwordHash exists:", !!passwordHash);
+    console.log("DEBUG - authProvider:", authProvider);
+    
+    if (!passwordHash) {
+      console.log("Invalid credentials: No password hash found");
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
+    if (authProvider !== "local") {
+      console.log(`Invalid credentials: Auth provider is ${authProvider}, not local`);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
