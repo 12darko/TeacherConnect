@@ -689,7 +689,8 @@ export class DatabaseStorage implements IStorage {
       return stats;
     } catch (error) {
       console.error("Error getting site statistics:", error);
-      // Return default values on error
+      
+      // Provide default statistics if table doesn't exist yet
       return {
         totalStudents: 1250,
         totalTeachers: 380,
