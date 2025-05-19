@@ -522,14 +522,24 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Popular Subjects Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Popular Subjects</h2>
+      {/* Popular Subjects Section - Improved Design */}
+      <section className="py-20 relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-neutral-50 to-transparent"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-12">
+            <div>
+              <Badge className="mb-3 px-3 py-1 bg-primary/10 text-primary border-none">
+                POPÜLER KONULAR
+              </Badge>
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                Uzmanlaşmak İstediğiniz <br className="hidden md:block"/> Alan Hangisi?
+              </h2>
+            </div>
             <Link href="/subjects">
-              <Button variant="success" className="group hover:bg-green-700">
-                View All Subjects
+              <Button variant="success" className="mt-4 md:mt-0 group hover:bg-green-700">
+                Tüm Konuları Gör
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -554,25 +564,35 @@ export default function Home() {
         </div>
       </section>
       
-      {/* How It Works Section */}
-      <section className="py-16 bg-neutral-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-            <p className="text-neutral-600 max-w-2xl mx-auto">
-              Getting started with our platform is easy. Follow these simple steps to begin your learning journey.
+      {/* How It Works Section - Improved Design */}
+      <section className="py-24 bg-gradient-to-b from-white to-neutral-50 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute -bottom-24 right-0 w-80 h-80 bg-primary/5 rounded-full"></div>
+        <div className="absolute top-1/3 -left-40 w-80 h-80 bg-primary/5 rounded-full"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 px-4 py-2 bg-primary/10 text-primary border-none font-medium">
+              NASIL ÇALIŞIR?
+            </Badge>
+            <h2 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
+              Öğrenmeye Başlamanın 3 Kolay Adımı
+            </h2>
+            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
+              Platformumuzla öğrenmeye başlamak çok kolay. Aşağıdaki adımları izleyerek öğrenme yolculuğunuza başlayın.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {howItWorksSteps.length > 0 ? (
               howItWorksSteps.map((step) => (
-                <div key={step.id} className="text-center">
-                  <div className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                <div key={step.id} className="text-center relative px-4 py-6 hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-white rounded-2xl shadow-sm border border-neutral-100 -z-10"></div>
+                  <div className="bg-gradient-to-br from-primary to-primary-dark text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-md">
                     {step.number}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                  <p className="text-neutral-600">
+                  <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
+                  <p className="text-neutral-600 leading-relaxed">
                     {step.description}
                   </p>
                 </div>
