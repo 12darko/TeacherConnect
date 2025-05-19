@@ -48,113 +48,61 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     }
   }, [sessionId]);
   
-  // Kamera ve mikrofon erişimi - Basitleştirilmiş sürüm
+  // Basitleştirilmiş kamera erişimi - tek seferlik
   useEffect(() => {
-    // Eğer oturum aktif değilse kamera erişimi sağlama
+    // Bekleme ekranı göster
+    const showPlaceholder = (videoRef: React.RefObject<HTMLVideoElement>, label: string) => {
+      if (!videoRef.current) return;
+      
+      // Sadece arka plan rengini ayarla, geriye kalan herşeyi CSS ile yönet
+      videoRef.current.poster = `data:image/svg+xml,
+        <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+          <rect width="640" height="480" fill="#3b82f6"/>
+          <text x="320" y="240" font-family="Arial" font-size="24" fill="white" text-anchor="middle">${label}</text>
+        </svg>`;
+    };
+    
     if (!isSessionActive) {
-      // Sadece canvas arka planı oluştur
-      createCanvasBackground(localVideoRef, "Siz");
-      createCanvasBackground(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+      showPlaceholder(localVideoRef, "Siz");
+      showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
       return;
     }
     
-    // Kamera erişimi için basit bir yaklaşım
-    const setupCamera = () => {
+    // Basit kamera erişimi
+    const setupCamera = async () => {
       try {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-          .then(stream => {
-            console.log("Kamera erişimi başarılı");
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = stream;
-              localVideoRef.current.play().catch(err => console.error("Video oynatma hatası:", err));
-            }
-            setLocalStream(stream);
-            
-            toast({
-              title: "Kamera Bağlandı",
-              description: "Görüntülü görüşme başlatıldı",
-            });
-          })
-          .catch(err => {
-            console.error("Kamera erişim hatası:", err);
-            toast({
-              title: "Kamera Erişimi Sağlanamadı",
-              description: "Tarayıcı izinlerini kontrol edin",
-              variant: "destructive",
-            });
-            
-            // Kamera erişimi olmadığında arka plan göster
-            createCanvasBackground(localVideoRef, "Siz");
-          });
+        // Basit kamera erişimi
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
         
-        // Demo için karşı taraf arka planı
-        createCanvasBackground(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
-      } catch (error) {
-        console.error("Kamera kurulum hatası:", error);
-        // Hata durumunda canvas arka planları göster
-        createCanvasBackground(localVideoRef, "Siz");
-        createCanvasBackground(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        
+        setLocalStream(stream);
+        
+        // Karşı taraf için placeholder göster
+        showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
+      } catch (err) {
+        console.error("Kamera erişimi hatası:", err);
+        showPlaceholder(localVideoRef, "Siz (Kamera erişilemedi)");
+        showPlaceholder(remoteVideoRef, isTeacher ? "Öğrenci" : "Öğretmen");
       }
     };
-
+    
     setupCamera();
     
-    // Cleanup function
     return () => {
+      // Medya izinlerini temizle
       if (localStream) {
         localStream.getTracks().forEach(track => {
           track.stop();
         });
       }
     };
-  }, [isSessionActive, isTeacher, toast]);
-  
-  // Canvas arka plan oluşturma - basitleştirilmiş ve iyileştirilmiş
-  const createCanvasBackground = (videoRef: React.RefObject<HTMLVideoElement>, label: string) => {
-    if (!videoRef.current) return;
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 320;  // Daha küçük boyut performans için
-    canvas.height = 240;
-    const ctx = canvas.getContext('2d');
-    
-    if (ctx) {
-      // Mavi gradient arka plan
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, '#3b82f6');
-      gradient.addColorStop(1, '#1e40af');
-      
-      function drawFrame() {
-        if (!videoRef.current) return;
-        
-        // Arka planı çiz
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Merkez daire
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Kullanıcı etiketi
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 18px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, canvas.width / 2, canvas.height / 2);
-        
-        // Canvas'ı video kaynağı olarak ayarla
-        videoRef.current.srcObject = canvas.captureStream(30); // 30fps
-        
-        // Kendini tekrar çağır (animasyon için)
-        requestAnimationFrame(drawFrame);
-      }
-      
-      // İlk frame'i çiz
-      drawFrame();
-    }
-  };
+  }, [isSessionActive, isTeacher]);
   
   // Ses açma/kapatma
   const toggleAudio = () => {
@@ -186,80 +134,121 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
     }
   };
   
-  // Ekran paylaşımı - basitleştirilmiş
+  // Ultra basitleştirilmiş ekran paylaşımı
   const toggleScreenShare = async () => {
+    // İstekte bulunmadan önce toast mesajı göster
+    if (!isScreenSharing) {
+      toast({
+        title: "Ekran paylaşımı isteniyor",
+        description: "Lütfen paylaşmak istediğiniz ekranı seçin"
+      });
+    }
+    
     try {
       if (isScreenSharing) {
-        // Ekran paylaşımını durdur ve kamera görüntüsüne geri dön
-        if (localStream) {
-          localStream.getTracks().forEach(track => track.stop());
+        // Eğer ekran paylaşımı yapılıyorsa, kapat
+        try {
+          // Önce streami durdur
+          if (localStream) {
+            localStream.getTracks().forEach(track => {
+              track.stop();
+            });
+          }
+          
+          // Kameraya geri dön
+          const videoStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = videoStream;
+          }
+          
+          setLocalStream(videoStream);
+          setIsScreenSharing(false);
+          
+          toast({
+            title: "Kameraya geri dönüldü"
+          });
+        } catch (err) {
+          console.error("Kameraya dönüş hatası:", err);
+          
+          // Video referansını temizle
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+          }
+          
+          setIsScreenSharing(false);
+          
+          // Bekleme ekranı göster
+          if (localVideoRef.current) {
+            localVideoRef.current.poster = `data:image/svg+xml,
+              <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+                <rect width="640" height="480" fill="#3b82f6"/>
+                <text x="320" y="240" font-family="Arial" font-size="24" fill="white" text-anchor="middle">Kamera erişilemiyor</text>
+              </svg>`;
+          }
         }
-        
-        // Kameraya geri dön
-        const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-          video: true, 
-          audio: true 
-        });
-        
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = cameraStream;
-        }
-        
-        setLocalStream(cameraStream);
-        setIsScreenSharing(false);
-        
-        toast({
-          title: "Ekran Paylaşımı Durduruldu",
-          description: "Kamera görüntüsüne geri dönüldü"
-        });
       } else {
         // Ekran paylaşımını başlat
         try {
-          const displayMedia = await navigator.mediaDevices.getDisplayMedia({ 
-            video: { cursor: "always" },
-            audio: false
+          const displayMedia = await navigator.mediaDevices.getDisplayMedia({
+            video: true
           });
           
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = displayMedia;
           }
           
-          // Ses kanalını koru
-          if (localStream) {
-            const audioTracks = localStream.getAudioTracks();
-            if (audioTracks.length > 0) {
-              displayMedia.addTrack(audioTracks[0].clone());
+          // Kullanıcı ekran paylaşımını durdurursa
+          displayMedia.getVideoTracks()[0].onended = async () => {
+            setIsScreenSharing(false);
+            
+            // Kameraya dönmeyi dene
+            try {
+              const videoStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+              });
+              
+              if (localVideoRef.current) {
+                localVideoRef.current.srcObject = videoStream;
+              }
+              
+              setLocalStream(videoStream);
+            } catch (error) {
+              console.error("Kameraya dönüş hatası:", error);
+              
+              if (localVideoRef.current) {
+                localVideoRef.current.poster = `data:image/svg+xml,
+                  <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+                    <rect width="640" height="480" fill="#3b82f6"/>
+                    <text x="320" y="240" font-family="Arial" font-size="24" fill="white" text-anchor="middle">Siz</text>
+                  </svg>`;
+              }
             }
-          }
-          
-          // Kullanıcı tarayıcı UI'dan paylaşımı durdurursa
-          displayMedia.getVideoTracks()[0].onended = () => {
-            toggleScreenShare();
           };
           
+          // Akışı sakla
           setLocalStream(displayMedia);
           setIsScreenSharing(true);
           
           toast({
-            title: "Ekran Paylaşımı Başlatıldı",
-            description: "Ekranınız diğer katılımcıya gösteriliyor"
+            title: "Ekran paylaşılıyor"
           });
         } catch (err) {
-          console.error("Ekran paylaşımı hatası:", err);
+          // İzin verilmezse ya da paylaşım iptal edilirse
+          console.error("Ekran paylaşımı başlatılamadı:", err);
+          
           toast({
-            title: "Ekran Paylaşımı Hatası",
-            description: "Lütfen tarayıcı izinlerini kontrol edin",
+            title: "Ekran paylaşımı iptal edildi",
             variant: "destructive"
           });
         }
       }
     } catch (err) {
-      console.error("Ekran paylaşımı işlemi hatası:", err);
-      toast({
-        title: "Ekran Paylaşımı İşlemi Başarısız",
-        description: "Bir sorun oluştu, lütfen tekrar deneyin",
-        variant: "destructive"
-      });
+      console.error("Genel hata:", err);
     }
   };
   
@@ -325,88 +314,107 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
   };
   
   return (
-    <div className="flex flex-col bg-white rounded-lg shadow-sm overflow-hidden h-full">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 flex-grow">
-        <div className={`${isChatOpen ? 'md:col-span-2' : 'md:col-span-3'} flex flex-col h-full`}>
-          {/* Video alanı - Daha basit ve stabil */}
-          <div className="relative bg-gray-900 rounded-lg overflow-hidden shadow-inner flex-grow">
-            {/* Ana video (uzak kullanıcı) */}
+    <div className="w-full h-full flex flex-col">
+      {/* Video görüşme ana kısmı - Optimize edilmiş */}
+      <div className="flex-grow flex flex-col sm:grid sm:grid-cols-12 gap-3 p-3 h-full">
+        {/* Ana video alanı - Daha net bir görüntü için */}
+        <div className={`${isChatOpen ? 'sm:col-span-8' : 'sm:col-span-12'} flex flex-col h-full`}>
+          {/* Büyük video ekranı */}
+          <div className="w-full relative flex-grow bg-gray-900 rounded overflow-hidden border border-gray-200 shadow-md">
             <video 
               ref={remoteVideoRef}
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-contain" 
               autoPlay 
               playsInline
+              style={{ width: '100%', height: '100%', minHeight: '300px', maxHeight: '70vh', background: '#1e293b' }}
             />
             
-            {/* Etiket - diğer kullanıcı */}
-            <div className="absolute top-3 left-3 bg-black/50 backdrop-blur text-white px-3 py-1 rounded-full text-sm">
-              <span className="inline-block h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-              {isTeacher ? sessionInfo?.studentName || "Öğrenci" : sessionInfo?.teacherName || "Öğretmen"}
+            <div className="absolute top-2 left-2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+              <div className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                {isTeacher ? sessionInfo?.studentName || "Öğrenci" : sessionInfo?.teacherName || "Öğretmen"}
+              </div>
             </div>
             
-            {/* Yerel video penceresi */}
-            <div className="absolute bottom-3 right-3 w-32 h-24 sm:w-40 sm:h-30 border-2 border-white/30 rounded-lg overflow-hidden">
+            {/* Büyük, belirgin kendi video penceremiz */}
+            <div className="absolute bottom-4 right-4 rounded-md overflow-hidden shadow-lg border border-gray-100" style={{ width: '180px', height: '130px', background: '#0f172a' }}>
               <video 
-                ref={localVideoRef}
-                className="w-full h-full object-cover" 
-                autoPlay 
-                playsInline 
-                muted 
+                ref={localVideoRef} 
+                className="w-full h-full object-cover"
+                autoPlay
+                playsInline
+                muted
               />
               
-              {/* Etiket - siz */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 text-xs text-white">
-                Siz {isScreenSharing && "(Ekran Paylaşımı)"}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 text-xs text-white text-center">
+                {isScreenSharing ? "Ekran Paylaşımı" : "Siz"}
               </div>
               
-              {/* Video kapalı göstergesi */}
               {!isVideoEnabled && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                  <VideoOffIcon className="h-6 w-6 text-white/70" />
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
+                  <VideoOffIcon className="h-6 w-6 text-white/60" /> 
                 </div>
               )}
             </div>
+            
+            {/* Video durumu gösterge */}
+            {isScreenSharing && (
+              <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 text-xs rounded-full animate-pulse">
+                Ekran Paylaşılıyor
+              </div>
+            )}
           </div>
           
-          {/* Video kontrol butonları - Daha basit ve anlaşılır */}
-          <div className="flex justify-center items-center gap-3 mt-4">
+          {/* Kontrol butonları - Daha büyük ve kullanışlı */}
+          <div className="flex flex-wrap gap-2 justify-center items-center mt-3">
             <Button
               variant={isAudioEnabled ? "outline" : "destructive"}
-              size="icon"
               onClick={toggleAudio}
-              className="rounded-full h-10 w-10"
+              className="flex items-center px-4 py-2"
+              size="sm"
             >
-              {isAudioEnabled ? <MicIcon className="h-5 w-5" /> : <MicOffIcon className="h-5 w-5" />}
+              {isAudioEnabled 
+                ? <MicIcon className="h-4 w-4 mr-2" /> 
+                : <MicOffIcon className="h-4 w-4 mr-2" />
+              }
+              {isAudioEnabled ? "Mikrofon: Açık" : "Mikrofon: Kapalı"}
             </Button>
             
             <Button
               variant={isVideoEnabled ? "outline" : "destructive"}
-              size="icon"
               onClick={toggleVideo}
-              className="rounded-full h-10 w-10"
+              className="flex items-center px-4 py-2"
+              size="sm"
             >
-              {isVideoEnabled ? <VideoIcon className="h-5 w-5" /> : <VideoOffIcon className="h-5 w-5" />}
+              {isVideoEnabled 
+                ? <VideoIcon className="h-4 w-4 mr-2" /> 
+                : <VideoOffIcon className="h-4 w-4 mr-2" />
+              }
+              {isVideoEnabled ? "Kamera: Açık" : "Kamera: Kapalı"}
             </Button>
             
             <Button
               variant={isScreenSharing ? "default" : "outline"}
-              size="icon"
               onClick={toggleScreenShare}
-              className="rounded-full h-10 w-10"
+              className="flex items-center px-4 py-2"
+              size="sm"
             >
-              <ScreenShareIcon className="h-5 w-5" />
+              <ScreenShareIcon className="h-4 w-4 mr-2" />
+              Ekran Paylaş
             </Button>
             
             <Button
               variant={isChatOpen ? "default" : "outline"}
-              size="icon"
               onClick={() => setIsChatOpen(!isChatOpen)}
-              className="rounded-full h-10 w-10 relative"
+              className="flex items-center px-4 py-2 relative"
+              size="sm"
             >
-              <MessagesSquareIcon className="h-5 w-5" />
+              <MessagesSquareIcon className="h-4 w-4 mr-2" />
+              Sohbet
               {messages.length > 1 && !isChatOpen && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                  {messages.length - 1}
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                 </span>
               )}
             </Button>
@@ -414,11 +422,12 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
             {isSessionActive && (
               <Button
                 variant="destructive"
-                size="icon"
                 onClick={handleEndCall}
-                className="rounded-full h-10 w-10"
+                className="flex items-center px-4 py-2"
+                size="sm"
               >
-                <PhoneOffIcon className="h-5 w-5" />
+                <PhoneOffIcon className="h-4 w-4 mr-2" />
+                Dersi Bitir
               </Button>
             )}
           </div>
@@ -426,49 +435,49 @@ export function VideoCall({ sessionId, isTeacher, isSessionActive, onEndCall }: 
         
         {/* Sohbet paneli - daha basit ve anlaşılır */}
         {isChatOpen && (
-          <div className="md:col-span-1 flex flex-col border rounded-lg h-full">
-            <div className="p-3 border-b bg-gray-50">
-              <h3 className="font-medium text-sm flex items-center">
-                <MessagesSquareIcon className="h-4 w-4 mr-2 text-primary" />
-                Canlı Sohbet
-              </h3>
+          <div className="sm:col-span-4 flex flex-col h-full border rounded shadow-sm">
+            <div className="bg-gray-100 border-b px-3 py-2">
+              <h3 className="text-sm font-medium">Ders Sohbeti</h3>
             </div>
             
-            <div className="flex-grow p-3 overflow-y-auto space-y-3 bg-white">
+            <div className="flex-grow p-3 overflow-y-auto bg-white space-y-3">
               {messages.map((message, i) => (
                 <div 
                   key={i} 
                   className={`flex flex-col ${message.sender === "Siz" ? "items-end" : "items-start"}`}
                 >
-                  <div className="flex items-center mb-1">
-                    <span className="text-xs font-medium">{message.sender}</span>
-                    <span className="text-xs text-gray-400 ml-2">{message.time}</span>
+                  <div className="inline-flex items-center text-xs mb-1 text-gray-500">
+                    <span>{message.sender}</span>
+                    <span className="mx-1">•</span>
+                    <span>{message.time}</span>
                   </div>
+                  
                   <div 
-                    className={`rounded-lg px-3 py-2 max-w-[90%] text-sm ${
+                    className={`px-3 py-2 rounded-lg max-w-[85%] ${
                       message.sender === "Siz" 
                         ? "bg-primary text-white" 
-                        : "bg-gray-100 text-gray-800"
+                        : "bg-gray-100"
                     }`}
                   >
-                    {message.text}
+                    <p className="text-sm">{message.text}</p>
                   </div>
                 </div>
               ))}
             </div>
             
-            <form onSubmit={sendMessage} className="border-t p-2 flex items-center">
+            <form onSubmit={sendMessage} className="p-2 border-t flex">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Mesajınızı yazın..."
-                className="flex-grow text-sm px-3 py-2 rounded border focus:outline-none focus:ring-1 focus:ring-primary mr-2"
+                className="flex-grow px-3 py-1 text-sm border rounded-l outline-none focus:ring-1 focus:ring-primary"
               />
               <Button 
                 type="submit" 
                 size="sm"
                 disabled={!newMessage.trim()}
+                className="rounded-l-none"
               >
                 Gönder
               </Button>
