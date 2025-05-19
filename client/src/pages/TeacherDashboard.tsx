@@ -67,6 +67,26 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { EarningsCardDemo } from "@/components/ui/teacher/EarningsCardDemo";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Users, 
   Clock, 
@@ -81,7 +101,10 @@ import {
   Check,
   X,
   GraduationCap,
-  CreditCard
+  CreditCard,
+  User,
+  MessageCircle,
+  MoreHorizontal
 } from "lucide-react";
 import { format, addHours } from "date-fns";
 import { tr } from "date-fns/locale";
