@@ -54,7 +54,7 @@ export default function Auth() {
           password: data.password
         };
         
-        const response = await fetch("/auth/login", {
+        const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -130,12 +130,23 @@ export default function Auth() {
     mutationFn: async (data: z.infer<typeof registerSchema>) => {
       try {
         console.log("Sending registration request:", data);
-        const response = await fetch("/auth/register", {
+        // Düzeltilmiş API yolu ve istek formatı
+        const requestBody = {
+          email: data.email.trim(),
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: data.role
+        };
+        
+        console.log("Sending registration request with body:", { ...requestBody, password: "***" });
+        
+        const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(requestBody),
           credentials: "include"
         });
         

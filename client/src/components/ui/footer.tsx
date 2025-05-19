@@ -6,10 +6,10 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   // Fetch footer menu items
-  const { data: footerItems, isLoading: isFooterLoading } = useQuery<MenuItem[]>({
+  const { data: footerItems = [], isLoading: isFooterLoading } = useQuery<MenuItem[]>({
     queryKey: ["/api/menu-items", "footer"],
     queryFn: async () => {
-      const response = await fetch("/api/menu-items?location=footer");
+      const response = await fetch("/api/menu-items?menu_location=footer");
       if (!response.ok) {
         throw new Error("Failed to fetch footer items");
       }
@@ -18,7 +18,7 @@ export default function Footer() {
   });
   
   // Fetch subjects for footer
-  const { data: subjects, isLoading: isSubjectsLoading } = useQuery<any[]>({
+  const { data: subjects = [], isLoading: isSubjectsLoading } = useQuery<any[]>({
     queryKey: ["/api/subjects"],
   });
   
@@ -35,10 +35,10 @@ export default function Footer() {
   });
 
   // Support links menu items
-  const { data: supportLinks } = useQuery<MenuItem[]>({
+  const { data: supportLinks = [] } = useQuery<MenuItem[]>({
     queryKey: ["/api/menu-items", "support"],
     queryFn: async () => {
-      const response = await fetch("/api/menu-items?location=support");
+      const response = await fetch("/api/menu-items?menu_location=support");
       if (!response.ok) {
         return [];
       }
