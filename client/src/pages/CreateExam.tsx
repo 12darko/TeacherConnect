@@ -171,13 +171,33 @@ export default function CreateExam() {
   const onSubmit = (data: ExamFormValues) => {
     if (!user) return;
     
-    // Ekstra doğrulama kontrolü
-    const validatedQuestions = data.questions.map(q => {
+    // Ekstra doğrulama kontrolü ve her soruya ID ekleyerek düzeltme
+    const validatedQuestions = data.questions.map((q, index) => {
       const correctAnswer = q.type === "multiple-choice" 
         ? parseInt(q.correctAnswer as string) 
         : q.correctAnswer.toString();
+      
+      // Boş alan kontrolü
+      if (!q.question.trim()) {
+        toast({
+          title: "Form hatası",
+          description: `Soru ${index + 1} için soru metni girilmemiş.`,
+          variant: "destructive"
+        });
+        throw new Error("Question text is required");
+      }
+      
+      if (q.type === "multiple-choice" && (!q.options || q.options.some(opt => !opt.trim()))) {
+        toast({
+          title: "Form hatası",
+          description: `Soru ${index + 1} için tüm seçenekleri doldurun.`,
+          variant: "destructive"
+        });
+        throw new Error("All options must be filled for multiple choice");
+      }
         
       return {
+        id: index + 1, // Her soruya bir ID ekliyoruz - sunucu bunu bekliyor
         question: q.question.trim(),
         type: q.type,
         options: q.type === "multiple-choice" ? q.options : undefined,
@@ -186,27 +206,17 @@ export default function CreateExam() {
       };
     });
     
-    // Form verilerinin doğruluğunu kontrol et
-    const invalidQuestions = validatedQuestions.filter(
-      q => !q.question || (q.type === "multiple-choice" && !q.options)
-    );
-    
-    if (invalidQuestions.length > 0) {
-      toast({
-        title: "Form hatası",
-        description: "Lütfen tüm soru alanlarını doldurun.",
-        variant: "destructive"
+    try {
+      createExam.mutate({
+        teacherId: user.id,
+        subjectId: parseInt(data.subjectId),
+        title: data.title,
+        description: data.description,
+        questions: validatedQuestions,
       });
-      return;
+    } catch (error) {
+      console.error("Error preparing exam data:", error);
     }
-    
-    createExam.mutate({
-      teacherId: user.id,
-      subjectId: parseInt(data.subjectId),
-      title: data.title,
-      description: data.description,
-      questions: validatedQuestions,
-    });
   };
   
   // Add new question
