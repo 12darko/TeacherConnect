@@ -682,16 +682,16 @@ export default function TeacherDashboard() {
           <h1 className="text-3xl font-heading font-semibold mb-1">Öğretmen Paneli</h1>
           <p className="text-muted-foreground">Hoş geldiniz, {user?.firstName || user?.email}</p>
         </div>
-        <div className="mt-4 md:mt-0 flex gap-2">
+        <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
           <SessionFormDialog />
           <Link href="/create-exam">
-            <Button variant="outline">
+            <Button variant="outline" className="whitespace-nowrap">
               <PlusCircle className="mr-2 h-4 w-4" />
               Sınav Oluştur
             </Button>
           </Link>
           <Link href={`/teacher/${user?.id}`}>
-            <Button>
+            <Button className="whitespace-nowrap">
               <BookOpen className="mr-2 h-4 w-4" />
               Profilimi Görüntüle
             </Button>
