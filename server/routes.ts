@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/features", async (req: Request, res: Response) => {
     try {
       const features = await storage.getFeatures();
-      return res.status(200).json(features.filter(f => f.visible).sort((a, b) => a.order - b.order));
+      return res.status(200).json(features.filter(f => f.visible).sort((a, b) => a.order_position - b.order_position));
     } catch (error) {
       console.error("Error retrieving features:", error);
       return res.status(500).json({ message: "An error occurred while retrieving features" });
